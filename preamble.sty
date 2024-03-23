@@ -1,0 +1,70 @@
+\ProvidesPackage{preamble}
+
+\usepackage[USenglish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+\usepackage{titlesec}
+\usepackage{placeins}
+\usepackage{listings}
+\usepackage{shellesc}
+
+\titleformat{\chapter}
+{\normalfont\huge\bfseries}{\thechapter.}{10pt}{\huge}
+
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+
+\usepackage[
+	top = 2.0cm,
+	bottom = 2.0cm,
+	left = 4.0cm,
+	right = 2.0cm
+]{geometry}
+
+\usepackage{setspace}
+\setstretch{1.5}
+
+\usepackage {helvet}
+\usepackage[hidelinks]{hyperref}
+\usepackage[
+	style=numeric,
+	sorting=none,
+	abbreviate=false,
+	giveninits=true,
+	backend=biber,
+]{biblatex}
+\bibliography{/home/nick/Documents/Docs/citations.bib}
+
+\counterwithout{table}{chapter}
+\counterwithout{figure}{chapter}
+
+\DeclareDelimFormat[bib]{nametitledelim}{\addcolon\space}
+\renewcommand {\revsdnamepunct}{\addcomma\space}
+\AtBeginBibliography{\vspace*{1em}}
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
+
+% Definig a custom style:
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{gray!10},   
+    commentstyle=\color{purple},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{gray},
+    stringstyle=\color{purple},
+    basicstyle=\ttfamily\footnotesize\bfseries,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=t,                    
+    keepspaces=true,                                     
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}% -- Setting up the custom style:
+\lstset{style=mystyle}
+
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+
+\usepackage{svg}
+\svgpath{{./images/}}

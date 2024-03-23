@@ -1,0 +1,10 @@
+\babel@toc {USenglish}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1}{\ignorespaces Memory Hierarchy of the GPU \blx@tocontentsinit {0}\cite {fig:gpu-arch}}}{6}{figure.2.1}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2}{\ignorespaces Pipeline Structure \blx@tocontentsinit {0}\cite {fig:pipeline}}}{8}{figure.3.2}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Triangle with vertices}}{10}{figure.3.3}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Quad with vertices created using indices}}{10}{figure.3.4}%
+\contentsline {figure}{\numberline {5}{\ignorespaces Interleaved Vertex Buffer}}{11}{figure.3.5}%
+\contentsline {figure}{\numberline {6}{\ignorespaces Non-Interleaved Vertex Buffer}}{12}{figure.3.6}%

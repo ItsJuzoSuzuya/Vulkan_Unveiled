@@ -1,0 +1,647 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{CDW-cpu_vs_gpu}{online}{}
+      \name{author}{1}{}{%
+        {{hash=f155f3d6b20b1fbcd86554d25200d1f7}{%
+           family={CDW},
+           familyi={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{f155f3d6b20b1fbcd86554d25200d1f7}
+      \strng{fullhash}{f155f3d6b20b1fbcd86554d25200d1f7}
+      \strng{bibnamehash}{f155f3d6b20b1fbcd86554d25200d1f7}
+      \strng{authorbibnamehash}{f155f3d6b20b1fbcd86554d25200d1f7}
+      \strng{authornamehash}{f155f3d6b20b1fbcd86554d25200d1f7}
+      \strng{authorfullhash}{f155f3d6b20b1fbcd86554d25200d1f7}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{CPU vs. GPU: What's the Difference?}
+      \field{urlday}{23}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2022}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.cdw.com/content/cdw/en/articles/hardware/cpu-vs-gpu.html#4
+      \endverb
+      \verb{url}
+      \verb https://www.cdw.com/content/cdw/en/articles/hardware/cpu-vs-gpu.html#4
+      \endverb
+    \endentry
+    \entry{NVIDIA-cpu-gpu}{online}{}
+      \name{author}{1}{}{%
+        {{hash=3ef7036fc2f019bf0ee0055c03d8856b}{%
+           family={Caulfield},
+           familyi={C\bibinitperiod},
+           given={Brian},
+           giveni={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{3ef7036fc2f019bf0ee0055c03d8856b}
+      \strng{fullhash}{3ef7036fc2f019bf0ee0055c03d8856b}
+      \strng{bibnamehash}{3ef7036fc2f019bf0ee0055c03d8856b}
+      \strng{authorbibnamehash}{3ef7036fc2f019bf0ee0055c03d8856b}
+      \strng{authornamehash}{3ef7036fc2f019bf0ee0055c03d8856b}
+      \strng{authorfullhash}{3ef7036fc2f019bf0ee0055c03d8856b}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{What’s the Difference Between a CPU and a GPU?}
+      \field{urlday}{23}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2009}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://blogs.nvidia.com/blog/whats-the-difference-between-a-cpu-and-a-gpu/
+      \endverb
+      \verb{url}
+      \verb https://blogs.nvidia.com/blog/whats-the-difference-between-a-cpu-and-a-gpu/
+      \endverb
+    \endentry
+    \entry{CUDA_Programming_Guide}{online}{}
+      \name{author}{1}{}{%
+        {{hash=a2fe9051fe051f819bd739ef3e340377}{%
+           family={NVIDIA},
+           familyi={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{fullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{bibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorbibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \field{extraname}{1}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{CUDA C++ Programming Guide}
+      \field{urlday}{21}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html
+      \endverb
+      \verb{url}
+      \verb https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html
+      \endverb
+    \endentry
+    \entry{NVIDIA-rtx-4090}{online}{}
+      \name{author}{1}{}{%
+        {{hash=a2fe9051fe051f819bd739ef3e340377}{%
+           family={NVIDIA},
+           familyi={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{fullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{bibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorbibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \field{extraname}{2}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{GeForce RTX 4090}
+      \field{urlday}{21}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2022}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.nvidia.com/de-de/geforce/graphics-cards/40-series/rtx-4090/
+      \endverb
+      \verb{url}
+      \verb https://www.nvidia.com/de-de/geforce/graphics-cards/40-series/rtx-4090/
+      \endverb
+    \endentry
+    \entry{vram}{online}{}
+      \name{author}{1}{}{%
+        {{hash=01c6143068ae52e61cad6f826f6142bf}{%
+           family={Hub)},
+           familyi={H\bibinitperiod},
+           given={Josna\bibnamedelima (Electronics},
+           giveni={J\bibinitperiod\bibinitdelim (\bibinitperiod}}}%
+      }
+      \strng{namehash}{01c6143068ae52e61cad6f826f6142bf}
+      \strng{fullhash}{01c6143068ae52e61cad6f826f6142bf}
+      \strng{bibnamehash}{01c6143068ae52e61cad6f826f6142bf}
+      \strng{authorbibnamehash}{01c6143068ae52e61cad6f826f6142bf}
+      \strng{authornamehash}{01c6143068ae52e61cad6f826f6142bf}
+      \strng{authorfullhash}{01c6143068ae52e61cad6f826f6142bf}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Which is Better – VRAM or RAM?}
+      \field{urlday}{21}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.electronicshub.org/vram-or-ram/
+      \endverb
+      \verb{url}
+      \verb https://www.electronicshub.org/vram-or-ram/
+      \endverb
+    \endentry
+    \entry{cherry_gpu_architecture}{online}{}
+      \name{author}{1}{}{%
+        {{hash=1bd268a7fc199b2460582966ad844c59}{%
+           family={Levinas},
+           familyi={L\bibinitperiod},
+           given={Mantas},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{1bd268a7fc199b2460582966ad844c59}
+      \strng{fullhash}{1bd268a7fc199b2460582966ad844c59}
+      \strng{bibnamehash}{1bd268a7fc199b2460582966ad844c59}
+      \strng{authorbibnamehash}{1bd268a7fc199b2460582966ad844c59}
+      \strng{authornamehash}{1bd268a7fc199b2460582966ad844c59}
+      \strng{authorfullhash}{1bd268a7fc199b2460582966ad844c59}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{GPU Architecture Explained: Everything You Need to Know and How It Has Evolved}
+      \field{urlday}{21}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2021}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.cherryservers.com/blog/everything-you-need-to-know-about-gpu-architecture
+      \endverb
+      \verb{url}
+      \verb https://www.cherryservers.com/blog/everything-you-need-to-know-about-gpu-architecture
+      \endverb
+    \endentry
+    \entry{rocm}{online}{}
+      \name{author}{1}{}{%
+        {{hash=48af4341f745163f945fa838eeabb062}{%
+           family={AMD},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{48af4341f745163f945fa838eeabb062}
+      \strng{fullhash}{48af4341f745163f945fa838eeabb062}
+      \strng{bibnamehash}{48af4341f745163f945fa838eeabb062}
+      \strng{authorbibnamehash}{48af4341f745163f945fa838eeabb062}
+      \strng{authornamehash}{48af4341f745163f945fa838eeabb062}
+      \strng{authorfullhash}{48af4341f745163f945fa838eeabb062}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{AMD ROCm™ Software}
+      \field{urlday}{21}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.amd.com/en/products/software/rocm.html
+      \endverb
+      \verb{url}
+      \verb https://www.amd.com/en/products/software/rocm.html
+      \endverb
+    \endentry
+    \entry{fig:gpu-arch}{online}{}
+      \name{author}{1}{}{%
+        {{hash=a2fe9051fe051f819bd739ef3e340377}{%
+           family={NVIDIA},
+           familyi={N\bibinitperiod}}}%
+      }
+      \strng{namehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{fullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{bibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorbibnamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authornamehash}{a2fe9051fe051f819bd739ef3e340377}
+      \strng{authorfullhash}{a2fe9051fe051f819bd739ef3e340377}
+      \field{extraname}{3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{GPU Performance Background User's Guide}
+      \field{urlday}{26}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.nvidia.com/deeplearning/performance/dl-performance-gpu-background/index.html
+      \endverb
+      \verb{url}
+      \verb https://docs.nvidia.com/deeplearning/performance/dl-performance-gpu-background/index.html
+      \endverb
+    \endentry
+    \entry{vkGuide}{online}{}
+      \name{author}{1}{}{%
+        {{hash=360d2798561495c22d1728bacf146374}{%
+           family={Blanco},
+           familyi={B\bibinitperiod},
+           given={Victor},
+           giveni={V\bibinitperiod}}}%
+      }
+      \strng{namehash}{360d2798561495c22d1728bacf146374}
+      \strng{fullhash}{360d2798561495c22d1728bacf146374}
+      \strng{bibnamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authorbibnamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authornamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authorfullhash}{360d2798561495c22d1728bacf146374}
+      \field{extraname}{1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{The graphics pipeline}
+      \field{urlday}{22}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2020}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://vkguide.dev/docs/new_chapter_3/render_pipeline/
+      \endverb
+      \verb{url}
+      \verb https://vkguide.dev/docs/new_chapter_3/render_pipeline/
+      \endverb
+    \endentry
+    \entry{build-pipeline}{online}{}
+      \name{author}{1}{}{%
+        {{hash=360d2798561495c22d1728bacf146374}{%
+           family={Blanco},
+           familyi={B\bibinitperiod},
+           given={Victor},
+           giveni={V\bibinitperiod}}}%
+      }
+      \strng{namehash}{360d2798561495c22d1728bacf146374}
+      \strng{fullhash}{360d2798561495c22d1728bacf146374}
+      \strng{bibnamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authorbibnamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authornamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authorfullhash}{360d2798561495c22d1728bacf146374}
+      \field{extraname}{2}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{The graphics pipeline}
+      \field{urlday}{25}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2020}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://vkguide.dev/docs/new_chapter_3/building_pipeline/
+      \endverb
+      \verb{url}
+      \verb https://vkguide.dev/docs/new_chapter_3/building_pipeline/
+      \endverb
+    \endentry
+    \entry{vulkan-tutorial-compute-shader}{online}{}
+      \name{author}{1}{}{%
+        {{hash=af6e218ca532c5996569a0f30ad69730}{%
+           family={Overvoorde},
+           familyi={O\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{fullhash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{bibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorbibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authornamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorfullhash}{af6e218ca532c5996569a0f30ad69730}
+      \field{extraname}{1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{Compute Shader}
+      \field{title}{Vulkan Tutorial}
+      \field{urlday}{25}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://vulkan-tutorial.com/Compute_Shader
+      \endverb
+      \verb{url}
+      \verb https://vulkan-tutorial.com/Compute_Shader
+      \endverb
+    \endentry
+    \entry{spirv}{online}{}
+      \name{author}{1}{}{%
+        {{hash=360d2798561495c22d1728bacf146374}{%
+           family={Blanco},
+           familyi={B\bibinitperiod},
+           given={Victor},
+           giveni={V\bibinitperiod}}}%
+      }
+      \strng{namehash}{360d2798561495c22d1728bacf146374}
+      \strng{fullhash}{360d2798561495c22d1728bacf146374}
+      \strng{bibnamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authorbibnamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authornamehash}{360d2798561495c22d1728bacf146374}
+      \strng{authorfullhash}{360d2798561495c22d1728bacf146374}
+      \field{extraname}{3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Running code on the GPU}
+      \field{urlday}{25}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2020}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://vkguide.dev/docs/new_chapter_2/vulkan_shader_drawing/
+      \endverb
+      \verb{url}
+      \verb https://vkguide.dev/docs/new_chapter_2/vulkan_shader_drawing/
+      \endverb
+    \endentry
+    \entry{fig:pipeline}{book}{}
+      \name{author}{1}{}{%
+        {{hash=b75d66c2bcf142b8fa6c73ece01f9bb2}{%
+           family={Singh},
+           familyi={S\bibinitperiod},
+           given={Parminder},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{b75d66c2bcf142b8fa6c73ece01f9bb2}
+      \strng{fullhash}{b75d66c2bcf142b8fa6c73ece01f9bb2}
+      \strng{bibnamehash}{b75d66c2bcf142b8fa6c73ece01f9bb2}
+      \strng{authorbibnamehash}{b75d66c2bcf142b8fa6c73ece01f9bb2}
+      \strng{authornamehash}{b75d66c2bcf142b8fa6c73ece01f9bb2}
+      \strng{authorfullhash}{b75d66c2bcf142b8fa6c73ece01f9bb2}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{9781786469809}
+      \field{title}{Learning Vulkan}
+      \field{year}{2016}
+    \endentry
+    \entry{vulkan-spec-draw}{online}{}
+      \name{author}{1}{}{%
+        {{hash=638160ae56a17712d83fafc12a740c80}{%
+           family={Group},
+           familyi={G\bibinitperiod},
+           given={Khronos},
+           giveni={K\bibinitperiod}}}%
+      }
+      \strng{namehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{fullhash}{638160ae56a17712d83fafc12a740c80}
+      \strng{bibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorbibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authornamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorfullhash}{638160ae56a17712d83fafc12a740c80}
+      \field{extraname}{1}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{21. Drawing Commands}
+      \field{title}{Vulkan Specification}
+      \field{urlday}{26}
+      \field{urlmonth}{2}
+      \field{urlyear}{2024}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap21.html
+      \endverb
+      \verb{url}
+      \verb https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap21.html
+      \endverb
+    \endentry
+    \entry{vulkan-spec-pipelines}{online}{}
+      \name{author}{1}{}{%
+        {{hash=638160ae56a17712d83fafc12a740c80}{%
+           family={Group},
+           familyi={G\bibinitperiod},
+           given={Khronos},
+           giveni={K\bibinitperiod}}}%
+      }
+      \strng{namehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{fullhash}{638160ae56a17712d83fafc12a740c80}
+      \strng{bibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorbibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authornamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorfullhash}{638160ae56a17712d83fafc12a740c80}
+      \field{extraname}{2}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{10. Pipelines}
+      \field{title}{Vulkan Specification}
+      \field{urlday}{1}
+      \field{urlmonth}{3}
+      \field{urlyear}{2024}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap10.html
+      \endverb
+      \verb{url}
+      \verb https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap10.html
+      \endverb
+    \endentry
+    \entry{vulkan-vertex-input}{online}{}
+      \name{author}{1}{}{%
+        {{hash=638160ae56a17712d83fafc12a740c80}{%
+           family={Group},
+           familyi={G\bibinitperiod},
+           given={Khronos},
+           giveni={K\bibinitperiod}}}%
+      }
+      \strng{namehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{fullhash}{638160ae56a17712d83fafc12a740c80}
+      \strng{bibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorbibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authornamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorfullhash}{638160ae56a17712d83fafc12a740c80}
+      \field{extraname}{3}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{Vertex Input Data Processing}
+      \field{title}{Vulkan Guide}
+      \field{urlday}{1}
+      \field{urlmonth}{3}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.vulkan.org/guide/latest/vertex_input_data_processing.html
+      \endverb
+      \verb{url}
+      \verb https://docs.vulkan.org/guide/latest/vertex_input_data_processing.html
+      \endverb
+    \endentry
+    \entry{vulkan-tutorial-index-buffer}{online}{}
+      \name{author}{1}{}{%
+        {{hash=af6e218ca532c5996569a0f30ad69730}{%
+           family={Overvoorde},
+           familyi={O\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{fullhash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{bibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorbibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authornamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorfullhash}{af6e218ca532c5996569a0f30ad69730}
+      \field{extraname}{2}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{Index Buffer}
+      \field{title}{Vulkan Tutorial}
+      \field{urlday}{1}
+      \field{urlmonth}{3}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://vulkan-tutorial.com/Vertex_buffers/Index_buffer
+      \endverb
+      \verb{url}
+      \verb https://vulkan-tutorial.com/Vertex_buffers/Index_buffer
+      \endverb
+    \endentry
+    \entry{vulkan-tutorial-vertex-buffer}{online}{}
+      \name{author}{1}{}{%
+        {{hash=af6e218ca532c5996569a0f30ad69730}{%
+           family={Overvoorde},
+           familyi={O\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{fullhash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{bibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorbibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authornamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorfullhash}{af6e218ca532c5996569a0f30ad69730}
+      \field{extraname}{3}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{Vertex Input Description}
+      \field{title}{Vulkan Tutorial}
+      \field{urlday}{3}
+      \field{urlmonth}{3}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description
+      \endverb
+      \verb{url}
+      \verb https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description
+      \endverb
+    \endentry
+    \entry{microsoft-ia}{online}{}
+      \name{author}{1}{}{%
+        {{hash=9e1c561ec3a72a0b7d1ac9bd0a486dfa}{%
+           family={Steven\bibnamedelima White},
+           familyi={S\bibinitperiod\bibinitdelim W\bibinitperiod},
+           given={Matt\bibnamedelima Wojciakowski},
+           giveni={M\bibinitperiod\bibinitdelim W\bibinitperiod}}}%
+      }
+      \strng{namehash}{9e1c561ec3a72a0b7d1ac9bd0a486dfa}
+      \strng{fullhash}{9e1c561ec3a72a0b7d1ac9bd0a486dfa}
+      \strng{bibnamehash}{9e1c561ec3a72a0b7d1ac9bd0a486dfa}
+      \strng{authorbibnamehash}{9e1c561ec3a72a0b7d1ac9bd0a486dfa}
+      \strng{authornamehash}{9e1c561ec3a72a0b7d1ac9bd0a486dfa}
+      \strng{authorfullhash}{9e1c561ec3a72a0b7d1ac9bd0a486dfa}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{Input Assembler (IA) Stage}
+      \field{title}{Universal Windows Platform}
+      \field{urlday}{3}
+      \field{urlmonth}{3}
+      \field{urlyear}{2024}
+      \field{year}{2022}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://learn.microsoft.com/en-us/windows/uwp/graphics-concepts/input-assembler-stage--ia-
+      \endverb
+      \verb{url}
+      \verb https://learn.microsoft.com/en-us/windows/uwp/graphics-concepts/input-assembler-stage--ia-
+      \endverb
+    \endentry
+    \entry{vulkan-spec-primitive-topology}{online}{}
+      \name{author}{1}{}{%
+        {{hash=638160ae56a17712d83fafc12a740c80}{%
+           family={Group},
+           familyi={G\bibinitperiod},
+           given={Khronos},
+           giveni={K\bibinitperiod}}}%
+      }
+      \strng{namehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{fullhash}{638160ae56a17712d83fafc12a740c80}
+      \strng{bibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorbibnamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authornamehash}{638160ae56a17712d83fafc12a740c80}
+      \strng{authorfullhash}{638160ae56a17712d83fafc12a740c80}
+      \field{extraname}{4}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{VkPrimitiveTopology(3) Manual Page}
+      \field{title}{Vulkan Specification}
+      \field{urlday}{3}
+      \field{urlmonth}{3}
+      \field{urlyear}{2024}
+      \field{year}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPrimitiveTopology.html
+      \endverb
+      \verb{url}
+      \verb https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPrimitiveTopology.html
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

@@ -1,0 +1,82 @@
+%% Creator: Inkscape 1.2.2 (b0a8486541, 2022-12-01), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'non-int-vertexbuffer_svg-tex.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{346.1410412bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.44656464)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{non-int-vertexbuffer_svg-tex.pdf}}%
+    \put(-0.00242066,0.27913694){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}location:\end{tabular}}}}%
+    \put(0.04336095,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}0\end{tabular}}}}%
+    \put(0.09052006,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}0\end{tabular}}}}%
+    \put(0.1343482,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}0\end{tabular}}}}%
+    \put(0.1798849,0.24230224){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}0\end{tabular}}}}%
+    \put(0.22529439,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}0\end{tabular}}}}%
+    \put(0.27076749,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}0\end{tabular}}}}%
+    \put(0.31624058,0.24230224){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}1\end{tabular}}}}%
+    \put(0.36171368,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}1\end{tabular}}}}%
+    \put(0.40718678,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}1\end{tabular}}}}%
+    \put(0.45510897,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}1\end{tabular}}}}%
+    \put(0.49813297,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}1\end{tabular}}}}%
+    \put(0.54360606,0.24198126){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}1\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{non-int-vertexbuffer_svg-tex.pdf}}%
+    \put(0.71554628,0.41802328){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}position: {x, y, z}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{non-int-vertexbuffer_svg-tex.pdf}}%
+    \put(0.71554628,0.34759814){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}color {r, g, b}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{non-int-vertexbuffer_svg-tex.pdf}}%
+    \put(0.82120735,0.18404984){\color[rgb]{1,1,1}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}Pipeline\end{tabular}}}}%
+    \put(0.18825625,0.35528599){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}\textbf{Vertexbuffer}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{non-int-vertexbuffer_svg-tex.pdf}}%
+    \put(0.30289486,0.02486533){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}Binding 1\end{tabular}}}}%
+    \put(0.45733414,0.10561353){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\smash{\begin{tabular}[t]{l}Binding 2\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{non-int-vertexbuffer_svg-tex.pdf}}%
+  \end{picture}%
+\endgroup%
