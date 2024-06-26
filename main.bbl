@@ -357,6 +357,70 @@
       \verb https://vulkan-tutorial.com/Compute_Shader
       \endverb
     \endentry
+    \entry{fig:view-frustum}{online}{}
+      \name{author}{1}{}{%
+        {{hash=516de641ba81d36bf9b42ee36a3b3a81}{%
+           family={Vries},
+           familyi={V\bibinitperiod},
+           given={Joey},
+           giveni={J\bibinitperiod},
+           prefix={de},
+           prefixi={d\bibinitperiod}}}%
+      }
+      \strng{namehash}{516de641ba81d36bf9b42ee36a3b3a81}
+      \strng{fullhash}{516de641ba81d36bf9b42ee36a3b3a81}
+      \strng{bibnamehash}{516de641ba81d36bf9b42ee36a3b3a81}
+      \strng{authorbibnamehash}{516de641ba81d36bf9b42ee36a3b3a81}
+      \strng{authornamehash}{516de641ba81d36bf9b42ee36a3b3a81}
+      \strng{authorfullhash}{516de641ba81d36bf9b42ee36a3b3a81}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{Coordinate Systems}
+      \field{title}{Getting started}
+      \field{urlday}{25}
+      \field{urlmonth}{6}
+      \field{urlyear}{2024}
+      \field{year}{2014}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://learnopengl.com/Getting-started/Coordinate-Systems
+      \endverb
+      \verb{url}
+      \verb https://learnopengl.com/Getting-started/Coordinate-Systems
+      \endverb
+    \endentry
+    \entry{fig:matrix-multiplication}{online}{}
+      \name{author}{1}{}{%
+        {{hash=16dddfe5af41c0a95bb948f902067f3a}{%
+           family={Richter},
+           familyi={R\bibinitperiod},
+           given={Steph},
+           giveni={S\bibinitperiod}}}%
+      }
+      \strng{namehash}{16dddfe5af41c0a95bb948f902067f3a}
+      \strng{fullhash}{16dddfe5af41c0a95bb948f902067f3a}
+      \strng{bibnamehash}{16dddfe5af41c0a95bb948f902067f3a}
+      \strng{authorbibnamehash}{16dddfe5af41c0a95bb948f902067f3a}
+      \strng{authornamehash}{16dddfe5af41c0a95bb948f902067f3a}
+      \strng{authorfullhash}{16dddfe5af41c0a95bb948f902067f3a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Matrix-Matrix-Multiplikation}
+      \field{urlday}{26}
+      \field{urlmonth}{6}
+      \field{urlyear}{2024}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.sofatutor.com/mathematik/videos/matrix-matrix-multiplikation
+      \endverb
+      \verb{url}
+      \verb https://www.sofatutor.com/mathematik/videos/matrix-matrix-multiplikation
+      \endverb
+    \endentry
     \entry{spirv}{online}{}
       \name{author}{1}{}{%
         {{hash=360d2798561495c22d1728bacf146374}{%
@@ -372,8 +436,8 @@
       \strng{authornamehash}{360d2798561495c22d1728bacf146374}
       \strng{authorfullhash}{360d2798561495c22d1728bacf146374}
       \field{extraname}{3}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Running code on the GPU}
@@ -639,6 +703,39 @@
       \endverb
       \verb{url}
       \verb https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPrimitiveTopology.html
+      \endverb
+    \endentry
+    \entry{vulkan-tutorial-shader-modules}{online}{}
+      \name{author}{1}{}{%
+        {{hash=af6e218ca532c5996569a0f30ad69730}{%
+           family={Overvoorde},
+           familyi={O\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{fullhash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{bibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorbibnamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authornamehash}{af6e218ca532c5996569a0f30ad69730}
+      \strng{authorfullhash}{af6e218ca532c5996569a0f30ad69730}
+      \field{extraname}{4}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{subtitle}{Shader Modules}
+      \field{title}{Vulkan Tutorial}
+      \field{urlday}{24}
+      \field{urlmonth}{6}
+      \field{urlyear}{2024}
+      \field{year}{2023}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules
+      \endverb
+      \verb{url}
+      \verb https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules
       \endverb
     \endentry
   \enddatalist

@@ -1,16 +1,16 @@
 %Package Date: 2018-01-01 % !TeX program = XeLaTeX
 
-\documentclass[12pt]{report} \usepackage {preamble}
+\documentclass[12pt]{report} \usepackage{preamble}
 
-\title {\textbf{\huge Vulkan Unveiled: A Beginner's Guide to Professional
-		Graphics Programming}} \author {Nick Schefner}
+\title{\textbf{\huge Vulkan Unveiled: A Beginner's Guide to Professional
+  Graphics Programming}} \author {Nick Schefner}
 \bibliography{citations.bib}
 
-\begin {document} \maketitle
+\begin{document} \maketitle
 
 \tableofcontents
 
-\chapter {Introduction}
+\chapter{Introduction}
 
 Dear Reader,
 
@@ -68,9 +68,9 @@ Lastly, I want to assure you that while learning Vulkan may seem daunting
 at first, with time and patience, anyone interested in this topic can
 develop a strong understanding of it.
 
-\chapter {The GPU}
+\chapter{The GPU}
 
-\section {Why do we need a GPU?}
+\section{Why do we need a GPU?}
 
 The graphics processing unit (GPU) is, like the name implies, a hardware
 component that is made specificly for processing graphical data. Sure,
@@ -114,7 +114,7 @@ slower memory source like the DRAM.  Therefore it is important to manage
 data efficiently and to not overload the VRAM by loading to many or to
 detailed textures.
 
-\section {Basic Architecture of the GPU}
+\section{Basic Architecture of the GPU}
 
 I've already mentioned that the GPU can take one instruction and
 execute it on multiple data at the same time. This is called SIMD
@@ -170,9 +170,9 @@ array of streaming multiprocessors (SM) to allow better control and
 management of the cores.  The VRAM is the memory of the GPU and its
 important to optimize your data to prevent overloading the VRAM.
 
-\chapter {Graphics Rendering Pipeline}
+\chapter{Graphics Rendering Pipeline}
 
-\section {What is the Graphics Pipeline?}
+\section{What is the Graphics Pipeline?}
 
 When we talk about the graphics pipeline, I want to make clear that we
 are not talking about a physical pipeline that is used to transport data
@@ -198,11 +198,172 @@ There is actually other pipeline types, like the compute or raytracing
 pipeline, made for different tasks, but we will focus on the graphics
 pipeline for now.
 
-The graphics pipeline is invoked by a draw command \cite{build-pipeline},
+The graphics pipeline is invoked by a draw command,
 while the the compute pipeline is invoked by a dispatch
-command. \cite{vulkan-tutorial-compute-shader}
+command. \cite{build-pipeline} \\
+\cite{vulkan-tutorial-compute-shader}
 
-\section {Stages of the Pipeline}
+\section{The Basics}
+
+To understand the graphics pipeline, we first need to understand the
+how the 2D image on our screen is created from the 3D data that we
+provide to the pipeline.
+
+We start with the world space, which is the 3D space that we use to
+define the positions of our objects in the scene. The world space is
+then transformed into the view space, which is the space that the
+camera sees. \cite{fig:view-frustum}
+
+But wait, camera? If you have worked with 3D graphics before, you know
+that we need a camera that is used to define the space we can view, aka
+the view space. The camera is an object that has a view frustum
+with a near and far plane, that is used to define what we can see.
+
+\begin{figure}[hbtp]
+	\centering \includegraphics[width=0.60\textwidth]{view-frustum.png}
+	\caption{View Frustum \cite{fig:view-frustum}}
+\end{figure}
+
+To transform the world space into the view space, we use a view matrix.
+Let's briefly talk about matrix transformations and how multiplication
+can be used to move, rotate or scale objects in 3D space.
+
+If you have never touched linear algebra before, I suggest you to go over
+2Blue1Brown's Essence of Linear Algebra series on YouTube. It is a great
+introduction to linear algebra and will help you understand the further topics.
+
+\subsection{Matrix Transformations}
+
+When we have an box in 3D space, we can represent its position as an
+array of 3 floats, which are the x, y and z coordinates of its center.
+To move the box, we can simly add or subtract a value from the x, y or z
+coordinate. But what if we want to rotate the box? We can't just add or
+subtract a value from the boxes center to rotate it. We need to takle each
+corner of the box and move it around the center of the box. This is where
+matrix transformations come into play.
+
+To rotate the box, we can multiply the position of each corner with a
+rotation matrix. Wait how do we multipy matrices? It's simple. We multiply
+the rows of the first matrix with the columns of the second matrix and add them
+together. The result is the value of the new matrix at the position where the row and
+column intersect.
+\[
+	\begin{bmatrix}
+		a & b & c \\
+		d & e & f \\
+		g & h & i \\
+	\end{bmatrix}
+	x
+	\begin{bmatrix}
+		j & k & l \\
+		m & n & o \\
+		p & q & r \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		(aj + bm + cp) & (ak + bn + cq) & (al + bo + cr) \\
+		(dj + em + fp) & (dk + en + fq) & (dl + eo + fr) \\
+		(gj + hm + ip) & (gk + hn + iq) & (gl + ho + ir) \\
+	\end{bmatrix}
+\]
+
+\begin{figure}[hbtp]
+	\centering \includesvg[width=0.60\textwidth]{images/matrix-multiplication.svg}
+	\caption{Matrix Multiplication \cite{fig:matrix-multiplication}}
+\end{figure}
+
+We can use this knowledge to create a rotation matrix. Lets say we have a line with
+the points \{0, 0, 0\} and \{1, 0, 0\}.
+When we want to rotate this line around an axis by 45 degrees, we can apply
+the following rotation matrices to the points:
+
+x-axis: \[
+	\begin{bmatrix}
+		1 & 0       & 0        \\
+		0 & cos(45) & -sin(45) \\
+		0 & sin(45) & cos(45)  \\
+	\end{bmatrix}
+\]
+
+y-axis: \[
+	\begin{bmatrix}
+		cos(45)  & 0 & sin(45) \\
+		0        & 1 & 0       \\
+		-sin(45) & 0 & cos(45) \\
+	\end{bmatrix}
+\]
+
+z-axis: \[
+	\begin{bmatrix}
+		cos(45) & -sin(45) & 0 \\
+		sin(45) & cos(45)  & 0 \\
+		0       & 0        & 1 \\
+	\end{bmatrix}
+\]
+
+Let's rotate the line around the y axis:
+
+\[
+	\begin{bmatrix}
+		cos(45)  & 0 & sin(45) \\
+		0        & 1 & 0       \\
+		-sin(45) & 0 & cos(45) \\
+	\end{bmatrix}
+	\begin{bmatrix}
+		0 \\
+		0 \\
+		0 \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		0 \\
+		0 \\
+		0 \\
+	\end{bmatrix}
+\]
+
+\[
+	\begin{bmatrix}
+		cos(45)  & 0 & sin(45) \\
+		0        & 1 & 0       \\
+		-sin(45) & 0 & cos(45) \\
+	\end{bmatrix}
+	\begin{bmatrix}
+		1 \\
+		0 \\
+		0 \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		cos(45)  \\
+		0        \\
+		-sin(45) \\
+	\end{bmatrix}
+\]
+
+You can see that the origin of the line stays the same, but the direction
+of the line has changed. This is because we actually rotate the entire
+world space and not the object itself. But because the object is in the
+world space, it will also be rotated.
+
+Scaling of an object is a bit simpler than rotation. We just multiply
+the position of the object with a scaling matrix. The scaling matrix
+looks like this:
+
+\[
+	\begin{bmatrix}
+		x & 0 & 0 \\
+		0 & y & 0 \\
+		0 & 0 & z \\
+	\end{bmatrix}
+\]
+
+You might see that we simply multiply the x, y and z coordinates with the
+scaling factor we want to apply to that axis. So when we want to scale an
+object by 2 on the x axis, we would multiply the x coordinate with 2 and
+leave the y and z coordinates as they are.
+
+\section{Stages of the Pipeline}
 
 The Vulkan pipeline consists of multiple stages. Some of them are fixed
 and can not be changed, while others are programmable to act as we
@@ -232,14 +393,14 @@ So some stages will be cut short to better explain the important ones.
 In the end you will rarely need to use geometry shaders or tessellation
 shaders, but it is important to know that they exist and what they do.
 
-\subsection {Draw}
+\subsection{Draw}
 
 The draw "stage" is not really a stage, but the command that starts
 the rendering process. When we call the vkCmdDraw Command on the GPU,
 the pipeline will start processing the data that we have given to
 it. \cite{vulkan-spec-draw}
 
-\subsection {Input Assembler}
+\subsection{Input Assembler}
 
 The input assembler is the first stage of the graphics pipeline. It takes
 a vertex and index buffer. \cite{vulkan-spec-pipelines} Before we talk
@@ -333,18 +494,17 @@ points, lines or triangles. \cite{microsoft-ia}
 
 // Provided by VK_VERSION_1_0 typedef
 enum VkPrimitiveTopology {
-    VK_PRIMITIVE_TOPOLOGY_POINT_LIST = 0, VK_PRIMITIVE_TOPOLOGY_LINE_LIST
-    = 1, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP =
-    2, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST =
-    3, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP =
-    4, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
-    VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
-    VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
-    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
-    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY = 9,
-    VK_PRIMITIVE_TOPOLOGY_PATCH_LIST = 10,
+  VK_PRIMITIVE_TOPOLOGY_POINT_LIST = 0, VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+  = 1, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP =
+  2, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST =
+  3, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP =
+  4, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
+  VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
+  VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
+  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
+  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY = 9,
+  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST = 10,
 } VkPrimitiveTopology; 
-
 \end{lstlisting} \cite{vulkan-spec-primitive-topology}
 
 These are the primitive topology types that the input assembler can
@@ -358,10 +518,25 @@ The same idea works with lines. The "with adjacency" types are only
 used when accessing the geometry stage. We will rarely use
 the adjacany types, so dont worry on understanding them now. \cite{vulkan-spec-primitive-topology}
 
-\subsection {Vertex Shader}
+\subsection{Vertex Shader}
 
-The vertex shader is the first programmable stage of the pipeline.
+The vertex shader is the first programmable stage of the pipeline. It takes
+the vertices and transforms them by scaling, rotating or translating them
+into clip coordinates.
+These coordinates range from -1 to 1 on the x, y and z axis, with the center
+beginning at \{0, 0, 0\}.
 
+\begin{figure}[hbtp]
+	\centering \includesvg[width=0.6\textwidth]{images/clip-space.svg}
+	\caption{Clip Coordinates in 2D}
+\end{figure} \FloatBarrier
+
+Please note, that the y axis is inverted in clip space and that there is a
+z coordinate that can go from 0 to 1, with 0 being directly behind the screen
+and 1 being the furthest point that will not be clipped off.
+
+The clip spaced is used to determine if a vertex is visible or not, by
+checking if the vertex is inbetween the -1 and 1 range. \cite{vulkan-tutorial-shader-modules}
 
 \printbibliography[
 	heading=bibintoc, title={Bibliography}

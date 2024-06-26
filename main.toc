@@ -6,8 +6,10 @@
 \contentsline {section}{\numberline {2.3}Summary}{6}{section.2.3}%
 \contentsline {chapter}{\numberline {3}Graphics Rendering Pipeline}{7}{chapter.3}%
 \contentsline {section}{\numberline {3.1}What is the Graphics Pipeline?}{7}{section.3.1}%
-\contentsline {section}{\numberline {3.2}Stages of the Pipeline}{8}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}Draw}{9}{subsection.3.2.1}%
-\contentsline {subsection}{\numberline {3.2.2}Input Assembler}{9}{subsection.3.2.2}%
-\contentsline {subsection}{\numberline {3.2.3}Vertex Shader}{13}{subsection.3.2.3}%
-\contentsline {chapter}{Bibliography}{14}{chapter*.2}%
+\contentsline {section}{\numberline {3.2}The Basics}{8}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Matrix Transformations}{9}{subsection.3.2.1}%
+\contentsline {section}{\numberline {3.3}Stages of the Pipeline}{11}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Draw}{12}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Input Assembler}{12}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Vertex Shader}{16}{subsection.3.3.3}%
+\contentsline {chapter}{Bibliography}{18}{chapter*.2}%

@@ -2380,20 +2380,24 @@
     <bcf:citekey order="16" intorder="1">vkGuide</bcf:citekey>
     <bcf:citekey order="17" intorder="1">build-pipeline</bcf:citekey>
     <bcf:citekey order="18" intorder="1">vulkan-tutorial-compute-shader</bcf:citekey>
-    <bcf:citekey order="19" intorder="1">spirv</bcf:citekey>
-    <bcf:citekey order="20" intorder="1">fig:pipeline</bcf:citekey>
-    <bcf:citekey order="21" intorder="1">vulkan-spec-draw</bcf:citekey>
-    <bcf:citekey order="22" intorder="1">vulkan-spec-pipelines</bcf:citekey>
-    <bcf:citekey order="23" intorder="1">vulkan-vertex-input</bcf:citekey>
-    <bcf:citekey order="24" intorder="1">vulkan-tutorial-index-buffer</bcf:citekey>
-    <bcf:citekey order="25" intorder="1">vulkan-tutorial-vertex-buffer</bcf:citekey>
-    <bcf:citekey order="26" intorder="1">vulkan-tutorial-vertex-buffer</bcf:citekey>
-    <bcf:citekey order="27" intorder="1">vulkan-tutorial-vertex-buffer</bcf:citekey>
+    <bcf:citekey order="19" intorder="1">fig:view-frustum</bcf:citekey>
+    <bcf:citekey order="20" intorder="1">fig:view-frustum</bcf:citekey>
+    <bcf:citekey order="21" intorder="1">fig:matrix-multiplication</bcf:citekey>
+    <bcf:citekey order="22" intorder="1">spirv</bcf:citekey>
+    <bcf:citekey order="23" intorder="1">fig:pipeline</bcf:citekey>
+    <bcf:citekey order="24" intorder="1">vulkan-spec-draw</bcf:citekey>
+    <bcf:citekey order="25" intorder="1">vulkan-spec-pipelines</bcf:citekey>
+    <bcf:citekey order="26" intorder="1">vulkan-vertex-input</bcf:citekey>
+    <bcf:citekey order="27" intorder="1">vulkan-tutorial-index-buffer</bcf:citekey>
     <bcf:citekey order="28" intorder="1">vulkan-tutorial-vertex-buffer</bcf:citekey>
-    <bcf:citekey order="29" intorder="1">vulkan-tutorial-index-buffer</bcf:citekey>
-    <bcf:citekey order="30" intorder="1">microsoft-ia</bcf:citekey>
-    <bcf:citekey order="31" intorder="1">vulkan-spec-primitive-topology</bcf:citekey>
-    <bcf:citekey order="32" intorder="1">vulkan-spec-primitive-topology</bcf:citekey>
+    <bcf:citekey order="29" intorder="1">vulkan-tutorial-vertex-buffer</bcf:citekey>
+    <bcf:citekey order="30" intorder="1">vulkan-tutorial-vertex-buffer</bcf:citekey>
+    <bcf:citekey order="31" intorder="1">vulkan-tutorial-vertex-buffer</bcf:citekey>
+    <bcf:citekey order="32" intorder="1">vulkan-tutorial-index-buffer</bcf:citekey>
+    <bcf:citekey order="33" intorder="1">microsoft-ia</bcf:citekey>
+    <bcf:citekey order="34" intorder="1">vulkan-spec-primitive-topology</bcf:citekey>
+    <bcf:citekey order="35" intorder="1">vulkan-spec-primitive-topology</bcf:citekey>
+    <bcf:citekey order="36" intorder="1">vulkan-tutorial-shader-modules</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">
