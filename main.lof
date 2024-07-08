@@ -3,11 +3,15 @@
 \addvspace {10\p@ }
 \contentsline {figure}{\numberline {1}{\ignorespaces Memory Hierarchy of the GPU \blx@tocontentsinit {0}\cite {fig:gpu-arch}}}{6}{figure.2.1}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2}{\ignorespaces View Frustum \blx@tocontentsinit {0}\cite {fig:view-frustum}}}{8}{figure.3.2}%
-\contentsline {figure}{\numberline {3}{\ignorespaces Matrix Multiplication \blx@tocontentsinit {0}\cite {fig:matrix-multiplication}}}{9}{figure.3.3}%
-\contentsline {figure}{\numberline {4}{\ignorespaces Pipeline Structure \blx@tocontentsinit {0}\cite {fig:pipeline}}}{11}{figure.3.4}%
-\contentsline {figure}{\numberline {5}{\ignorespaces Triangle with vertices}}{13}{figure.3.5}%
-\contentsline {figure}{\numberline {6}{\ignorespaces Quad with vertices created using indices}}{13}{figure.3.6}%
-\contentsline {figure}{\numberline {7}{\ignorespaces Interleaved Vertex Buffer}}{14}{figure.3.7}%
-\contentsline {figure}{\numberline {8}{\ignorespaces Non-Interleaved Vertex Buffer}}{15}{figure.3.8}%
-\contentsline {figure}{\numberline {9}{\ignorespaces Clip Coordinates in 2D}}{17}{figure.3.9}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Coordinate Systems \blx@tocontentsinit {0}\cite {fig:view-frustum}}}{8}{figure.3.2}%
+\contentsline {figure}{\numberline {3}{\ignorespaces View Frustum \blx@tocontentsinit {0}\cite {fig:view-frustum}}}{9}{figure.3.3}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Matrix Multiplication \blx@tocontentsinit {0}\cite {fig:matrix-multiplication}}}{10}{figure.3.4}%
+\contentsline {figure}{\numberline {5}{\ignorespaces Canonical View Volume \blx@tocontentsinit {0}\cite {fig:cvv}}}{15}{figure.3.5}%
+\contentsline {figure}{\numberline {6}{\ignorespaces View Frustum}}{16}{figure.3.6}%
+\contentsline {figure}{\numberline {7}{\ignorespaces Canonical View Volume Front}}{19}{figure.3.7}%
+\contentsline {figure}{\numberline {8}{\ignorespaces Pipeline Structure \blx@tocontentsinit {0}\cite {fig:pipeline}}}{22}{figure.3.8}%
+\contentsline {figure}{\numberline {9}{\ignorespaces Triangle with vertices}}{23}{figure.3.9}%
+\contentsline {figure}{\numberline {10}{\ignorespaces Quad with vertices created using indices}}{24}{figure.3.10}%
+\contentsline {figure}{\numberline {11}{\ignorespaces Interleaved Vertex Buffer}}{25}{figure.3.11}%
+\contentsline {figure}{\numberline {12}{\ignorespaces Non-Interleaved Vertex Buffer}}{25}{figure.3.12}%
+\contentsline {figure}{\numberline {13}{\ignorespaces Clip Coordinates in 2D}}{28}{figure.3.13}%

@@ -3,7 +3,7 @@
 \documentclass[12pt]{report} \usepackage{preamble}
 
 \title{\textbf{\huge Vulkan Unveiled: A Beginner's Guide to Professional
-  Graphics Programming}} \author {Nick Schefner}
+Graphics Programming}} \author {Nick Schefner}
 \bibliography{citations.bib}
 
 \begin{document} \maketitle
@@ -38,7 +38,7 @@ I often feel that I missed the dots connecting every aspect of the
 underlying technologies when first getting started in this field as a
 game dev. Therefor it might be quite overwhelming at first, to understand
 how the graphics that we see every day are created and displayed onto
-our displays. It doesn’t help that Vulkan expands on that complexity
+our displays. It does not help that Vulkan expands on that complexity
 and provides us with many options to explicitly control certain rendering
 processes like memory management or command buffer construction to provide
 portability and flexibility, whereas older graphic APIs abstracted these
@@ -51,7 +51,7 @@ rendering possibilities that modern GPUs allow us to twist and tweak.
 The main idea off this book is to slowly introduce someone who has had
 no contact with graphical programming so far, but is excited to dive
 into an interesting topic that is a must know for every aspiring future
-game developer or artist that doesn’t want to rely on the existing
+game developer or artist that does not want to rely on the existing
 ecosystems. We will first learn to understand the GPU and its usage. I
 will then focus on explaining pipelines, buffers, swap chains and other
 components of the render system and explain in detail how they work
@@ -73,19 +73,19 @@ develop a strong understanding of it.
 \section{Why do we need a GPU?}
 
 The graphics processing unit (GPU) is, like the name implies, a hardware
-component that is made specificly for processing graphical data. Sure,
+component that is made specifically for processing graphical data. Sure,
 okay, but why do we need a separate hardware component for that?  Why not
 just let the CPU handle the calculations? The answer is simple: speed
 and parallelism.
 
 The CPU is great at executing one command after another, but
 it is not very good at executing multiple commands at the same
-time. Sure we have multithreading but the CPU is limited to just a
+time. Sure we have multi threading but the CPU is limited to just a
 few cores. \cite{CDW-cpu_vs_gpu} On the other hand, the GPU is mainly
 build on processing mathematically complex operations like matrix
 multiplications, that are not just executed once but a multiple
 of times. \cite{NVIDIA-cpu-gpu} Because the GPU focuses on speed
-and parallelism, it is designed to neglegt the need for complex
+and parallelism, it is designed to neglect the need for complex
 control structures and caching, which are the main focus of the
 CPU. \cite{CUDA_Programming_Guide}
 
@@ -103,7 +103,7 @@ than the cores of the CPU, but because they can run in parallel they are
 more suitable for graphical computations. \cite{CUDA_Programming_Guide}
 
 The GPU also has its own memory called the video random access memory
-(VRAM) which is used to store the processed data. I dont want to go into
+(VRAM) which is used to store the processed data. I don't want to go into
 detail about the VRAM because it is not relevant for understanding Vulkan,
 but it is important to add that the VRAM allows simultaneously reading
 and writing data, which is a big advantage over the CPU. \cite{vram}
@@ -121,13 +121,13 @@ execute it on multiple data at the same time. This is called SIMD
 (Single Instruction, Multiple Data). \cite{cherry_gpu_architecture}
 
 The GPU is made up of thousands of small cores, which are called CUDA
-compute units on NVIDIA grapahics cards \cite{CUDA_Programming_Guide}
-and ROCm compute units on AMD graphics, which I will neglegt to
+compute units on NVIDIA graphics cards \cite{CUDA_Programming_Guide}
+and ROCm compute units on AMD graphics, which I will neglect to
 simplify this topic. \cite{rocm} CUDA stands for "Compute Unified
 Device Architecture" and is a low level parallel computing platform
 and programming model that comes with an API for writing programs
 that can handle the power and advantages of the GPU in an high level
-language like c or c++. \cite{CUDA_Programming_Guide} Dont worry, we
+language like c or c++. \cite{CUDA_Programming_Guide} Don't worry, we
 will not use CUDA or an assembly language in this book, because Vulkan
 abstracts the usage of the GPU for us, but it is important to understand
 that the GPU is not just a black box that we can throw commands at and
@@ -164,7 +164,7 @@ important bits what we have learned so far.
 The GPU was created to process graphical data much faster than a CPU
 could ever do. It allows us to execute the same command on multiple
 data simultaneously to prevent waiting for a single command to finish,
-which helps us render reaccuring tasks like drawing a texture or model
+which helps us render reoccurring tasks like drawing a texture or model
 much faster.  It is made up of many cores which are combined into an
 array of streaming multiprocessors (SM) to allow better control and
 management of the cores.  The VRAM is the memory of the GPU and its
@@ -178,7 +178,7 @@ When we talk about the graphics pipeline, I want to make clear that we
 are not talking about a physical pipeline that is used to transport data
 from one place to another. I've made that mistake when I first started
 working with pipelines. My first thought was that the pipeline is a tool
-to transport data from the CPU to the GPU, but thats totally wrong.
+to transport data from the CPU to the GPU, but that's totally wrong.
 
 What is it then? Let's start with a simple definition.
 
@@ -190,7 +190,7 @@ explicitly targeting the GPU, which would be a massive task to do.
 Please note that the pipeline is implemented differently in every graphics
 API, but the basic ideas stay the same. We feed the pipeline with some
 graphical data, which then performs operations to transform the data into
-an 2D image that can be displayed on our screen. The proccessed data
+an 2D image that can be displayed on our screen. The processed data
 is then stored in a so called framebuffer, which I will explain later.
 \cite{vkGuide}
 
@@ -199,7 +199,7 @@ pipeline, made for different tasks, but we will focus on the graphics
 pipeline for now.
 
 The graphics pipeline is invoked by a draw command,
-while the the compute pipeline is invoked by a dispatch
+while the compute pipeline is invoked by a dispatch
 command. \cite{build-pipeline} \\
 \cite{vulkan-tutorial-compute-shader}
 
@@ -208,6 +208,12 @@ command. \cite{build-pipeline} \\
 To understand the graphics pipeline, we first need to understand the
 how the 2D image on our screen is created from the 3D data that we
 provide to the pipeline.
+
+\begin{figure}[hbtp]
+	\centering \includegraphics[width=\textwidth]{coordinate-systems.png}
+	\caption{Coordinate Systems \cite{fig:view-frustum}}
+\end{figure}
+\FloatBarrier
 
 We start with the world space, which is the 3D space that we use to
 define the positions of our objects in the scene. The world space is
@@ -223,6 +229,7 @@ with a near and far plane, that is used to define what we can see.
 	\centering \includegraphics[width=0.60\textwidth]{view-frustum.png}
 	\caption{View Frustum \cite{fig:view-frustum}}
 \end{figure}
+\FloatBarrier
 
 To transform the world space into the view space, we use a view matrix.
 Let's briefly talk about matrix transformations and how multiplication
@@ -232,18 +239,23 @@ If you have never touched linear algebra before, I suggest you to go over
 2Blue1Brown's Essence of Linear Algebra series on YouTube. It is a great
 introduction to linear algebra and will help you understand the further topics.
 
+\subsection{Homogeneous Coordinates}
+
+When we want to transform a 3D point, we can use a 4x4 matrix to
+transform the point. But why a 4x4 matrix? Because we need to add a
+fourth coordinate to the point, which is called the w coordinate. This
+coordinate will be used to add perspective to the point, so
+that the point or object will appear smaller when it is further away
+from the camera. It achieves this by dividing the x, y and z coordinates
+by the w coordinate.
+
 \subsection{Matrix Transformations}
 
 When we have an box in 3D space, we can represent its position as an
-array of 3 floats, which are the x, y and z coordinates of its center.
-To move the box, we can simly add or subtract a value from the x, y or z
-coordinate. But what if we want to rotate the box? We can't just add or
-subtract a value from the boxes center to rotate it. We need to takle each
-corner of the box and move it around the center of the box. This is where
-matrix transformations come into play.
-
-To rotate the box, we can multiply the position of each corner with a
-rotation matrix. Wait how do we multipy matrices? It's simple. We multiply
+array of 4 floats, which are the x, y, z and w coordinates of its center.
+To move the box, we need to add or subtract a value from the x, y or
+z coordinate but how can we do that? We can multiply our position with a translation matrix to
+move the box. Wait how do we multiply matrices? It's simple. We multiply
 the rows of the first matrix with the columns of the second matrix and add them
 together. The result is the value of the new matrix at the position where the row and
 column intersect.
@@ -271,33 +283,72 @@ column intersect.
 	\centering \includesvg[width=0.60\textwidth]{images/matrix-multiplication.svg}
 	\caption{Matrix Multiplication \cite{fig:matrix-multiplication}}
 \end{figure}
+\FloatBarrier
+
+Therefor we can create a translation that moves the box by \{tx, ty, tz\}
+
+\[
+	\begin{bmatrix}
+		1 & 0 & 0 & tx \\
+		0 & 1 & 0 & ty \\
+		0 & 0 & 1 & tz \\
+		0 & 0 & 0 & 1  \\
+	\end{bmatrix}
+	x
+	\begin{bmatrix}
+		x \\
+		y \\
+		z \\
+		w \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		x + tx*w \\
+		y + ty*w \\
+		z + tz*w \\
+		w        \\
+	\end{bmatrix}
+\]
+
+Please note that the w coordinate is changing the x, y and z coordinates,
+to adjust the movement to the perspective of the camera.
+
+But what if we want to rotate the box? We can't just add or
+subtract a value from the boxes center to rotate it. We need to tackle each
+corner of the box and move it around the center of the box.
+
+To rotate the box, we can multiply the position of each corner with a
+rotation matrix.
 
 We can use this knowledge to create a rotation matrix. Lets say we have a line with
 the points \{0, 0, 0\} and \{1, 0, 0\}.
-When we want to rotate this line around an axis by 45 degrees, we can apply
+When we want to rotate this line around an axis by \(\delta\) degrees, we can apply
 the following rotation matrices to the points:
 
 x-axis: \[
 	\begin{bmatrix}
-		1 & 0       & 0        \\
-		0 & cos(45) & -sin(45) \\
-		0 & sin(45) & cos(45)  \\
+		1 & 0            & 0           & 0 \\
+		0 & cos(\delta)  & sin(\delta) & 0 \\
+		0 & -sin(\delta) & cos(\delta) & 0 \\
+		0 & 0            & 0           & 1 \\
 	\end{bmatrix}
 \]
 
 y-axis: \[
 	\begin{bmatrix}
-		cos(45)  & 0 & sin(45) \\
-		0        & 1 & 0       \\
-		-sin(45) & 0 & cos(45) \\
+		cos(\delta) & 0 & -sin(\delta) & 0 \\
+		0           & 1 & 0            & 0 \\
+		sin(\delta) & 0 & cos(\delta)  & 0 \\
+		0           & 0 & 0            & 1 \\
 	\end{bmatrix}
 \]
 
 z-axis: \[
 	\begin{bmatrix}
-		cos(45) & -sin(45) & 0 \\
-		sin(45) & cos(45)  & 0 \\
-		0       & 0        & 1 \\
+		cos(\delta)  & sin(\delta) & 0 & 0 \\
+		-sin(\delta) & cos(\delta) & 0 & 0 \\
+		0            & 0           & 1 & 0 \\
+		0            & 0           & 0 & 1 \\
 	\end{bmatrix}
 \]
 
@@ -305,39 +356,45 @@ Let's rotate the line around the y axis:
 
 \[
 	\begin{bmatrix}
-		cos(45)  & 0 & sin(45) \\
-		0        & 1 & 0       \\
-		-sin(45) & 0 & cos(45) \\
+		cos(\delta) & 0 & -sin(\delta) & 0 \\
+		0           & 1 & 0            & 0 \\
+		sin(\delta) & 0 & cos(\delta)  & 0 \\
+		0           & 0 & 0            & 1 \\
 	\end{bmatrix}
 	\begin{bmatrix}
 		0 \\
 		0 \\
 		0 \\
+		1 \\
 	\end{bmatrix}
 	=
 	\begin{bmatrix}
 		0 \\
 		0 \\
 		0 \\
+		1 \\
 	\end{bmatrix}
 \]
 
 \[
 	\begin{bmatrix}
-		cos(45)  & 0 & sin(45) \\
-		0        & 1 & 0       \\
-		-sin(45) & 0 & cos(45) \\
+		cos(\delta) & 0 & -sin(\delta) & 0 \\
+		0           & 1 & 0            & 0 \\
+		sin(\delta) & 0 & cos(\delta)  & 0 \\
+		0           & 0 & 0            & 1 \\
 	\end{bmatrix}
 	\begin{bmatrix}
 		1 \\
 		0 \\
 		0 \\
+		1 \\
 	\end{bmatrix}
 	=
 	\begin{bmatrix}
-		cos(45)  \\
-		0        \\
-		-sin(45) \\
+		cos(\delta) \\
+		0           \\
+		sin(\delta) \\
+		1           \\
 	\end{bmatrix}
 \]
 
@@ -347,14 +404,15 @@ world space and not the object itself. But because the object is in the
 world space, it will also be rotated.
 
 Scaling of an object is a bit simpler than rotation. We just multiply
-the position of the object with a scaling matrix. The scaling matrix
+the position of the object with a scaling matrix that
 looks like this:
 
 \[
 	\begin{bmatrix}
-		x & 0 & 0 \\
-		0 & y & 0 \\
-		0 & 0 & z \\
+		x & 0 & 0 & 0 \\
+		0 & y & 0 & 0 \\
+		0 & 0 & z & 0 \\
+		0 & 0 & 0 & 1 \\
 	\end{bmatrix}
 \]
 
@@ -363,11 +421,426 @@ scaling factor we want to apply to that axis. So when we want to scale an
 object by 2 on the x axis, we would multiply the x coordinate with 2 and
 leave the y and z coordinates as they are.
 
+\subsection{View Space}
+
+Now that we know how to transform the world space, we can move the camera
+and the objects, so that the camera is the origin of the view space.
+
+To do so we simply take the position of the camera, for example \{1, 2, 3, 1\},
+and subtract it from every object in the world space. This will move the
+camera to the origin of the view space and keep the objects in the same
+position relative to the camera.
+
+\[
+	\begin{bmatrix}
+		1 & 0 & 0 & -1 \\
+		0 & 1 & 0 & -2 \\
+		0 & 0 & 1 & -3 \\
+		0 & 0 & 0 & 1  \\
+	\end{bmatrix}
+	\begin{bmatrix}
+		x \\
+		y \\
+		z \\
+		w \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		x - 1*w \\
+		y - 2*w \\
+		z - 3*w \\
+		w       \\
+	\end{bmatrix}
+\]
+
+Looking at the result, we can see that it doesn't really make sense to keep
+the w coordinate for the camera, because the camera is not a 3D object.
+Therefor we can set the w coordinate of the camera to 1. This will make the homogeneous
+coordinates of the camera \{x, y, z, 1\} equal to \{x, y, z\} in 3D space.
+
+Now that the camera is the origin of the view space, we need to rotate everything,
+so that the camera is looking down the z axis. Lets say we have a camera that is
+is looking down this direction: \{x,y,z\}. We can create a rotation matrix that
+rotates the world space so that the camera is looking down the z axis \{0, 0, z\}.
+
+But first we need to get the angles of the rotation. We can do this by using the
+dot product of the camera direction and the z axis. The dot product is simply the
+cosine of the angle between two vectors. So when we have two vectors \{x, y, z\}
+and \{0, 0, z\}, we can calculate the angle between them by using the dot product.
+
+The dot product looks like this:
+\[a \cdot b = |a| * |b| * cos(\theta)\]
+\[a \cdot b = a_x * b_x + a_y * b_y + a_z * b_z\]
+
+From here we can divide everything by \(|a| * |b|\) to get \(cos(\theta)= \frac{a \cdot b}{|a| * |b|}\).
+Let's calculate the angles we need to rotate the camera to look down the z axis.
+
+We start off by rotating the camera, so that it is looking down the xz plane.
+This means that the y coordinate of the camera direction is 0. By taking the dot
+product of the camera direction and the x axis on the same hight, we can calculate the angle
+we need to rotate the camera around the z axis.
+
+\[
+	\begin{bmatrix}
+		x \\
+		y \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		1 \\
+		0 \\
+	\end{bmatrix}
+	=
+	\frac{x}{\sqrt{x^2 + y^2}}
+	=
+	cos(\theta)
+\]
+
+Now we just need to rotate the xz plane around the y axis, so that the camera is looking
+up the z axis. We can calculate the angle by taking the dot product of the camera direction
+after rotating it around the z axis and the z axis itself
+
+\[
+	\begin{bmatrix}
+		x \\
+		z \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		0 \\
+		1 \\
+	\end{bmatrix}
+	=
+	\frac{z}{\sqrt{x^2 + z^2}}
+	=
+	cos(\theta)
+\]
+
+Let's calculate the angles for the camera direction \{1, 1, 1\}.
+
+\[
+	\theta_z = cos^{-1}(\frac{1}{\sqrt{1^2 + 1^2}})
+	=
+	cos^{-1}(\frac{1}{\sqrt{2}})
+	=
+	45\degree
+\]
+
+Now that we have the z angle, we can rotate everything by 45 degrees around the z axis.
+
+\[
+	\begin{bmatrix}
+		cos(\theta_z)  & sin(\theta_z) & 0  & 0 \\
+		-sin(\theta_z) & cos(\theta_z) & -1 & 0 \\
+		0              & 0             & 1  & 0 \\
+		0              & 0             & 0  & 1 \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		1 \\
+		1 \\
+		1 \\
+		1 \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		\sqrt{2} \\
+		0        \\
+		1        \\
+		1        \\
+	\end{bmatrix}
+\]
+
+Now we calculate the angle for the y axis.
+
+\[
+	\theta_y = cos^{-1}(\frac{1}{\sqrt{\sqrt{2}^2 + 1^2}})
+	=
+	cos^{-1}(\frac{1}{\sqrt{3}})
+	=
+	54.7\degree
+\]
+
+\[
+	\begin{bmatrix}
+		cos(\theta_y) & 0 & -sin(\theta_y) & 0 \\
+		0             & 1 & 0              & 0 \\
+		sin(\theta_y) & 0 & cos(\theta_y)  & 0 \\
+		0             & 0 & 0              & 1 \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		\sqrt{2} \\
+		0        \\
+		1        \\
+		1        \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		0        \\
+		0        \\
+		\sqrt{3} \\
+		1        \\
+	\end{bmatrix}
+\]
+
+Don't forget to perform all of this for every object in the world space.
+The result will be the view space, where the camera is the origin and
+the objects are rotated so that the camera is looking down the z axis.
+
+\subsection{Projection Transformation}
+
+The next step is the transformation from the view space to the canonical
+view volume (CVV). The CVV is a that is used to define what we can see
+on the screen. It is also called the clip space, because it is used to
+clip everything that is outside of the view frustum.
+
+\begin{figure}[hbtp]
+	\centering \includegraphics[width=0.80\textwidth]{cvv.png}
+	\caption{Canonical View Volume \cite{fig:cvv}}
+\end{figure} \FloatBarrier
+
+This task involves transforming the view frustum into a orthographic view
+volume, which is a cube with the size of the near plane and the same depth
+as the frustum. Then we move the orthographic view volume to the origin
+and scale it to the size of the cvv.
+
+Let's start with the transformation of the view frustum to the orthographic
+view volume. We basically need to scale the objects so that the far plane is
+the same size as the near plane. Normally the near plane is 0.1 units away and the far
+plane is 100 units away.
+
+When we're looking at the frustum from the side, we can see that the camera and
+the far plane create a triangle that can be divided into two right triangles at the
+z axis.
+
+\begin{figure}[hbtp]
+	\centering \includesvg[width=0.80\textwidth]{images/perspective.svg}
+	\caption{View Frustum}
+\end{figure} \FloatBarrier
+
+What we need to calculate is yn, which is the new height of the object.
+To do so we use the green triangle and the near planes distance on the z axis
+(n) to get the following formula:
+
+\[
+	\frac{yn}{n} = \frac{y}{z}
+\]
+
+We can use this because the triangles sin angle is the same in the green triangle.
+When we solve this for yn, we get:
+
+\[
+	yn = \frac{y * n}{z}
+\]
+
+The same can be applied for the x axis:
+
+\[
+	xn = \frac{x * n}{z}
+\]
+
+The z axis stays the same.
+
+So when we have a point \{x, y, z\} in the view space, we need to transform it to \\
+\(\{\frac{x * n}{z}, \frac{y * n}{z}, z\}\) to get the orthographic view volume. Unfortunately
+there is no way we can divide the x and y value with z with just 3 dimensions. We need to add a 4th coordinate to the point to be able to
+divide by z. This is called the perspective divide.
+
+To do so we add a homogeneous variable to the point and transfer the z coordinate to this new w
+variable. This will allow us to divide the x, y and z coordinate by the z coordinate.
+So what we want is to transform the point \{x, y, z, w\} to \(\{x * n, y * n, z^2, z\}\).
+Keep in mind that the homogeneous coordinate is the same as the 3D coordinate after dividing by w.
+
+Okay so what we need is a 4x4 matrix that multiplies the x and y coordinate with n and the z coordinate with itself.
+We also need to multiply the w coordinate with z, to move the z coordinate to the w coordinate. This works because
+w is like a scaling factor for the x, y and z coordinate but is often set to 1.
+
+\[
+	\begin{bmatrix}
+		n & 0 & 0   & 0   \\
+		0 & n & 0   & 0   \\
+		0 & 0 & m_1 & m_2 \\
+		0 & 0 & 1   & 0   \\
+	\end{bmatrix}
+	\begin{bmatrix}
+		x \\
+		y \\
+		z \\
+		w \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		x * n \\
+		y * n \\
+		z^2   \\
+		z     \\
+	\end{bmatrix}
+\]
+
+Okay we have one last problem. How do we get to \(z^2\) ?
+First we have the equation \(z^2 = m_1 * z + m_2\), considering w is 1.
+The problem is that there are 2 possible solutions for m1 and m2, which we
+can not work with. So we need to add 2 constrains to the equation.
+We can just say that we want to apply this equation to the near and far planes z coordinate.
+So we will say z = n and z = f. This will give us 2 equations that we can solve for m1 and m2.
+
+\[
+	\begin{bmatrix}
+		n^2 \\
+		f^2 \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		m_1 * n + m_2 \\
+		m_1 * f + m_2 \\
+	\end{bmatrix}
+\]
+
+With this we can now calculate m1 and m2.
+
+\( n^2 = m_1 * n + m_2 \) \\
+\( m_2 = n^2 - m_1 * n \) \\
+\( f^2 = m_1 * f + m_2 \) \\
+\( f^2 = m_1 * f + n^2 - m_1 * n \) \\
+\( f^2 - n^2 = m_1 * f - m_1 * n \) \\
+\( f^2 - n^2 = m_1 * (f - n) \) \\
+\( m_1 = \frac{f^2 - n^2}{f - n} \) \\
+\( m_1 = f + n \) \\
+\( m_2 = n^2 - (f + n) * n \) \\
+\( m_2 = n^2 - f * n - n^2 \) \\
+\( m_2 = -f * n \) \\
+
+Therefor the final matrix looks like this:
+
+\[
+	\begin{bmatrix}
+		n & 0 & 0     & 0      \\
+		0 & n & 0     & 0      \\
+		0 & 0 & f + n & -f * n \\
+		0 & 0 & 1     & 0      \\
+	\end{bmatrix}
+\]
+
+This matrix will actually only give us \(z^2\) on the near and far plane. The Objects in between will have
+a little offset on the z axis but will remain linearly interpolated between the near and far plane.
+
+Now that we have the orthographic view volume, we need to move it to the origin and scale it to the size of the CVV.
+The CVV looks like this from the front:
+
+\begin{figure}[hbtp]
+	\centering \includesvg[width=0.60\textwidth]{images/clip-space.svg}
+	\caption{Canonical View Volume Front}
+\end{figure} \FloatBarrier
+
+It is a coordinate system where the y axis is flipped and therefore the positive of the z axis is pointing away from us.
+Each axis ranges from -1 to 1 except the z axis, which ranges from 0 to 1. This is because the everything negative on the z axis
+is behind us and therefor not visible.
+
+Lets first move the orthographic view volumes near planes center to the origin.
+
+\[
+	\begin{bmatrix}
+		1 & 0 & 0 & -c_x \\
+		0 & 1 & 0 & -c_y \\
+		0 & 0 & 1 & -c_z \\
+		0 & 0 & 0 & 1    \\
+	\end{bmatrix}
+\]
+
+
+When the near plane is 0.1 units away, we need to move the orthographic view volume by 0.1 units on the z axis.
+So the \(c_z\) value is the distance of the near plane on the z axis aka n.
+
+For the x and y value we just have to calculate the center of the near plane. This is done by adding the opposite
+sides together and then dividing them by 2. So for \(c_x\) we get \(\frac{l + r}{2}\) and for \(c_y\) we get \(\frac{t + b}{2}\).
+
+Next we scale the orthographic view volume to the size of the CVV. This is done by multiplying the x, y and z coordinate
+with the dimension of the canonical view volume over the size of the orthographic view volume.
+We can get the size from subtracting the right side from the left side for the x axis,
+the top from the bottom for the y axis and the far from the near plane for the z axis. So the scaling matrix looks like this:
+
+\[
+	\begin{bmatrix}
+		\frac{2}{r - l} & 0               & 0               & 0 \\
+		0               & \frac{2}{t - b} & 0               & 0 \\
+		0               & 0               & \frac{1}{f - n} & 0 \\
+		0               & 0               & 0               & 1 \\
+	\end{bmatrix}
+\]
+
+Now we can combine both transformations to get the final projection matrix:
+
+\[
+	\begin{bmatrix}
+		1 & 0 & 0 & -\frac{l + r}{2} \\
+		0 & 1 & 0 & -\frac{t + b}{2} \\
+		0 & 0 & 1 & -n               \\
+		0 & 0 & 0 & 1                \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		\frac{2}{r - l} & 0               & 0               & 0 \\
+		0               & \frac{2}{t - b} & 0               & 0 \\
+		0               & 0               & \frac{1}{f - n} & 0 \\
+		0               & 0               & 0               & 1 \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		\frac{2}{r - l} & 0               & 0               & -\frac{l + r}{r - l} \\
+		0               & \frac{2}{t - b} & 0               & -\frac{t + b}{b - t} \\
+		0               & 0               & \frac{1}{f - n} & -\frac{n}{f - n}     \\
+		0               & 0               & 0               & 1                    \\
+	\end{bmatrix}
+\]
+
+This is the projection matrix that is used to transform the view space to the clip space. The clip space is then used to
+determine what is visible on the screen and what is not. Everything that is visible will now be projected onto the 2D screen.
+
+But wait, we still have that pesky w coordinate. Luckily Vulkan does the perspective divide for us, so we don't have to worry about it.
+After the perspective divide we get the normalized device coordinates (NDC).
+
+\subsection{Viewport Transformation}
+
+The viewport is the area on the screen where the image is displayed. It is defined by the x and y position, the width and height and the
+min and max depth and starts at the top left corner of the screen. The viewport transformation is used to transform the NDC to the screen space.
+This is done by scaling the x and y coordinate to the width and height of the viewport,
+scaling and moving the z coordinate to the depth range and then adding
+half of the width to the x coordinate and subtracting half of the height from the y coordinate
+to move the origin to the top left corner of the screen.
+
+\[
+	\begin{bmatrix}
+		\frac{width}{2} & 0                & 0                   & \frac{width}{2}  \\
+		0               & \frac{height}{2} & 0                   & \frac{height}{2} \\
+		0               & 0                & maxDepth - minDepth & minDepth         \\
+		0               & 0                & 0                   & 1                \\
+	\end{bmatrix}
+\]
+
+This will transform the NDC to the screen space, but we can also add an x and y offset to the viewport to move the image around on the screen.
+That would mean we need to add the x and y offset when moving the origin to the top left corner of the screen.
+
+\[
+	\begin{bmatrix}
+		\frac{width}{2} & 0                & 0                   & \frac{width}{2} + x  \\
+		0               & \frac{height}{2} & 0                   & \frac{height}{2} + y \\
+		0               & 0                & maxDepth - minDepth & minDepth             \\
+		0               & 0                & 0                   & 1                    \\
+	\end{bmatrix}
+\]
+
+Wow that was a lot of complicated math, but it's important to understand how the world is
+projected onto our screen. That's the whole point of 3D graphics after all :P
+
+Don't worry tho if you don't quite understand everything, maybe dive into some other resources to further
+understand this topic and until then, do what programmers do best. Copy and paste it from somewhere else.
+
 \section{Stages of the Pipeline}
 
 The Vulkan pipeline consists of multiple stages. Some of them are fixed
 and can not be changed, while others are programmable to act as we
-want them to. These changable stages are called shaders and are usually
+want them to. These changeable stages are called shaders and are usually
 written in the OpenGL Shading Language (GLSL). These shaders have to be
 given to the pipeline as compiled SPIR-V bytecode. \cite{spirv}
 
@@ -378,8 +851,8 @@ Lets take a look at the Vulkan pipeline and its stages:
 		Structure \cite{fig:pipeline}}
 \end{figure}
 
-Okay okay, I know thats alot and there is stuff I haven't talked about
-yet, like these Buffers, Images and the Push Constants.  Dont worry I
+Okay okay, I know that's a lot and there is stuff I haven't talked about
+yet, like these Buffers, Images and the Push Constants. Don't worry I
 will explain all of these things when going over the stages.
 
 On the left side we have the graphics pipeline and on the right side the
@@ -388,7 +861,7 @@ for different tasks, right? If we would use the graphics pipeline but
 actually just need one shader to edit some data, we would waste a lot
 of resources and time sending it though the graphics pipeline.
 
-Im going to focus on the graphics pipeline and its most important stages.
+I'm going to focus on the graphics pipeline and its most important stages.
 So some stages will be cut short to better explain the important ones.
 In the end you will rarely need to use geometry shaders or tessellation
 shaders, but it is important to know that they exist and what they do.
@@ -457,12 +930,12 @@ of the Vertex. \cite{vulkan-tutorial-vertex-buffer}
 
 You can see that each attribute has a specific location in the buffer.
 These locations tell the pipeline what bytes belong together. So when
-accessing the buffers 0. location it gets an vec3(x,y,z).  The pipeline
-also needs to know by what offset, in bytes, each vertex is sperated.
+accessing the buffers 0st location it gets an vec3(x,y,z).  The pipeline
+also needs to know by what offset, in bytes, each vertex is separated.
 In this case it would be 24 bytes, because position and color both
 contain 3 floats, which are 4 bytes each. \cite{vulkan-tutorial-vertex-buffer}
 
-This example shows a single buffer containing all atrributes in
+This example shows a single buffer containing all attributes in
 an interleaved pattern, but we can also create one buffer for each
 attribute and then attach them into a single vertexbuffer. This is called
 a non-interleaved pattern.
@@ -516,7 +989,7 @@ while a strip will create a triangle for every 3 indices and then use
 the last 2 vertices of the last triangle to create the next triangle.
 The same idea works with lines. The "with adjacency" types are only
 used when accessing the geometry stage. We will rarely use
-the adjacany types, so dont worry on understanding them now. \cite{vulkan-spec-primitive-topology}
+the adjacency types, so don't worry on understanding them now. \cite{vulkan-spec-primitive-topology}
 
 \subsection{Vertex Shader}
 
@@ -536,7 +1009,7 @@ z coordinate that can go from 0 to 1, with 0 being directly behind the screen
 and 1 being the furthest point that will not be clipped off.
 
 The clip spaced is used to determine if a vertex is visible or not, by
-checking if the vertex is inbetween the -1 and 1 range. \cite{vulkan-tutorial-shader-modules}
+checking if the vertex is in between the -1 and 1 range. \cite{vulkan-tutorial-shader-modules}
 
 \printbibliography[
 	heading=bibintoc, title={Bibliography}

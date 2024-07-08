@@ -421,6 +421,37 @@
       \verb https://www.sofatutor.com/mathematik/videos/matrix-matrix-multiplikation
       \endverb
     \endentry
+    \entry{fig:cvv}{online}{}
+      \name{author}{1}{}{%
+        {{hash=f702f952544ba66b1534757bf3b1a0b2}{%
+           family={Galea},
+           familyi={G\bibinitperiod},
+           given={Brendan},
+           giveni={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{f702f952544ba66b1534757bf3b1a0b2}
+      \strng{fullhash}{f702f952544ba66b1534757bf3b1a0b2}
+      \strng{bibnamehash}{f702f952544ba66b1534757bf3b1a0b2}
+      \strng{authorbibnamehash}{f702f952544ba66b1534757bf3b1a0b2}
+      \strng{authornamehash}{f702f952544ba66b1534757bf3b1a0b2}
+      \strng{authorfullhash}{f702f952544ba66b1534757bf3b1a0b2}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{The Math behind (most) 3D games - Perspective Projection}
+      \field{urlday}{1}
+      \field{urlmonth}{7}
+      \field{urlyear}{2024}
+      \field{year}{2021}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.youtube.com/watch?v=U0_ONQQ5ZNM
+      \endverb
+      \verb{url}
+      \verb https://www.youtube.com/watch?v=U0_ONQQ5ZNM
+      \endverb
+    \endentry
     \entry{spirv}{online}{}
       \name{author}{1}{}{%
         {{hash=360d2798561495c22d1728bacf146374}{%
@@ -622,8 +653,8 @@
       \strng{authornamehash}{af6e218ca532c5996569a0f30ad69730}
       \strng{authorfullhash}{af6e218ca532c5996569a0f30ad69730}
       \field{extraname}{3}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{subtitle}{Vertex Input Description}
