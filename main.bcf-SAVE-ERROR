@@ -2420,41 +2420,4 @@
     <bcf:citekey order="56" intorder="1">fig:isoline</bcf:citekey>
     <bcf:citekey order="57" intorder="1">tessellation</bcf:citekey>
     <bcf:citekey order="58" intorder="1">tessellation</bcf:citekey>
-    <bcf:citekey order="59" intorder="1">tessellation</bcf:citekey>
-    <bcf:citekey order="60" intorder="1">tessellation</bcf:citekey>
-    <bcf:citekey order="61" intorder="1">tessellation</bcf:citekey>
-    <bcf:citekey order="62" intorder="1">tessellation</bcf:citekey>
-    <bcf:citekey order="63" intorder="1">geometry-shader</bcf:citekey>
-    <bcf:citekey order="64" intorder="1">vertex-post-processing</bcf:citekey>
-    <bcf:citekey order="65" intorder="1">vertex-post-processing</bcf:citekey>
-    <bcf:citekey order="66" intorder="1">vertex-post-processing</bcf:citekey>
-    <bcf:citekey order="67" intorder="1">vertex-post-processing</bcf:citekey>
-    <bcf:citekey order="68" intorder="1">vertex-post-processing</bcf:citekey>
-    <bcf:citekey order="69" intorder="1">vertex-post-processing</bcf:citekey>
-    <bcf:citekey order="70" intorder="1">vertex-post-processing</bcf:citekey>
-    <bcf:citekey order="71" intorder="1">rasterization</bcf:citekey>
-    <bcf:citekey order="72" intorder="1">rasterization</bcf:citekey>
-    <bcf:citekey order="73" intorder="1">framebuffers</bcf:citekey>
-    <bcf:citekey order="74" intorder="1">render-pass</bcf:citekey>
-    <bcf:citekey order="75" intorder="1">swapchain</bcf:citekey>
-  </bcf:section>
-  <!-- SORTING TEMPLATES -->
-  <bcf:sortingtemplate name="none">
-    <bcf:sort order="1">
-      <bcf:sortitem order="1">citeorder</bcf:sortitem>
-    </bcf:sort>
-    <bcf:sort order="2">
-      <bcf:sortitem order="1">intciteorder</bcf:sortitem>
-    </bcf:sort>
-  </bcf:sortingtemplate>
-  <!-- DATALISTS -->
-  <bcf:datalist section="0"
-                name="none/global//global/global"
-                type="entry"
-                sortingtemplatename="none"
-                sortingnamekeytemplatename="global"
-                labelprefix=""
-                uniquenametemplatename="global"
-                labelalphanametemplatename="global">
-  </bcf:datalist>
-</bcf:controlfile>
+    <bcf:citekey order="59" intorder="1">tess

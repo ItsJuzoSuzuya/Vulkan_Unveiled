@@ -1,0 +1,118 @@
+%% Creator: Inkscape 1.2.2 (b0a8486541, 2022-12-01), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'pipeline_svg-tex.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{654.35301197bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.51119196)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{pipeline_svg-tex.pdf}}%
+    \put(0.13967978,0.40177373){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Vertex Shader\end{tabular}}}}%
+    \put(0.13937384,0.49371734){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Draw\end{tabular}}}}%
+    \put(0.13926563,0.43758036){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Input Assembler\end{tabular}}}}%
+    \put(0.13977679,0.35592692){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Tessellation Control Shader\end{tabular}}}}%
+    \put(0.13977679,0.32154181){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Tessellation Primitive Generator\end{tabular}}}}%
+    \put(0.13977679,0.2871567){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Tessellation Evaluation Shader\end{tabular}}}}%
+    \put(0.13971336,0.14982893){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Rasterization\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{pipeline_svg-tex.pdf}}%
+    \put(0.44873162,0.49343005){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Indirect Buffer\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{pipeline_svg-tex.pdf}}%
+    \put(0.8732922,0.11096285){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Legend\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{pipeline_svg-tex.pdf}}%
+    \put(0.13934772,0.24273141){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Geometry Shader\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{pipeline_svg-tex.pdf}}%
+    \put(0.14039241,0.18567663){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Vertex Post-Processing\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{pipeline_svg-tex.pdf}}%
+    \put(0.13937011,0.1166937){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Early Per-Fragment Tests\end{tabular}}}}%
+    \put(0.13903058,0.0823086){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Fragment Shader\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{pipeline_svg-tex.pdf}}%
+    \put(0.13937012,0.04817348){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Late Per-Fragment Tests\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{pipeline_svg-tex.pdf}}%
+    \put(0.13974321,0.01353838){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Blending\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{pipeline_svg-tex.pdf}}%
+    \put(0.44873162,0.44758324){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Index Buffer\end{tabular}}}}%
+    \put(0.4494853,0.42465983){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Vertex Buffers\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{pipeline_svg-tex.pdf}}%
+    \put(0.71286193,0.35592692){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Task Shader\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{pipeline_svg-tex.pdf}}%
+    \put(0.71279855,0.49488888){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}DrawMeshTasks\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=12]{pipeline_svg-tex.pdf}}%
+    \put(0.44908234,0.11684296){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Depth/Stencil Attachments\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{pipeline_svg-tex.pdf}}%
+    \put(0.44908235,0.08245785){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Input Attachments\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=14]{pipeline_svg-tex.pdf}}%
+    \put(0.44908235,0.01368763){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Color Attachments\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=15]{pipeline_svg-tex.pdf}}%
+    \put(0.87292282,0.08109611){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Fixed Function Stage\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=16]{pipeline_svg-tex.pdf}}%
+    \put(0.87289673,0.04788246){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Shader Stage\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=17]{pipeline_svg-tex.pdf}}%
+    \put(0.87316543,0.01368763){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c} Resource\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=18]{pipeline_svg-tex.pdf}}%
+    \put(0.91874354,0.43758036){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Compute Shader\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=19]{pipeline_svg-tex.pdf}}%
+    \put(0.91910914,0.49488888){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Dispatch\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=20]{pipeline_svg-tex.pdf}}%
+    \put(0.71286193,0.39031202){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Task Assembler\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=21]{pipeline_svg-tex.pdf}}%
+    \put(0.71211577,0.275695){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Mesh Assembler\end{tabular}}}}%
+    \put(0.71136962,0.24130991){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Mesh Shader\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=22]{pipeline_svg-tex.pdf}}%
+    \put(0.4488361,0.37984102){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Descriptor Sets\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=23]{pipeline_svg-tex.pdf}}%
+    \put(0.4488361,0.2023401){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Push Constants\end{tabular}}}}%
+    \put(0.44891819,0.3558896){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Uniform Buffers\end{tabular}}}}%
+    \put(0.44891819,0.33296621){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Uniform Texel Buffers\end{tabular}}}}%
+    \put(0.44908238,0.31154268){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Sampled Images\end{tabular}}}}%
+    \put(0.44908238,0.28858195){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Storage Buffers\end{tabular}}}}%
+    \put(0.44908238,0.26565854){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Storage Texel Buffers\end{tabular}}}}%
+    \put(0.44908238,0.24292167){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}Storage Images\end{tabular}}}}%
+  \end{picture}%
+\endgroup%

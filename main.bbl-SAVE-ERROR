@@ -373,7 +373,6 @@
       \strng{authorbibnamehash}{516de641ba81d36bf9b42ee36a3b3a81}
       \strng{authornamehash}{516de641ba81d36bf9b42ee36a3b3a81}
       \strng{authorfullhash}{516de641ba81d36bf9b42ee36a3b3a81}
-      \field{extraname}{1}
       \field{sortinit}{1}
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
@@ -436,7 +435,6 @@
       \strng{authorbibnamehash}{f702f952544ba66b1534757bf3b1a0b2}
       \strng{authornamehash}{f702f952544ba66b1534757bf3b1a0b2}
       \strng{authorfullhash}{f702f952544ba66b1534757bf3b1a0b2}
-      \field{extraname}{1}
       \field{sortinit}{2}
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
@@ -912,6 +910,37 @@
       \verb https://docs.vulkan.org/spec/latest/chapters/tessellation.html
       \endverb
     \endentry
+    \entry{tessangle}{online}{}
+      \name{author}{1}{}{%
+        {{hash=41dfd792184b77d5ecabd4aec5fccf84}{%
+           family={Lab},
+           familyi={L\bibinitperiod},
+           given={The\bibnamedelima Action},
+           giveni={T\bibinitperiod\bibinitdelim A\bibinitperiod}}}%
+      }
+      \strng{namehash}{41dfd792184b77d5ecabd4aec5fccf84}
+      \strng{fullhash}{41dfd792184b77d5ecabd4aec5fccf84}
+      \strng{bibnamehash}{41dfd792184b77d5ecabd4aec5fccf84}
+      \strng{authorbibnamehash}{41dfd792184b77d5ecabd4aec5fccf84}
+      \strng{authornamehash}{41dfd792184b77d5ecabd4aec5fccf84}
+      \strng{authorfullhash}{41dfd792184b77d5ecabd4aec5fccf84}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Tessellation Is Easier Than You Think}
+      \field{urlday}{9}
+      \field{urlmonth}{7}
+      \field{urlyear}{2024}
+      \field{year}{2021}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.youtube.com/watch?v=eFXxTTaC_zY&t=235s
+      \endverb
+      \verb{url}
+      \verb https://www.youtube.com/watch?v=eFXxTTaC_zY&t=235s
+      \endverb
+    \endentry
     \entry{fig:inner-tessellation}{online}{}
       \name{author}{1}{}{%
         {{hash=638160ae56a17712d83fafc12a740c80}{%
@@ -959,8 +988,8 @@
       \strng{authorbibnamehash}{0370e3403aead4e69e2e03c2ff4770a8}
       \strng{authornamehash}{0370e3403aead4e69e2e03c2ff4770a8}
       \strng{authorfullhash}{0370e3403aead4e69e2e03c2ff4770a8}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Equilateral Triangle}
@@ -974,237 +1003,6 @@
       \endverb
       \verb{url}
       \verb https://www.storyofmathematics.com/equilateral-triangle/
-      \endverb
-    \endentry
-    \entry{fig:isoline}{online}{}
-      \name{author}{1}{}{%
-        {{hash=638160ae56a17712d83fafc12a740c80}{%
-           family={Group},
-           familyi={G\bibinitperiod},
-           given={Khronos},
-           giveni={K\bibinitperiod}}}%
-      }
-      \strng{namehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{fullhash}{638160ae56a17712d83fafc12a740c80}
-      \strng{bibnamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authorbibnamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authornamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authorfullhash}{638160ae56a17712d83fafc12a740c80}
-      \field{extraname}{8}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{subtitle}{File:Tessellation isoline 6 2.png}
-      \field{title}{Vulkan Specification}
-      \field{urlday}{14}
-      \field{urlmonth}{7}
-      \field{urlyear}{2024}
-      \field{year}{2024}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.khronos.org/opengl/wiki/File:Tessellation_isoline_6_2.png
-      \endverb
-      \verb{url}
-      \verb https://www.khronos.org/opengl/wiki/File:Tessellation_isoline_6_2.png
-      \endverb
-    \endentry
-    \entry{geometry-shader}{online}{}
-      \name{author}{1}{}{%
-        {{hash=516de641ba81d36bf9b42ee36a3b3a81}{%
-           family={Vries},
-           familyi={V\bibinitperiod},
-           given={Joey},
-           giveni={J\bibinitperiod},
-           prefix={de},
-           prefixi={d\bibinitperiod}}}%
-      }
-      \strng{namehash}{516de641ba81d36bf9b42ee36a3b3a81}
-      \strng{fullhash}{516de641ba81d36bf9b42ee36a3b3a81}
-      \strng{bibnamehash}{516de641ba81d36bf9b42ee36a3b3a81}
-      \strng{authorbibnamehash}{516de641ba81d36bf9b42ee36a3b3a81}
-      \strng{authornamehash}{516de641ba81d36bf9b42ee36a3b3a81}
-      \strng{authorfullhash}{516de641ba81d36bf9b42ee36a3b3a81}
-      \field{extraname}{2}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{subtitle}{Geometry Shader}
-      \field{title}{Advanced OpenGL}
-      \field{urlday}{15}
-      \field{urlmonth}{7}
-      \field{urlyear}{2024}
-      \field{year}{2014}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://learnopengl.com/Advanced-OpenGL/Geometry-Shader
-      \endverb
-      \verb{url}
-      \verb https://learnopengl.com/Advanced-OpenGL/Geometry-Shader
-      \endverb
-    \endentry
-    \entry{vertex-post-processing}{online}{}
-      \name{author}{1}{}{%
-        {{hash=638160ae56a17712d83fafc12a740c80}{%
-           family={Group},
-           familyi={G\bibinitperiod},
-           given={Khronos},
-           giveni={K\bibinitperiod}}}%
-      }
-      \strng{namehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{fullhash}{638160ae56a17712d83fafc12a740c80}
-      \strng{bibnamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authorbibnamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authornamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authorfullhash}{638160ae56a17712d83fafc12a740c80}
-      \field{extraname}{9}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{subtitle}{Fixed-Function Vertex Post-Processing}
-      \field{title}{Vulkan Specification}
-      \field{urlday}{15}
-      \field{urlmonth}{7}
-      \field{urlyear}{2024}
-      \field{year}{2024}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://docs.vulkan.org/spec/latest/chapters/vertexpostproc.html
-      \endverb
-      \verb{url}
-      \verb https://docs.vulkan.org/spec/latest/chapters/vertexpostproc.html
-      \endverb
-    \endentry
-    \entry{rasterization}{online}{}
-      \name{author}{1}{}{%
-        {{hash=638160ae56a17712d83fafc12a740c80}{%
-           family={Group},
-           familyi={G\bibinitperiod},
-           given={Khronos},
-           giveni={K\bibinitperiod}}}%
-      }
-      \strng{namehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{fullhash}{638160ae56a17712d83fafc12a740c80}
-      \strng{bibnamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authorbibnamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authornamehash}{638160ae56a17712d83fafc12a740c80}
-      \strng{authorfullhash}{638160ae56a17712d83fafc12a740c80}
-      \field{extraname}{10}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{subtitle}{Rasterization}
-      \field{title}{Vulkan Specification}
-      \field{urlday}{22}
-      \field{urlmonth}{7}
-      \field{urlyear}{2024}
-      \field{year}{2024}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://docs.vulkan.org/spec/latest/chapters/primsrast.html
-      \endverb
-      \verb{url}
-      \verb https://docs.vulkan.org/spec/latest/chapters/primsrast.html
-      \endverb
-    \endentry
-    \entry{framebuffers}{online}{}
-      \name{author}{1}{}{%
-        {{hash=b5ead6d860b9c4444e39ac15371084d7}{%
-           family={LunarG},
-           familyi={L\bibinitperiod},
-           given={Inc},
-           giveni={I\bibinitperiod}}}%
-      }
-      \strng{namehash}{b5ead6d860b9c4444e39ac15371084d7}
-      \strng{fullhash}{b5ead6d860b9c4444e39ac15371084d7}
-      \strng{bibnamehash}{b5ead6d860b9c4444e39ac15371084d7}
-      \strng{authorbibnamehash}{b5ead6d860b9c4444e39ac15371084d7}
-      \strng{authornamehash}{b5ead6d860b9c4444e39ac15371084d7}
-      \strng{authorfullhash}{b5ead6d860b9c4444e39ac15371084d7}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{subtitle}{The Vulkan Framebuffer}
-      \field{title}{Create the Framebuffers}
-      \field{urlday}{22}
-      \field{urlmonth}{7}
-      \field{urlyear}{2024}
-      \field{year}{2016}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://vulkan.lunarg.com/doc/view/latest/windows/tutorial/html/12-init_frame_buffers.html
-      \endverb
-      \verb{url}
-      \verb https://vulkan.lunarg.com/doc/view/latest/windows/tutorial/html/12-init_frame_buffers.html
-      \endverb
-    \endentry
-    \entry{render-pass}{online}{}
-      \name{author}{1}{}{%
-        {{hash=af6e218ca532c5996569a0f30ad69730}{%
-           family={Overvoorde},
-           familyi={O\bibinitperiod},
-           given={Alexander},
-           giveni={A\bibinitperiod}}}%
-      }
-      \strng{namehash}{af6e218ca532c5996569a0f30ad69730}
-      \strng{fullhash}{af6e218ca532c5996569a0f30ad69730}
-      \strng{bibnamehash}{af6e218ca532c5996569a0f30ad69730}
-      \strng{authorbibnamehash}{af6e218ca532c5996569a0f30ad69730}
-      \strng{authornamehash}{af6e218ca532c5996569a0f30ad69730}
-      \strng{authorfullhash}{af6e218ca532c5996569a0f30ad69730}
-      \field{extraname}{6}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{subtitle}{Render Passes}
-      \field{title}{Vulkan Tutorial}
-      \field{urlday}{22}
-      \field{urlmonth}{7}
-      \field{urlyear}{2024}
-      \field{year}{2023}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes
-      \endverb
-      \verb{url}
-      \verb https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes
-      \endverb
-    \endentry
-    \entry{swapchain}{online}{}
-      \name{author}{1}{}{%
-        {{hash=f702f952544ba66b1534757bf3b1a0b2}{%
-           family={Galea},
-           familyi={G\bibinitperiod},
-           given={Brendan},
-           giveni={B\bibinitperiod}}}%
-      }
-      \strng{namehash}{f702f952544ba66b1534757bf3b1a0b2}
-      \strng{fullhash}{f702f952544ba66b1534757bf3b1a0b2}
-      \strng{bibnamehash}{f702f952544ba66b1534757bf3b1a0b2}
-      \strng{authorbibnamehash}{f702f952544ba66b1534757bf3b1a0b2}
-      \strng{authornamehash}{f702f952544ba66b1534757bf3b1a0b2}
-      \strng{authorfullhash}{f702f952544ba66b1534757bf3b1a0b2}
-      \field{extraname}{2}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Swap Chain Overview - Vulkan Game Engine Tutorial 05 part 1}
-      \field{urlday}{22}
-      \field{urlmonth}{7}
-      \field{urlyear}{2024}
-      \field{year}{2021}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.youtube.com/watch?v=IUYH74MqxOA
-      \endverb
-      \verb{url}
-      \verb https://www.youtube.com/watch?v=IUYH74MqxOA
       \endverb
     \endentry
   \enddatalist

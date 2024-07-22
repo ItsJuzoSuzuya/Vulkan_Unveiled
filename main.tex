@@ -699,17 +699,21 @@ So we will say z = n and z = f. This will give us 2 equations that we can solve 
 
 With this we can now calculate m1 and m2.
 
-\( n^2 = m_1 * n + m_2 \) \\
-\( m_2 = n^2 - m_1 * n \) \\
-\( f^2 = m_1 * f + m_2 \) \\
-\( f^2 = m_1 * f + n^2 - m_1 * n \) \\
-\( f^2 - n^2 = m_1 * f - m_1 * n \) \\
-\( f^2 - n^2 = m_1 * (f - n) \) \\
-\( m_1 = \frac{f^2 - n^2}{f - n} \) \\
-\( m_1 = f + n \) \\
-\( m_2 = n^2 - (f + n) * n \) \\
-\( m_2 = n^2 - f * n - n^2 \) \\
-\( m_2 = -f * n \) \\
+\[
+	\begin{aligned}
+		 & n^2 = m_1 * n + m_2           \\
+		 & m_2 = n^2 - m_1 * n           \\
+		 & f^2 = m_1 * f + m_2           \\
+		 & f^2 = m_1 * f + n^2 - m_1 * n \\
+		 & f^2 - n^2 = m_1 * f - m_1 * n \\
+		 & f^2 - n^2 = m_1 * (f - n)     \\
+		 & m_1 = \frac{f^2 - n^2}{f - n} \\
+		 & m_1 = f + n                   \\
+		 & m_2 = n^2 - (f + n) * n       \\
+		 & m_2 = n^2 - f * n - n^2       \\
+		 & m_2 = -f * n
+	\end{aligned}
+\]
 
 Therefor the final matrix looks like this:
 
@@ -797,9 +801,6 @@ Now we can combine both transformations to get the final projection matrix:
 This is the projection matrix that is used to transform the view space to the clip space. The clip space is then used to
 determine what is visible on the screen and what is not. Everything that is visible will now be projected onto the 2D screen.
 
-But wait, we still have that pesky w coordinate. Luckily Vulkan does the perspective divide for us, so we don't have to worry about it.
-After the perspective divide we get the normalized device coordinates (NDC).
-
 \subsection{Viewport Transformation}
 
 The viewport is the area on the screen where the image is displayed. It is defined by the x and y position, the width and height and the
@@ -847,9 +848,10 @@ given to the pipeline as compiled SPIR-V bytecode. \cite{spirv}
 Lets take a look at the Vulkan pipeline and its stages:
 
 \begin{figure}[hbtp]
-	\centering \includegraphics{pipeline.jpg} \caption{Pipeline
-		Structure \cite{fig:pipeline}}
-\end{figure}
+	\fontsize{6}{10}\selectfont
+	\centering \includesvg[width=1\textwidth]{images/pipeline.svg}
+	\caption{Pipeline Structure \cite{fig:pipeline}}
+\end{figure} \FloatBarrier
 
 Okay okay, I know that's a lot and there is stuff I haven't talked about
 yet, like these Buffers, Images and the Push Constants. Don't worry I
@@ -872,6 +874,12 @@ The draw "stage" is not really a stage, but the command that starts
 the rendering process. When we call the vkCmdDraw Command on the GPU,
 the pipeline will start processing the data that we have given to
 it. \cite{vulkan-spec-draw}
+
+The vkCmdDraw Command is part of the Command Buffer, which is used to
+record and execute commands on the GPU. This Command Buffer is then
+submitted to a VkQueue, which will execute the commands on the GPU
+in the order they were recorded. \cite{command-buffers}
+
 
 \subsection{Input Assembler}
 
@@ -965,20 +973,20 @@ points, lines or triangles. \cite{microsoft-ia}
 
 \begin{lstlisting}[language=C++] 
 
-// Provided by VK_VERSION_1_0 typedef
-enum VkPrimitiveTopology {
-  VK_PRIMITIVE_TOPOLOGY_POINT_LIST = 0, VK_PRIMITIVE_TOPOLOGY_LINE_LIST
-  = 1, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP =
-  2, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST =
-  3, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP =
-  4, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
-  VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
-  VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
-  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
-  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY = 9,
-  VK_PRIMITIVE_TOPOLOGY_PATCH_LIST = 10,
-} VkPrimitiveTopology; 
-\end{lstlisting} \cite{vulkan-spec-primitive-topology}
+  // Provided by VK_VERSION_1_0 typedef
+  enum VkPrimitiveTopology {
+    VK_PRIMITIVE_TOPOLOGY_POINT_LIST = 0, VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+    = 1, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP =
+    2, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST =
+    3, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP =
+    4, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
+    VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
+    VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY = 9,
+    VK_PRIMITIVE_TOPOLOGY_PATCH_LIST = 10,
+  } VkPrimitiveTopology; 
+  \end{lstlisting} \cite{vulkan-spec-primitive-topology}
 
 These are the primitive topology types that the input assembler can
 create in Vulkan.  We have to tell the input assembler what type of
@@ -993,23 +1001,483 @@ the adjacency types, so don't worry on understanding them now. \cite{vulkan-spec
 
 \subsection{Vertex Shader}
 
-The vertex shader is the first programmable stage of the pipeline. It takes
-the vertices and transforms them by scaling, rotating or translating them
-into clip coordinates.
-These coordinates range from -1 to 1 on the x, y and z axis, with the center
-beginning at \{0, 0, 0\}.
+The vertex shader is the first programmable stage of the pipeline.
+Here we transform the world to our clip space. The vertex shader takes
+the vertex data from the input assembler and transforms each vertex
+to it's clip space position. \cite{vulkan-tutorial-shader-modules}
+
+But we need to program the transformation ourselves. We can use our new
+knowledge of matrices to transform the vertices. To do so we pass the
+model, view and projection matrix to the vertex shader via resource descriptors.
+
+Resource descriptors are used to pass data to the shaders during the
+rendering process. There are multiple types of descriptors, but we will
+focus on the uniform buffer descriptor (UBO) which passes data to the shaders
+in the form of a buffer.
+
+But first we have to create a descriptor layout that tells the pipeline
+what type of data we are passing to which shader. Then we create a descriptor
+pool that holds multiple descriptor sets. The descriptor sets are used to
+bind the buffers to the shaders and are created from the descriptor pool. \cite{vulkan-tutorial-descriptors}
+
+Descriptors are good to pass constant data to the shaders, but when we
+want to pass data that changes frequently we can use push constants.
+Push constants are a small amount of data that is stored in the command
+buffer. We can assign a minimum of 128 bytes to the push constants, which
+is enough to pass 2 4x4 matrices to the shaders. \cite{push-constants}
+
+After that the pipeline performs the perspective divide and returns the
+normalized device coordinates.
+
+\subsection{Tessellation}
+
+The tessellation stage is actually divided in 3 stages. The tessellation
+control shader, tessellation primitive generator (tessellator) and the tessellation
+evaluation shader. Please note that the Tessellation stage is optional and will
+only be executed if both shaders are defined in the pipeline.\cite{tessellation}
+
+If you are not familiar with tessellation, it is a technique used to
+subdivide a polygon, a shape, into smaller polygons without leaving
+any gaps in between. This can be used to create more detailed models
+without having to pass all the vertex data from the CPU to the GPU. \cite{tessellation}
+
+The tessellation control shader is used to define how many times
+our primitive should be subdivided, by defining inner and outer tessellation levels.
+It also passes the vertex positions to the evaluation shader. \cite{tessellation}
+
+After setting the tessellation levels, the tessellator subdivides a patch, which is
+a new primitive type, into smaller patches.
+This can be done in 3 ways: Triangles, Quads or Isolines.
+Lets first talk about the tessellation of a triangle.
+
+Vulkan uses barycentric coordinates to subdivide the triangle. Barycentric
+coordinates consist, in the case of a triangle, of 3 variables (u,v,w) that sum up to 1.
+Each variable represents the relative position of a vertex in the triangle with 1 being directly
+on the vertex. So when we have a triangle with vertices A, B and C, the barycentric coordinates
+could be \{0, 0, 1\} for A, \{0, 1, 0\} for B and \{1, 0, 0\} for C, depending on the selected
+origin of the triangle. \cite{tessellation}
+
+A point in the triangle ABC, like the center, could be calculated like this:
+
+\[
+	\begin{bmatrix}
+		1 \\
+		1 \\
+		1 \\
+	\end{bmatrix}
+	\div
+	3
+	=
+	\begin{bmatrix}
+		\frac{1}{3} \\
+		\frac{1}{3} \\
+		\frac{1}{3} \\
+	\end{bmatrix}
+\]
+
+Because the center is equally distant from all vertices, the barycentric coordinates need to be equal for u, v and w
+and when we sum them up they need to equal 1.
+
+First the inner tessellation levels subdivides the patches edges into the desired amount of segments and
+creates temporary vertices on the edges of the patch. These vertices are then used to create an
+inner triangle by taking the 2 neighboring vertices of the outer triangles corners and extending perpendicular
+lines to the edge of the outer triangle. Where these two lines intersect, a new vertex is created. When you
+do this for all 3 corners it creates the corners of the inner triangle. \cite{tessellation}
 
 \begin{figure}[hbtp]
-	\centering \includesvg[width=0.6\textwidth]{images/clip-space.svg}
-	\caption{Clip Coordinates in 2D}
+	\centering \includegraphics[width=0.4\textwidth]{innertri.png}
+	\caption{Inner Tessellation with 4 segments}
+	\cite{fig:inner-tessellation}
 \end{figure} \FloatBarrier
 
-Please note, that the y axis is inverted in clip space and that there is a
-z coordinate that can go from 0 to 1, with 0 being directly behind the screen
-and 1 being the furthest point that will not be clipped off.
+You can see that the inner tessellation level of 4 cuts each edge of the outer triangle into 4 segments.
+This is done by calculating the barycentric coordinates of the temporary vertices on the edges. Let's
+calculate the barycentric coordinates of the first vertex on the left edge AB.
 
-The clip spaced is used to determine if a vertex is visible or not, by
-checking if the vertex is in between the -1 and 1 range. \cite{vulkan-tutorial-shader-modules}
+We need 3 points where u is always 0 because the vertices are on the opposite edge of the corner {1,0,0}
+To get the distance of one segment we divide the edge length by the desired segments length.
+
+So the length of one segment is \(\frac{1}{4}\).
+For the first vertex we then get \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\), for the second
+vertex \{0, \(\frac{2}{4}\), \(\frac{2}{4}\}\) and for the third vertex \{0, \(\frac{3}{4}\), \(\frac{1}{4}\}\).
+
+We do the same for each edge and then calculate the intersection of the perpendicular lines to get the inner triangles
+corner vertices.
+
+For the bottom left corner of the inner triangle we take the 2 vertices of the outer triangle \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\)
+and \{\(\frac{1}{4}\), 0, \(\frac{3}{4}\}\).
+
+Now we need to get the direction of the perpendicular line. This is way easier than it sounds, because our barycentric triangle is
+equilateral. That means that when we draw a line to display the height of the triangle and take it's direction, we get the direction
+of the perpendicular line to the lower edge. Luckily, because the triangle stays the same no matter how we rotate it, we can just use
+the direction of the height line to get the direction of the perpendicular lines for each triangle. \cite{equilateral-triangle}
+
+\begin{figure}[htbp]
+	\centering \includegraphics[width=0.7\textwidth]{Equiletral-Triangle.png}
+	\caption{Equilateral Triangle}
+	\cite{equilateral-triangle}
+\end{figure} \FloatBarrier
+
+Considering that we can calculate the direction of the perpendicular line:
+
+\[
+	\begin{aligned}
+		 & E(\frac{1}{2}, 0, \frac{1}{2})                                                      \\
+		 & A(0, 1, 0)                                                                          \\
+		 & A - E = (0 - \frac{1}{2}, 1 - 0, 0 - \frac{1}{2}) = (-\frac{1}{2}, 1, -\frac{1}{2}) \\
+	\end{aligned}
+\]
+
+We can now add this direction to the vertex \(\{\frac{1}{4}, 0, \frac{3}{4}\}\) to get the perpendicular lines function.
+
+\[
+	f(v) = \{\frac{1}{4} - \frac{1}{2}v, 0 + v, \frac{3}{4} - \frac{1}{2}v\}
+\]
+
+It's the same for the other points, but we need to change the direction of the perpendicular line.
+
+\[
+	f(u) = \{0+u, \frac{1}{4} - \frac{1}{2}u, \frac{3}{4} - \frac{1}{2}u\}
+\]
+
+To get the intersection we simply set the functions equal to each other and solve it.
+
+\[
+	\begin{aligned}
+		     &               & f(v)= f(u)                                                                                \\
+		I)   &               & \frac{1}{4} - \frac{1}{2}\cdot v & = u                                                    \\
+		II)  &               & v                                & = \frac{1}{4} - \frac{1}{2}\cdot u                     \\
+		III) &               & \frac{3}{4} -\frac{1}{2}\cdot v  & = \frac{3}{4} -\frac{1}{2}\cdot u                      \\
+		     &               & v                                & = u                                                    \\
+		I)   &               & \frac{1}{4} - \frac{1}{2}\cdot u & = u                                                    \\
+		     &               & \frac{3}{2}\cdot u               & = \frac{1}{4}                                          \\
+		u    & = \frac{1}{6} & v                                & = \frac{1}{6}                      & w & = \frac{4}{6}
+	\end{aligned}
+\]
+
+Voil\`a, that's how we get the corners of the inner triangle. Now vulkan subdivides the inner triangles edges by n-2 with n being the
+inner tessellation level. Because our tessellation level is 4 we subdivide the first inner triangles edges into 2
+pieces. The vertex dividing the inner edge is then calculated by projecting a perpendicular line form the outer edge to the inner edge.
+We repeat this until n is smaller than 3, but when we start with n = 2 we will have a tessellation vertex in the center of the
+triangle. \cite{tessellation}
+
+When we have calculated all inner tessellation vertices we fill the area of the concentric triangles with triangles by
+connecting the vertices in a way that ensures that the triangles are not overlapping. If the inner tessellation level is 2 and
+no outer tessellation level is set, the tessellator will connect the corners of the triangle with the center vertex. \cite{tessellation}
+Unfortunately, considering more complicated tessellation, the order in witch the vertices are created and connected is implementation dependent,
+which means that it is up to the GPU to decide how the vertices are connected. \cite{tessellation}
+
+After the inner patches are filled, we discard the outer triangles temporary vertices and subdivide each edge by
+it's outer tessellation level. The tessellator now fills the area of the outer triangle with the outermost inner triangle.
+Now that all the triangles are created, the tessellation primitive generator assigns the vertices their barycentric coordinates (u,v,w)
+and passes them to the tessellation evaluation shader. \cite{tessellation}
+
+For Quads and isolines the process is similar, but the patch only has 2 barycentric coordinates. So we can just calculate the
+barycentric coordinates as if we were in an x,y coordinate system. \cite{tessellation}
+
+Quads have 4 outer tessellation levels that subdivide the outer edges and 2 inner tessellation levels that subdivide the area of the quad
+into smaller quads. The first inner tessellation level divides the columns and the second inner tessellation level divides the rows.
+At the end the tessellator fills the area of the quad with triangles. \cite{tessellation}
+
+Isolines on the other hand is a set of horizontal lines that have a length of 1 on the u axis and are equally spaced on the v axis.
+They only have 2 outer tessellation levels that define how many single lines are created and in how many segments they are divided.
+
+\begin{figure}[hbtp]
+	\centering \includegraphics[width=0.4\textwidth]{Tessellation_isoline_6_2.png}
+	\caption{Isoline Tessellation (6, 2)}
+	\cite{fig:isoline}
+\end{figure} \FloatBarrier
+
+These were the possible tessellation types that the tessellator can work with but there are a few more things to consider for each of them.
+For example, we can change the tessellator spacing, which defines the spacing of the outer tessellation levels. The tessellator spacing
+can be either equal, fractional even or fractional odd, which allow us to have a tessellation level of 2.5 for example. \cite{tessellation}
+We can also control the vertex winding order, which defines which side of the triangle is the front and which is the back. This is important
+for culling and lighting calculations. \cite{tessellation}
+
+Please note that all of this is already handled by vulkan and all we have to do is to set the tessellation levels and optionally spacing
+and winding order in the tessellation control shader and pass it over to the tessellation primitive generator. \cite{tessellation}
+
+After the tessellator created all of the new triangles the tessellation evaluation shader is called to transform the new vertices to the clip space.
+The tessellation evaluation shader takes each barycentric coordinate and the position of the original triangles corner vertices, that we have forwarded in
+the control shader, to calculate the position of the new vertices in clip space. \cite{tessellation}
+
+To do so we can multiply the barycentric coordinates with the corner vertices and add them together to get the new vertex position.
+For a triangle with vertices A, B and C and barycentric coordinates \{u, v, w\} the new vertex position would be calculated like this:
+
+\[
+	\begin{aligned}
+		x & = u \cdot A_x + v \cdot B_x + w \cdot C_x \\
+		y & = u \cdot A_y + v \cdot B_y + w \cdot C_y \\
+		z & = u \cdot A_z + v \cdot B_z + w \cdot C_z \\
+	\end{aligned}
+\]
+
+After that we can transform them further, adding curvature or displacement to the vertices. When using a quad we can adjust the vertices
+by using a 2D texture like a height map to displace the vertices. \cite{tessellation}
+
+One last thing to mention is that when we use a tessellation shader we actually skip the perspective projection in the vertex shader and
+instead do it in the tessellation evaluation shader. This is because the newly created vertice have to be projected to the clip space
+along with the original vertices. \cite{tessellation}
+
+\subsection{Geometry Shader}
+
+The next stage is the geometry shader (GS). The GS is used to create new primitives and is great at procedural generation of geometry.
+That includes creating particles, grass or fur. It takes all the vertices of a primitive and generates new vertices that are then combined to
+either points, line strips or triangle strips. For example, we could take a single point and create a quad around it by emitting 4 new vertices.
+These will then be combined to 2 triangles by the pipeline, forming a quad. \cite{geometry-shader}
+
+I will not go further into explaining the geometry shader because its implementation is very dependent on the use case. It is enough to know
+some use cases and that we basically can create new primitives with it.
+
+\subsection{Vertex Post Processing}
+
+After all of the previous stages we can do some post processing on the vertices. This is done by the vertex post processing stage.
+Here we have many sub stages that I will go over briefly.
+
+\textbf{Transform Feedback} is used to capture the output of the previous stages and store it in a feedback buffer. This can be used to
+call a new draw command with the stored data. \cite{vertex-post-processing}
+
+\textbf{Viewport Swizzle} is used to change the orientation of the viewport. For example, we can flip the y axis to display the image upside down.
+To achieve this we can define the swizzle for each axis via the VkViewportSwizzleNV struct. \cite{vertex-post-processing}
+
+\textbf{Flat shading} is used to color the whole primitive with one color. This is done by calculating the color of the first vertex and then
+using this color for the whole primitive. \cite{vertex-post-processing}
+
+\textbf{Primitive Clipping} is used to discard primitives that are outside of the clip space. This is done by checking if the primitive is
+completely outside of the clip space and then discarding it. \cite{vertex-post-processing}
+When only a part of the primitive is outside of the clip space, the pipeline will discard that part and create new vertices on the edge of the clip space,
+where the primitive would intersects the clip space. \cite{vertex-post-processing}
+
+Clipping is done by checking if the vertex's x, y and z coordinates are in between -w and w or z\textunderscore min and w for z.
+If they are not, the vertex is outside of the clip space and will be discarded.
+
+\textbf{Clipping Shader Outputs} is used to discard the vertex output attributes that are outside of the clip space.
+
+\textbf{Controlling Viewport W Scaling} can be used to change the w coordinate of the vertex. This can help to adjust the depth of an object.
+
+\textbf{Coordinate Transformation} is the step where our clip coordinates (x,y,z,w) are transformed to (x,y,z) by dividing x, y and z by w.
+This step is the perspective divide and provides us with normalized device coordinates (NDC) \cite{vertex-post-processing}
+
+\textbf{Render Pass Transform} can be enabled to rotate the viewport on the xy plane. This can be used to rotate the image on the screen
+by either 90, 180 or 270 degrees, using the VK\textunderscore SURFACE\textunderscore TRANSFORM\textunderscore ROTATE\textunderscore {degree}\textunderscore
+BIT\textunderscore KHR attribute. \cite{vertex-post-processing}
+
+\textbf{Controlling the Viewport} is a stage where vulkan scales the NDC to the dimensions of the viewport. It is also possible to create
+scissors to only render a part of the viewport.
+
+\subsection{Rasterization}
+
+This stage of the pipeline converts our primitives into a 2D image. It takes our viewport and checks which pixels are covered by the
+primitives and then fills them with the color of the primitive.
+
+Let's take a look on how this is done. Again, there are multiple primitives that can be rasterized: points, lines and triangles.
+
+We'll start with triangles, because they will be needed for the other types too.
+
+The first step of rasterization is determining if the triangle is front or back facing, which is done by checking if the area of the triangle
+is positive or negative. We can calculate the area of a triangle using the following formula:
+
+\[
+	a = -\frac{1}{2} \sum_{i=0}^{n-1} (x_i \cdot y_{i\oplus 1} - x_{i\oplus 1} \cdot y_i)
+\]
+
+This probably looks confusing so let me explain it a bit further. n is the number of vertices in our triangle, which is 3, while i is the current
+vertex's index and \(\oplus\) is basically performing \( i+1\) mod n. So when we have a triangle with vertices A, B and C the sum could look like this:
+
+\[A_x \cdot B_y - B_x \cdot A_y + B_x \cdot C_y - C_x \cdot B_y + C_x \cdot A_y - A_x \cdot C_y\]
+
+or like this:
+
+\[A_x \cdot C_y - C_x \cdot A_y + C_x \cdot B_y - B_x \cdot C_y + B_x \cdot A_y - A_x \cdot B_y\]
+
+depending on the order of the vertices. If your familiar with vector math you might recognize this as the cross product of two side vectors that originate from the same vertex.
+The cross product of these two vectors gives us a vector that is perpendicular to the triangle, which can either point towards us or away from us.
+This is because our 2D display can be seen as a 3D space with the z axis pointing out of the screen.
+
+For example we can take the two vectors \(\vec{AB} = B - A\) and \(\vec{AC} = C - A\) and calculate the cross product of them to get the normal of the triangle.
+
+To calculate the cross product we can look at this visual representation:
+
+\begin{figure}[hbtp]
+	\centering
+	\includegraphics[width=0.5\textwidth]{cross-product.png}
+	\caption{Cross Product} \FloatBarrier
+\end{figure}
+
+We simply write each vector 2 times under each other, cut out the top and bottom row and then multiply diagonally, subtract the blue result from the red result
+and add each "cross" result together.
+
+In this case we would have:
+
+\[
+	\begin{aligned}
+		 & (B_y - A_y) \cdot 0 - 0 \cdot (C_x - A_x) = 0                                                                                    \\
+		 & 0 \cdot (C_x - A_x) - 0 \cdot (B_x - A_x) = 0                                                                                    \\
+		 & (B_x - A_x) \cdot (C_y - A_y) - (C_x - A_x) \cdot (B_y - A_y) =                                                                  \\
+		 & B_x \cdot C_y - B_x \cdot A_y - A_x \cdot C_y + A_x \cdot A_y - C_x \cdot B_y + C_x \cdot A_y + A_x \cdot B_y - A_x \cdot A_y  = \\
+		 & B_x \cdot C_y - B_x \cdot A_y - A_x \cdot C_y - C_x \cdot B_y + C_x \cdot A_y + A_x \cdot B_y                                    \\
+	\end{aligned}
+\]
+
+This last therm comes out to our previous formula.
+Now that we have a perpendicular vector to the triangle we can calculate the area of the triangle, because the area of the triangle is half of
+the cross product. That's why we multiply the cross product by \(\frac{1}{2}\). But wait a minute, why is there a minus sign in front of the formula?
+This comes from the fact that our z axis is flipped, which means that a positive area means that the triangle is facing away from us which is not
+intuitive. So we flip the sign to get a positive vector.
+
+To actually tell the pipeline what negation is considered front facing we can set the frontFace attribute in the VkPipelineRasterizationStateCreateInfo
+to either \\
+VK\textunderscore FRONT\textunderscore FACE\textunderscore CLOCKWISE or
+VK\textunderscore FRONT\textunderscore FACE\textunderscore COUNTER\textunderscore CLOCKWISE.
+Clockwise means that the triangle is front facing if the area is negative and counter clockwise then covers the opposite. \cite{rasterization}
+
+Next they are culled according to the cullMode attribute in the VkPipelineRasterizationStateCreateInfo. This can be set to either
+VK\textunderscore CULL\textunderscore MODE\textunderscore NONE, \\
+VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT,
+VK\textunderscore CULL\textunderscore MODE\textunderscore BACK or \\
+VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT\textunderscore AND\textunderscore BACK.
+This determines if the front facing, back facing, both or none of the triangles are discarded. \cite{rasterization}
+
+Next we take the vertices of each triangle and determine its bounding box. A bounding box is basically the smallest rectangle that
+contains the whole triangle. By doing this we don't have to check every pixel if it is inside the triangle, but only the pixels that are
+inside the bounding box. This is done by taking the minimum and maximum x and y coordinates of the triangle's vertices.
+
+Next we iterate through every pixels center inside the bounding box, and check if it is inside the triangle.
+A point is inside the triangle if it is to the right of all the triangles edge vectors when it is clockwise oriented
+and to the left when it is counter clockwise oriented. We can check this by calculating the cross product of the edge vectors and the vector
+from the first vertex to the pixels position. If the cross product is positive the point is to the right of the edge, if it is negative it is to the left.
+If the cross product is 0 the point is on the edge.
+
+Okay but what if the point is on an edge of adjacent triangles? How do we know which triangle should be drawn?
+For this case graphics APIs usually use the top-left rule. This rule states that left and top edges are considered to be inside the triangle
+while right and bottom edges are considered to be outside. How do we know which edge is which?
+
+A top edge is an edge where the y coordinate is flat and pointing to the right, so where the y coordinate doesn't change
+and the x coordinate is increasing when the winding order is clockwise or else is decreasing when it is counter clockwise.
+
+A left edge is an edge where the y coordinate is decreasing (clockwise), which means that it is pointing upwards, because the y axis is flipped.
+
+Is the edge a top or left edge? Then the point is inside the triangle, otherwise an offset is added to move the point outside of the triangle.
+
+Some of you might not like the idea of checking every pixel inside the bounding box, because it is very inefficient. There is actually
+a way to rasterize a triangle without a bounding box. To do so we have to take a look at a fact that comes from using the barycentric coordinates.
+When we go through the triangle and calculate one of the barycentric coordinates we can see that the step size we take is always the same
+when we go from one pixel in the triangle to the next. This comes from an intresting property of the barycentric coordinates. When we go from
+one pixel to the next the barycentric coordinates change by a constant amount. This means that we can rasterize a triangle by only checking
+the barycentric coordinates of the first pixel and then adding a constant amount to the barycentric coordinates to get the barycentric coordinates.
+If the barycentric coordinates are inside the triangle we draw the pixel, if not we skip it.
+
+We can calculate the constant amount by calculating the barycentric coordinates of the next pixel and then subtracting the barycentric coordinates
+of the current pixel from them. This will give us the constant amount we have to add to the barycentric coordinates to get the barycentric coordinates
+of the next pixel.
+
+For lines and points we use the same methods, we just have to draw a box around the line or point and then check if the pixel is inside this box.
+The box drawn is not the bounding box but the thickness of the line or point.
+
+We have two problems left.
+
+First, lines and edges will not look smooth because we only interpolate the color of the vertices. They will look chunky
+because we fully color the pixel if the center is inside the box. To fix this we can use anti-aliasing. Anti-aliasing is a technique used to
+smooth the edges of a line or point. We can do this by checking how much of the pixel is covered by the line and then color the pixel
+accordingly.
+
+Second, what if we have two triangles that overlap? We can't just draw the second triangle over the first one. To fix this we can use a depth buffer.
+You might have asked yourself why we need a z coordinate for the vertices. This is because we can use the z coordinate to determine which pixel is
+in front of each other. When we rasterize a pixel we write the z value into an depth buffer and then we check if the z value of the next pixel is
+smaller than the z value in the depth buffer. If it is we draw the pixel and write the new depth into the depth buffer, if not we skip it.
+
+\subsection{Fragment Shader}
+
+The fragment shader is the last programmable stage of the pipeline. It takes the fragment data from the rasterization stage and performs
+operations on each fragment. This is where we can calculate the color of the fragment.
+
+To do so we need to interpolate the vertex colors.
+Fortunately, we already know a way on getting the relative position of a point to a triangles vertices, the barycentric coordinates.
+We can use the barycentric coordinates to interpolate the color of a vertex to get the color of the pixel.
+
+But how do we get the baricentric coordinates of a pixel? We can use the same method as before, by calculating the area of the triangle
+between to vertices and the pixel. So we take the cross product of on side vector and the vector from the first vertex to the pixel
+and divide it by 2 to get its area. We do this for all 3 sides and then divide them by the area of the full triangle to get the barycentric coordinates.
+
+For example when we have green vertex A\{1,2\}, red vertex B\{2,3\} and blue vertex C\{3,2\} and the coordinates of the pixel are
+\{2,2.5\} we can calculate the barycentric coordinates like this:
+
+\[
+	\begin{aligned}
+		\text{Area of the triangle * 2}     & = 2                                             \\
+		\text{Area of the triangle ABP * 2} & = \frac{\left| 0.5 - 1 \right|}{2} = 0.25       \\
+		\text{Area of the triangle BCP * 2} & = \frac{\left| (-0.5) \right|}{2} = 0.25        \\
+		\text{Area of the triangle CAP * 2} & = \frac{\left| (-2) \cdot 0.5 \right|}{2} = 0.5 \\
+	\end{aligned}
+\]
+
+So the barycentric coordinates are \{0.25, 0.25, 0.5\}. If you're confused on why I'm using the area times 2, it's because we can safe the
+computation of the actual area because we are only caring about the relative position of the pixel to the vertices, so as long as everything stays
+at the same scale it will give us the same answer.
+
+Next we interpolate the colors of the vertices linearly to get the color of the pixel. This is done by multiplying the color of each vertex
+with the barycentric coordinates and adding them together.
+
+\[
+	\begin{aligned}
+		r & = 0.25 \cdot A_r + 0.25 \cdot B_r + 0.5 \cdot C_r     \\
+		g & = 0.25 \cdot A_g + 0.25 \cdot B_g + 0.5 \cdot C_g     \\
+		b & = 0.25 \cdot A_b + 0.25 \cdot B_b + 0.5 \cdot C_b     \\
+		\\
+		r & = 0.25 \cdot 0 + 0.25 \cdot 255 + 0.5 \cdot 0 = 63.75 \\
+		g & = 0.25 \cdot 255 + 0.25 \cdot 0 + 0.5 \cdot 0 = 63.75 \\
+		b & = 0.25 \cdot 0 + 0.25 \cdot 0 + 0.5 \cdot 255 = 127.5 \\
+	\end{aligned}
+\]
+
+Which will give us this color: \{63.75, 63.75, 127.5\}.
+We repeat this for every fragment inside the triangle and then we have our rasterized image.
+
+But we can do more than just interpolate the color of the vertices. We can also apply lighting, textures and more.
+
+\subsection{Blending}
+
+The last stage of the pipeline is blending. Blending is used to create transparency and some other graphical effects.
+There isn't much to say about blending. It gives us many options to blend the color of the fragment but all of the operations are
+performed by the GPU, so we don't have to worry about it. When blending is complete we have our final framebuffer that we can display.
+
+\section{Drawing Process}
+
+\subsection{Framebuffers}
+
+A Framebuffer consists of multiple attachments. An attachment is the buffer that holds either the color or depth of each fragment.
+These buffers are written to by the pipeline and then presented to the screen.
+The color attachment is used to store the color of each fragment, while the depth attachment is used to store the depth of each fragment.
+The depth attachment is used to save the z coordinate of each fragment to prevent drawing over fragments if they are not visible. \cite{framebuffers}
+
+\subsection{Render Pass}
+
+A render pass holds the information about how many color and depth attachments we have and how they are used in the pipeline.
+It can consist of multiple subpasses, which are used to render the scene in multiple steps. For example, we can render the scene
+in one subpass and then apply post processing in another subpass. \cite{render-pass}
+
+\subsection{Swapchain}
+
+The swapchain is used to present the final framebuffer to the screen. It consists of usually 2 (Double Buffering) or more framebuffers.
+On a swapchain we can present one framebuffer while we render to another framebuffer.
+The presented framebuffer is called the front buffer and the rendered framebuffer is called the back buffer.
+Every time a new frame is rendered the front and back buffers are swapped. This is done to prevent screen tearing.
+You know when the screen is cut into 2 different images? That's screen tearing. It happens when the GPU is rendering to the framebuffer
+while the screen is reading from it. But that only happens when we have V-Sync disabled.
+
+There are two problems with Double Buffering. It can cause input lag. This is because the GPU has to wait for the swapchain to swap the framebuffers
+before it can render the next frame. To fix this we can use Triple Buffering. The other problem occures when the GPU takes longer than one frame.
+This will cause the swapchain to wait for the GPU to finish rendering the frame before it can swap the framebuffers. This will cause the frame
+to drop and the game to stutter. To fix this we can use a third buffer to render to while the GPU is rendering the frame. This way the GPU can
+swap the framebuffers without waiting for the GPU to finish rendering the frame. \cite{swapchain}
+
+\section{Conclusion}
+
+This was a brief overview of the Vulkan pipeline and its rendering. Now that we have a basic understanding of the pipeline we can start
+programming our first Vulkan application. In the next chapter we will set up the Vulkan environment and create a window to render to.
+
+\chapter{Setting up Vulkan}
+
 
 \printbibliography[
 	heading=bibintoc, title={Bibliography}
