@@ -1478,6 +1478,93 @@ programming our first Vulkan application. In the next chapter we will set up the
 
 \chapter{Setting up Vulkan}
 
+Because the Setup of Vulkan is highly dependent on your operating system and IDE I will only give a brief overview of the setup process.
+
+Let's start by setting up our development environment. First of all we need to to install the Vulkan SDK. You can download it from the
+\href{https://vulkan.lunarg.com/sdk/home}{LunarG} website or use your preferred package manager.
+
+Now verify if your GPU and drivers support Vulkan. To do so go into the Bin folder of the Vulkan SDK and run the
+\textit{vkcube.exe} program. If it runs without any errors and display a cube you are good to go. If not you have to update your drivers or
+include the Vulkan runtime in your system.
+
+Next we'll need to install GLFW, a library for creating windows and handling input. We will use it to create a window for our application.
+You can download the 64-bit binaries from the \href{https://www.glfw.org/download.html}{GLFW} website or
+use your package manager. After downloading the binaries, extract them to a location that is easy to access.
+
+Because Vulkan does not include a library for linear algebra operations we will use the \href{https://github.com/g-truc/glm}{OpenGL Mathematics}
+(GLM) library. Again, download the library and extract it to a location that is easy to access.
+
+Don't forget to install a C++ and GLSL compiler when needed.
+
+Next you will need to either setup your IDE or write a Makefile to compile your program.
+
+This is a very brief overview of the setup process, because explaining the setup for every operating system and IDE would be too much.
+Please read through this \href{https://vulkan-tutorial.com/Development_environment}{Vulkan Tutorial} to get a more detailed explanation.
+
+\section{Creating a Window}
+
+Before we can start rendering we need to create an application window, because vulkan is only a graphics API and doesn't provide a way to create a window.
+Do not worry about implementing a window from scratch, because there are libraries for creating windows for vulkan. We will use the
+previously installed open source and multi-platform library GLFW (Graphics Library Framework)
+which provides us with a simple API that we can use to create a window and handle input. \cite{glfw}
+
+Let's start by creating a core folder in our source folder. Here all of the core functionalities
+of our game engine will be stored. In this folder create a new header file called window.hpp.
+
+Inside we first need to include the GLFW header file and the define of \\
+GLFW\textunderscore INCLUDE\textunderscore VULKAN to include the vulkan header files.
+
+\begin{lstlisting}[language=C++, caption = {Include GLFW and Vulkan}]
+  #define GLFW_INCLUDE_VULKAN
+  #include <GLFW/glfw3.h>
+\end{lstlisting}
+
+Next we add a namespace that we want to use for our engine. In my case I will use
+the namespace \textit{engine}, but feel free to use the actual name of your engine.
+Inside we create our class Window with an constructor that takes the width, height
+and name of the window as arguments. We also add an empty destructor to clean up the window.
+
+\begin{lstlisting}[language=C++, caption = {Window Class}]
+  namespace engine {
+    class Window {
+    public:
+      Window(int width, int height, std::string name);
+      ~Window();
+    };
+  }
+\end{lstlisting}
+
+Because the name is a string we need to include the it.
+
+\begin{lstlisting}[language=C++, caption = {Include String}]
+  #include <string>
+\end{lstlisting}
+
+The job of the constructor is to initialize a window with the given width, height and name.
+So let's create a private helper function that initializes the window. We will call it
+\textit{initWindow}. Let's also store the width, height and name of the window in private variables.
+After initializing the window we will need a pointer to the window object, so we can access it later.
+
+\begin{lstlisting}[language=C++, caption = {Window Class}]
+namespace engine {
+  class Window {
+      public:
+        Window(int width, int height, std::string name);
+        ~Window();
+      private:
+        void initWindow();
+      
+        const int width;
+        const int height;
+      
+        std::string name;
+        GLFWwindow* window;
+    };
+}
+\end{lstlisting}
+
+That's the header file for now. Let's implement the defined functions in the source file.
+In the Window.cpp file we 
 
 \printbibliography[
 	heading=bibintoc, title={Bibliography}
