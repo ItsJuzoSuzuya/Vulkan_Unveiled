@@ -644,7 +644,8 @@ The z axis stays the same.
 
 So when we have a point \{x, y, z\} in the view space, we need to transform it to \\
 \(\{\frac{x * n}{z}, \frac{y * n}{z}, z\}\) to get the orthographic view volume. Unfortunately
-there is no way we can divide the x and y value with z with just 3 dimensions. We need to add a 4th coordinate to the point to be able to
+there is no way we can divide the x and y value with z with just 3 dimensions.
+We need to add a 4th coordinate to the point to be able to
 divide by z. This is called the perspective divide.
 
 To do so we add a homogeneous variable to the point and transfer the z coordinate to this new w
@@ -652,8 +653,9 @@ variable. This will allow us to divide the x, y and z coordinate by the z coordi
 So what we want is to transform the point \{x, y, z, w\} to \(\{x * n, y * n, z^2, z\}\).
 Keep in mind that the homogeneous coordinate is the same as the 3D coordinate after dividing by w.
 
-Okay so what we need is a 4x4 matrix that multiplies the x and y coordinate with n and the z coordinate with itself.
-We also need to multiply the w coordinate with z, to move the z coordinate to the w coordinate. This works because
+Okay so what we need is a 4x4 matrix that multiplies the x and y coordinate with n and the z coordinate
+with itself. We also need to multiply the w coordinate with z,
+to move the z coordinate to the w coordinate. This works because
 w is like a scaling factor for the x, y and z coordinate but is often set to 1.
 
 \[
@@ -729,16 +731,17 @@ Therefor the final matrix looks like this:
 This matrix will actually only give us \(z^2\) on the near and far plane. The Objects in between will have
 a little offset on the z axis but will remain linearly interpolated between the near and far plane.
 
-Now that we have the orthographic view volume, we need to move it to the origin and scale it to the size of the CVV.
-The CVV looks like this from the front:
+Now that we have the orthographic view volume, we need to move it to the origin and
+scale it to the size of the CVV. The CVV looks like this from the front:
 
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.60\textwidth]{images/clip-space.svg}
 	\caption{Canonical View Volume Front}
 \end{figure} \FloatBarrier
 
-It is a coordinate system where the y axis is flipped and therefore the positive of the z axis is pointing away from us.
-Each axis ranges from -1 to 1 except the z axis, which ranges from 0 to 1. This is because the everything negative on the z axis
+It is a coordinate system where the y axis is flipped and therefore the positive of the z axis
+is pointing away from us. Each axis ranges from -1 to 1 except the z axis,
+which ranges from 0 to 1. This is because the everything negative on the z axis
 is behind us and therefor not visible.
 
 Lets first move the orthographic view volumes near planes center to the origin.
@@ -753,16 +756,20 @@ Lets first move the orthographic view volumes near planes center to the origin.
 \]
 
 
-When the near plane is 0.1 units away, we need to move the orthographic view volume by 0.1 units on the z axis.
-So the \(c_z\) value is the distance of the near plane on the z axis aka n.
+When the near plane is 0.1 units away, we need to move the orthographic view volume
+by 0.1 units on the z axis. So the \(c_z\) value is the distance of the near
+plane on the z axis aka n.
 
-For the x and y value we just have to calculate the center of the near plane. This is done by adding the opposite
-sides together and then dividing them by 2. So for \(c_x\) we get \(\frac{l + r}{2}\) and for \(c_y\) we get \(\frac{t + b}{2}\).
+For the x and y value we just have to calculate the center of the near plane.
+This is done by adding the opposite sides together and then dividing them by 2.
+So for \(c_x\) we get \(\frac{l + r}{2}\) and for \(c_y\) we get \(\frac{t + b}{2}\).
 
-Next we scale the orthographic view volume to the size of the CVV. This is done by multiplying the x, y and z coordinate
+Next we scale the orthographic view volume to the size of the CVV.
+This is done by multiplying the x, y and z coordinate
 with the dimension of the canonical view volume over the size of the orthographic view volume.
 We can get the size from subtracting the right side from the left side for the x axis,
-the top from the bottom for the y axis and the far from the near plane for the z axis. So the scaling matrix looks like this:
+the top from the bottom for the y axis and the far from the near plane for the z axis.
+So the scaling matrix looks like this:
 
 \[
 	\begin{bmatrix}
@@ -798,13 +805,16 @@ Now we can combine both transformations to get the final projection matrix:
 	\end{bmatrix}
 \]
 
-This is the projection matrix that is used to transform the view space to the clip space. The clip space is then used to
-determine what is visible on the screen and what is not. Everything that is visible will now be projected onto the 2D screen.
+This is the projection matrix that is used to transform the view space to the clip space.
+The clip space is then used to determine what is visible on the screen and what is not.
+Everything that is visible will now be projected onto the 2D screen.
 
 \subsection{Viewport Transformation}
 
-The viewport is the area on the screen where the image is displayed. It is defined by the x and y position, the width and height and the
-min and max depth and starts at the top left corner of the screen. The viewport transformation is used to transform the NDC to the screen space.
+The viewport is the area on the screen where the image is displayed.
+It is defined by the x and y position, the width and height and the
+min and max depth and starts at the top left corner of the screen.
+The viewport transformation is used to transform the NDC to the screen space.
 This is done by scaling the x and y coordinate to the width and height of the viewport,
 scaling and moving the z coordinate to the depth range and then adding
 half of the width to the x coordinate and subtracting half of the height from the y coordinate
@@ -819,8 +829,10 @@ to move the origin to the top left corner of the screen.
 	\end{bmatrix}
 \]
 
-This will transform the NDC to the screen space, but we can also add an x and y offset to the viewport to move the image around on the screen.
-That would mean we need to add the x and y offset when moving the origin to the top left corner of the screen.
+This will transform the NDC to the screen space, but we can also add an x
+and y offset to the viewport to move the image around on the screen.
+That would mean we need to add the x and y offset when moving
+the origin to the top left corner of the screen.
 
 \[
 	\begin{bmatrix}
@@ -1075,7 +1087,8 @@ A point in the triangle ABC, like the center, could be calculated like this:
 	\end{bmatrix}
 \]
 
-Because the center is equally distant from all vertices, the barycentric coordinates need to be equal for u, v and w
+Because the center is equally distant from all vertices,
+the barycentric coordinates need to be equal for u, v and w
 and when we sum them up they need to equal 1.
 
 First the inner tessellation levels subdivides the patches edges into the desired amount of segments and
@@ -1101,16 +1114,20 @@ So the length of one segment is \(\frac{1}{4}\).
 For the first vertex we then get \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\), for the second
 vertex \{0, \(\frac{2}{4}\), \(\frac{2}{4}\}\) and for the third vertex \{0, \(\frac{3}{4}\), \(\frac{1}{4}\}\).
 
-We do the same for each edge and then calculate the intersection of the perpendicular lines to get the inner triangles
-corner vertices.
+We do the same for each edge and then calculate the intersection of the
+perpendicular lines to get the inner triangles corner vertices.
 
-For the bottom left corner of the inner triangle we take the 2 vertices of the outer triangle \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\)
+For the bottom left corner of the inner triangle we take the
+2 vertices of the outer triangle \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\)
 and \{\(\frac{1}{4}\), 0, \(\frac{3}{4}\}\).
 
-Now we need to get the direction of the perpendicular line. This is way easier than it sounds, because our barycentric triangle is
-equilateral. That means that when we draw a line to display the height of the triangle and take it's direction, we get the direction
-of the perpendicular line to the lower edge. Luckily, because the triangle stays the same no matter how we rotate it, we can just use
-the direction of the height line to get the direction of the perpendicular lines for each triangle. \cite{equilateral-triangle}
+Now we need to get the direction of the perpendicular line.
+This is way easier than it sounds, because our barycentric triangle is equilateral.
+That means that when we draw a line to display the height of the triangle and take it's direction,
+we get the direction of the perpendicular line to the lower edge.
+Luckily, because the triangle stays the same no matter how we rotate it, we can just use
+the direction of the height line to get the direction of the
+perpendicular lines for each triangle. \cite{equilateral-triangle}
 
 \begin{figure}[htbp]
 	\centering \includegraphics[width=0.7\textwidth]{Equiletral-Triangle.png}
@@ -1128,7 +1145,8 @@ Considering that we can calculate the direction of the perpendicular line:
 	\end{aligned}
 \]
 
-We can now add this direction to the vertex \(\{\frac{1}{4}, 0, \frac{3}{4}\}\) to get the perpendicular lines function.
+We can now add this direction to the vertex \(\{\frac{1}{4}, 0, \frac{3}{4}\}\)
+to get the perpendicular lines function.
 
 \[
 	f(v) = \{\frac{1}{4} - \frac{1}{2}v, 0 + v, \frac{3}{4} - \frac{1}{2}v\}
@@ -1155,32 +1173,45 @@ To get the intersection we simply set the functions equal to each other and solv
 	\end{aligned}
 \]
 
-Voil\`a, that's how we get the corners of the inner triangle. Now vulkan subdivides the inner triangles edges by n-2 with n being the
-inner tessellation level. Because our tessellation level is 4 we subdivide the first inner triangles edges into 2
-pieces. The vertex dividing the inner edge is then calculated by projecting a perpendicular line form the outer edge to the inner edge.
-We repeat this until n is smaller than 3, but when we start with n = 2 we will have a tessellation vertex in the center of the
-triangle. \cite{tessellation}
+Voil\`a, that's how we get the corners of the inner triangle.
+Now vulkan subdivides the inner triangles edges by n-2 with n being the
+inner tessellation level. Because our tessellation level is 4
+we subdivide the first inner triangles edges into 2 pieces.
+The vertex dividing the inner edge is then calculated by projecting a
+perpendicular line from the outer edge to the inner edge.
+We repeat this until n is smaller than 3, but when we start with n = 2
+we will have a tessellation vertex in the center of the triangle. \cite{tessellation}
 
-When we have calculated all inner tessellation vertices we fill the area of the concentric triangles with triangles by
-connecting the vertices in a way that ensures that the triangles are not overlapping. If the inner tessellation level is 2 and
-no outer tessellation level is set, the tessellator will connect the corners of the triangle with the center vertex. \cite{tessellation}
-Unfortunately, considering more complicated tessellation, the order in witch the vertices are created and connected is implementation dependent,
+When we have calculated all inner tessellation vertices we fill the area of the
+concentric triangles with triangles by connecting the vertices in a way that
+ensures that the triangles are not overlapping. If the inner tessellation level is 2 and
+no outer tessellation level is set, the tessellator will connect the corners
+of the triangle with the center vertex. \cite{tessellation}
+Unfortunately, considering more complicated tessellation, the order in wich the vertices
+are created and connected is implementation dependent,
 which means that it is up to the GPU to decide how the vertices are connected. \cite{tessellation}
 
-After the inner patches are filled, we discard the outer triangles temporary vertices and subdivide each edge by
-it's outer tessellation level. The tessellator now fills the area of the outer triangle with the outermost inner triangle.
-Now that all the triangles are created, the tessellation primitive generator assigns the vertices their barycentric coordinates (u,v,w)
+After the inner patches are filled, we discard the outer triangles temporary vertices
+and subdivide each edge by it's outer tessellation level.
+The tessellator now fills the area of the outer triangle with the outermost inner triangle.
+Now that all the triangles are created, the tessellation primitive generator assigns
+the vertices their barycentric coordinates (u,v,w)
 and passes them to the tessellation evaluation shader. \cite{tessellation}
 
-For Quads and isolines the process is similar, but the patch only has 2 barycentric coordinates. So we can just calculate the
-barycentric coordinates as if we were in an x,y coordinate system. \cite{tessellation}
+For Quads and isolines the process is similar, but the patch only has 2 barycentric coordinates.
+So we can just calculate the barycentric coordinates as if we were in
+an x,y coordinate system. \cite{tessellation}
 
-Quads have 4 outer tessellation levels that subdivide the outer edges and 2 inner tessellation levels that subdivide the area of the quad
-into smaller quads. The first inner tessellation level divides the columns and the second inner tessellation level divides the rows.
+Quads have 4 outer tessellation levels that subdivide the outer edges
+and 2 inner tessellation levels that subdivide the area of the quad
+into smaller quads. The first inner tessellation level divides the columns
+and the second inner tessellation level divides the rows.
 At the end the tessellator fills the area of the quad with triangles. \cite{tessellation}
 
-Isolines on the other hand is a set of horizontal lines that have a length of 1 on the u axis and are equally spaced on the v axis.
-They only have 2 outer tessellation levels that define how many single lines are created and in how many segments they are divided.
+Isolines on the other hand is a set of horizontal lines that have a length
+of 1 on the u axis and are equally spaced on the v axis.
+They only have 2 outer tessellation levels that define how many single lines
+are created and in how many segments they are divided.
 
 \begin{figure}[hbtp]
 	\centering \includegraphics[width=0.4\textwidth]{Tessellation_isoline_6_2.png}
@@ -1188,21 +1219,31 @@ They only have 2 outer tessellation levels that define how many single lines are
 	\cite{fig:isoline}
 \end{figure} \FloatBarrier
 
-These were the possible tessellation types that the tessellator can work with but there are a few more things to consider for each of them.
-For example, we can change the tessellator spacing, which defines the spacing of the outer tessellation levels. The tessellator spacing
-can be either equal, fractional even or fractional odd, which allow us to have a tessellation level of 2.5 for example. \cite{tessellation}
-We can also control the vertex winding order, which defines which side of the triangle is the front and which is the back. This is important
+These were the possible tessellation types that the tessellator
+can work with but there are a few more things to consider for each of them.
+For example, we can change the tessellator spacing,
+which defines the spacing of the outer tessellation levels.
+The tessellator spacing can be either equal, fractional even or fractional odd,
+which allow us to have a tessellation level of 2.5 for example. \cite{tessellation}
+We can also control the vertex winding order, which defines which side of the triangle
+is the front and which is the back. This is important
 for culling and lighting calculations. \cite{tessellation}
 
-Please note that all of this is already handled by vulkan and all we have to do is to set the tessellation levels and optionally spacing
-and winding order in the tessellation control shader and pass it over to the tessellation primitive generator. \cite{tessellation}
+Please note that all of this is already handled by vulkan
+and all we have to do is to set the tessellation levels and optionally spacing
+and winding order in the tessellation control shader and pass it over
+to the tessellation primitive generator. \cite{tessellation}
 
-After the tessellator created all of the new triangles the tessellation evaluation shader is called to transform the new vertices to the clip space.
-The tessellation evaluation shader takes each barycentric coordinate and the position of the original triangles corner vertices, that we have forwarded in
+After the tessellator created all of the new triangles the tessellation evaluation shader
+is called to transform the new vertices to the clip space.
+The tessellation evaluation shader takes each barycentric coordinate
+and the position of the original triangles corner vertices, that we have forwarded in
 the control shader, to calculate the position of the new vertices in clip space. \cite{tessellation}
 
-To do so we can multiply the barycentric coordinates with the corner vertices and add them together to get the new vertex position.
-For a triangle with vertices A, B and C and barycentric coordinates \{u, v, w\} the new vertex position would be calculated like this:
+To do so we can multiply the barycentric coordinates with the corner vertices
+and add them together to get the new vertex position.
+For a triangle with vertices A, B and C and barycentric coordinates \{u, v, w\}
+the new vertex position would be calculated like this:
 
 \[
 	\begin{aligned}
@@ -1212,77 +1253,102 @@ For a triangle with vertices A, B and C and barycentric coordinates \{u, v, w\} 
 	\end{aligned}
 \]
 
-After that we can transform them further, adding curvature or displacement to the vertices. When using a quad we can adjust the vertices
+After that we can transform them further, adding curvature or displacement to the vertices.
+When using a quad we can adjust the vertices
 by using a 2D texture like a height map to displace the vertices. \cite{tessellation}
 
-One last thing to mention is that when we use a tessellation shader we actually skip the perspective projection in the vertex shader and
-instead do it in the tessellation evaluation shader. This is because the newly created vertice have to be projected to the clip space
+One last thing to mention is that when we use a tessellation shader
+we actually skip the perspective projection in the vertex shader and
+instead do it in the tessellation evaluation shader.
+This is because the newly created vertice have to be projected to the clip space
 along with the original vertices. \cite{tessellation}
 
 \subsection{Geometry Shader}
 
-The next stage is the geometry shader (GS). The GS is used to create new primitives and is great at procedural generation of geometry.
-That includes creating particles, grass or fur. It takes all the vertices of a primitive and generates new vertices that are then combined to
-either points, line strips or triangle strips. For example, we could take a single point and create a quad around it by emitting 4 new vertices.
+The next stage is the geometry shader (GS). The GS is used to create new
+primitives and is great at procedural generation of geometry.
+That includes creating particles, grass or fur. It takes all the vertices of a primitive
+and generates new vertices that are then combined to
+either points, line strips or triangle strips.
+For example, we could take a single point and create a quad around it by emitting 4 new vertices.
 These will then be combined to 2 triangles by the pipeline, forming a quad. \cite{geometry-shader}
 
-I will not go further into explaining the geometry shader because its implementation is very dependent on the use case. It is enough to know
+I will not go further into explaining the geometry shader because its
+implementation is very dependent on the use case. It is enough to know
 some use cases and that we basically can create new primitives with it.
 
 \subsection{Vertex Post Processing}
 
-After all of the previous stages we can do some post processing on the vertices. This is done by the vertex post processing stage.
+After all of the previous stages we can do some post processing on the vertices.
+This is done by the vertex post processing stage.
 Here we have many sub stages that I will go over briefly.
 
-\textbf{Transform Feedback} is used to capture the output of the previous stages and store it in a feedback buffer. This can be used to
+\textbf{Transform Feedback} is used to capture the output of the previous stages
+and store it in a feedback buffer. This can be used to
 call a new draw command with the stored data. \cite{vertex-post-processing}
 
-\textbf{Viewport Swizzle} is used to change the orientation of the viewport. For example, we can flip the y axis to display the image upside down.
+\textbf{Viewport Swizzle} is used to change the orientation of the viewport.
+For example, we can flip the y axis to display the image upside down.
 To achieve this we can define the swizzle for each axis via the VkViewportSwizzleNV struct. \cite{vertex-post-processing}
 
-\textbf{Flat shading} is used to color the whole primitive with one color. This is done by calculating the color of the first vertex and then
+\textbf{Flat shading} is used to color the whole primitive with one color.
+This is done by calculating the color of the first vertex and then
 using this color for the whole primitive. \cite{vertex-post-processing}
 
-\textbf{Primitive Clipping} is used to discard primitives that are outside of the clip space. This is done by checking if the primitive is
+\textbf{Primitive Clipping} is used to discard primitives that are outside of the clip space.
+This is done by checking if the primitive is
 completely outside of the clip space and then discarding it. \cite{vertex-post-processing}
-When only a part of the primitive is outside of the clip space, the pipeline will discard that part and create new vertices on the edge of the clip space,
+When only a part of the primitive is outside of the clip space,
+the pipeline will discard that part and create new vertices on the edge of the clip space,
 where the primitive would intersects the clip space. \cite{vertex-post-processing}
 
-Clipping is done by checking if the vertex's x, y and z coordinates are in between -w and w or z\textunderscore min and w for z.
+Clipping is done by checking if the vertex's x, y and z coordinates
+are in between -w and w or z\textunderscore min and w for z.
 If they are not, the vertex is outside of the clip space and will be discarded.
 
-\textbf{Clipping Shader Outputs} is used to discard the vertex output attributes that are outside of the clip space.
+\textbf{Clipping Shader Outputs} is used to discard the vertex output attributes
+that are outside of the clip space.
 
-\textbf{Controlling Viewport W Scaling} can be used to change the w coordinate of the vertex. This can help to adjust the depth of an object.
+\textbf{Controlling Viewport W Scaling} can be used to change the w coordinate of the vertex.
+This can help to adjust the depth of an object.
 
-\textbf{Coordinate Transformation} is the step where our clip coordinates (x,y,z,w) are transformed to (x,y,z) by dividing x, y and z by w.
-This step is the perspective divide and provides us with normalized device coordinates (NDC) \cite{vertex-post-processing}
+\textbf{Coordinate Transformation} is the step where our clip coordinates (x,y,z,w)
+are transformed to (x,y,z) by dividing x, y and z by w.
+This step is the perspective divide and provides us with
+normalized device coordinates (NDC) \cite{vertex-post-processing}
 
-\textbf{Render Pass Transform} can be enabled to rotate the viewport on the xy plane. This can be used to rotate the image on the screen
-by either 90, 180 or 270 degrees, using the VK\textunderscore SURFACE\textunderscore TRANSFORM\textunderscore ROTATE\textunderscore {degree}\textunderscore
-BIT\textunderscore KHR attribute. \cite{vertex-post-processing}
+\textbf{Render Pass Transform} can be enabled to rotate the viewport on the xy plane.
+This can be used to rotate the image on the screen by either 90, 180 or 270 degrees, using the
+VK\textunderscore SURFACE\textunderscore TRANSFORM\textunderscore ROTATE\textunderscore
+{degree}\textunderscore BIT\textunderscore KHR attribute. \cite{vertex-post-processing}
 
-\textbf{Controlling the Viewport} is a stage where vulkan scales the NDC to the dimensions of the viewport. It is also possible to create
+\textbf{Controlling the Viewport} is a stage where vulkan scales the NDC
+to the dimensions of the viewport. It is also possible to create
 scissors to only render a part of the viewport.
 
 \subsection{Rasterization}
 
-This stage of the pipeline converts our primitives into a 2D image. It takes our viewport and checks which pixels are covered by the
+This stage of the pipeline converts our primitives into a 2D image.
+It takes our viewport and checks which pixels are covered by the
 primitives and then fills them with the color of the primitive.
 
-Let's take a look on how this is done. Again, there are multiple primitives that can be rasterized: points, lines and triangles.
+Let's take a look on how this is done. Again, there are multiple primitives that can be rasterized:
+points, lines and triangles.
 
 We'll start with triangles, because they will be needed for the other types too.
 
-The first step of rasterization is determining if the triangle is front or back facing, which is done by checking if the area of the triangle
-is positive or negative. We can calculate the area of a triangle using the following formula:
+The first step of rasterization is determining if the triangle is front or back facing,
+which is done by checking if the area of the triangle is positive or negative.
+We can calculate the area of a triangle using the following formula:
 
 \[
 	a = -\frac{1}{2} \sum_{i=0}^{n-1} (x_i \cdot y_{i\oplus 1} - x_{i\oplus 1} \cdot y_i)
 \]
 
-This probably looks confusing so let me explain it a bit further. n is the number of vertices in our triangle, which is 3, while i is the current
-vertex's index and \(\oplus\) is basically performing \( i+1\) mod n. So when we have a triangle with vertices A, B and C the sum could look like this:
+This probably looks confusing so let me explain it a bit further.
+n is the number of vertices in our triangle, which is 3, while i is the current
+vertex's index and \(\oplus\) is basically performing \( i+1\) mod n.
+So when we have a triangle with vertices A, B and C the sum could look like this:
 
 \[A_x \cdot B_y - B_x \cdot A_y + B_x \cdot C_y - C_x \cdot B_y + C_x \cdot A_y - A_x \cdot C_y\]
 
@@ -1290,11 +1356,14 @@ or like this:
 
 \[A_x \cdot C_y - C_x \cdot A_y + C_x \cdot B_y - B_x \cdot C_y + B_x \cdot A_y - A_x \cdot B_y\]
 
-depending on the order of the vertices. If your familiar with vector math you might recognize this as the cross product of two side vectors that originate from the same vertex.
-The cross product of these two vectors gives us a vector that is perpendicular to the triangle, which can either point towards us or away from us.
+depending on the order of the vertices. If your familiar with vector math you might
+recognize this as the cross product of two side vectors that originate from the same vertex.
+The cross product of these two vectors gives us a vector that is perpendicular to the triangle,
+which can either point towards us or away from us.
 This is because our 2D display can be seen as a 3D space with the z axis pointing out of the screen.
 
-For example we can take the two vectors \(\vec{AB} = B - A\) and \(\vec{AC} = C - A\) and calculate the cross product of them to get the normal of the triangle.
+For example we can take the two vectors \(\vec{AB} = B - A\) and \(\vec{AC} = C - A\)
+and calculate the cross product of them to get the normal of the triangle.
 
 To calculate the cross product we can look at this visual representation:
 
@@ -1304,7 +1373,8 @@ To calculate the cross product we can look at this visual representation:
 	\caption{Cross Product} \FloatBarrier
 \end{figure}
 
-We simply write each vector 2 times under each other, cut out the top and bottom row and then multiply diagonally, subtract the blue result from the red result
+We simply write each vector 2 times under each other, cut out the top and bottom row
+and then multiply diagonally, subtract the blue result from the red result
 and add each "cross" result together.
 
 In this case we would have:
@@ -1320,86 +1390,126 @@ In this case we would have:
 \]
 
 This last therm comes out to our previous formula.
-Now that we have a perpendicular vector to the triangle we can calculate the area of the triangle, because the area of the triangle is half of
-the cross product. That's why we multiply the cross product by \(\frac{1}{2}\). But wait a minute, why is there a minus sign in front of the formula?
-This comes from the fact that our z axis is flipped, which means that a positive area means that the triangle is facing away from us which is not
+Now that we have a perpendicular vector to the triangle we can calculate the area of the triangle,
+because the area of the triangle is half of the cross product.
+That's why we multiply the cross product by \(\frac{1}{2}\).
+But wait a minute, why is there a minus sign in front of the formula?
+This comes from the fact that our z axis is flipped, which means that a positive area
+means that the triangle is facing away from us which is not
 intuitive. So we flip the sign to get a positive vector.
 
-To actually tell the pipeline what negation is considered front facing we can set the frontFace attribute in the VkPipelineRasterizationStateCreateInfo
+To actually tell the pipeline what negation is considered front facing
+we can set the frontFace attribute in the VkPipelineRasterizationStateCreateInfo
 to either \\
 VK\textunderscore FRONT\textunderscore FACE\textunderscore CLOCKWISE or
 VK\textunderscore FRONT\textunderscore FACE\textunderscore COUNTER\textunderscore CLOCKWISE.
-Clockwise means that the triangle is front facing if the area is negative and counter clockwise then covers the opposite. \cite{rasterization}
+Clockwise means that the triangle is front facing if the area is negative
+and counter clockwise then covers the opposite. \cite{rasterization}
 
-Next they are culled according to the cullMode attribute in the VkPipelineRasterizationStateCreateInfo. This can be set to either
+Next they are culled according to the cullMode attribute
+in the VkPipelineRasterizationStateCreateInfo. This can be set to either
 VK\textunderscore CULL\textunderscore MODE\textunderscore NONE, \\
 VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT,
 VK\textunderscore CULL\textunderscore MODE\textunderscore BACK or \\
 VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT\textunderscore AND\textunderscore BACK.
-This determines if the front facing, back facing, both or none of the triangles are discarded. \cite{rasterization}
+This determines if the front facing, back facing,
+both or none of the triangles are discarded. \cite{rasterization}
 
-Next we take the vertices of each triangle and determine its bounding box. A bounding box is basically the smallest rectangle that
-contains the whole triangle. By doing this we don't have to check every pixel if it is inside the triangle, but only the pixels that are
-inside the bounding box. This is done by taking the minimum and maximum x and y coordinates of the triangle's vertices.
+Next we take the vertices of each triangle and determine its bounding box.
+A bounding box is basically the smallest rectangle that
+contains the whole triangle. By doing this we don't have to check every pixel
+if it is inside the triangle, but only the pixels that are
+inside the bounding box. This is done by taking the minimum
+and maximum x and y coordinates of the triangle's vertices.
 
-Next we iterate through every pixels center inside the bounding box, and check if it is inside the triangle.
-A point is inside the triangle if it is to the right of all the triangles edge vectors when it is clockwise oriented
-and to the left when it is counter clockwise oriented. We can check this by calculating the cross product of the edge vectors and the vector
-from the first vertex to the pixels position. If the cross product is positive the point is to the right of the edge, if it is negative it is to the left.
+Next we iterate through every pixels center inside the bounding box,
+and check if it is inside the triangle.
+A point is inside the triangle if it is to the right of all
+the triangles edge vectors when it is clockwise oriented
+and to the left when it is counter clockwise oriented.
+We can check this by calculating the cross product of the edge vectors and the vector
+from the first vertex to the pixels position. If the cross product is positive
+the point is to the right of the edge, if it is negative it is to the left.
 If the cross product is 0 the point is on the edge.
 
-Okay but what if the point is on an edge of adjacent triangles? How do we know which triangle should be drawn?
-For this case graphics APIs usually use the top-left rule. This rule states that left and top edges are considered to be inside the triangle
+Okay but what if the point is on an edge of adjacent triangles?
+How do we know which triangle should be drawn?
+For this case graphics APIs usually use the top-left rule.
+This rule states that left and top edges are considered to be inside the triangle
 while right and bottom edges are considered to be outside. How do we know which edge is which?
 
-A top edge is an edge where the y coordinate is flat and pointing to the right, so where the y coordinate doesn't change
-and the x coordinate is increasing when the winding order is clockwise or else is decreasing when it is counter clockwise.
+A top edge is an edge where the y coordinate is flat and pointing to the right,
+so where the y coordinate doesn't change
+and the x coordinate is increasing when the winding order is clockwise
+or else is decreasing when it is counter clockwise.
 
-A left edge is an edge where the y coordinate is decreasing (clockwise), which means that it is pointing upwards, because the y axis is flipped.
+A left edge is an edge where the y coordinate is decreasing (clockwise),
+which means that it is pointing upwards, because the y axis is flipped.
 
-Is the edge a top or left edge? Then the point is inside the triangle, otherwise an offset is added to move the point outside of the triangle.
+Is the edge a top or left edge? Then the point is inside the triangle,
+otherwise an offset is added to move the point outside of the triangle.
 
-Some of you might not like the idea of checking every pixel inside the bounding box, because it is very inefficient. There is actually
-a way to rasterize a triangle without a bounding box. To do so we have to take a look at a fact that comes from using the barycentric coordinates.
-When we go through the triangle and calculate one of the barycentric coordinates we can see that the step size we take is always the same
-when we go from one pixel in the triangle to the next. This comes from an intresting property of the barycentric coordinates. When we go from
-one pixel to the next the barycentric coordinates change by a constant amount. This means that we can rasterize a triangle by only checking
-the barycentric coordinates of the first pixel and then adding a constant amount to the barycentric coordinates to get the barycentric coordinates.
+Some of you might not like the idea of checking every pixel inside the bounding box,
+because it is very inefficient. There is actually a way to rasterize
+a triangle without a bounding box. To do so we have to take a look at
+a fact that comes from using the barycentric coordinates.
+When we go through the triangle and calculate one of the barycentric coordinates
+we can see that the step size we take is always the same
+when we go from one pixel in the triangle to the next.
+This comes from an intresting property of the barycentric coordinates.
+When we go from one pixel to the next the barycentric coordinates
+change by a constant amount. This means that we can rasterize a triangle by only checking
+the barycentric coordinates of the first pixel and then adding a constant amount
+to the barycentric coordinates to get the barycentric coordinates.
 If the barycentric coordinates are inside the triangle we draw the pixel, if not we skip it.
 
-We can calculate the constant amount by calculating the barycentric coordinates of the next pixel and then subtracting the barycentric coordinates
-of the current pixel from them. This will give us the constant amount we have to add to the barycentric coordinates to get the barycentric coordinates
-of the next pixel.
+We can calculate the constant amount by calculating the barycentric coordinates
+of the next pixel and then subtracting the barycentric coordinates
+of the current pixel from them. This will give us the constant amount we have to add
+to the barycentric coordinates to get the barycentric coordinates of the next pixel.
 
-For lines and points we use the same methods, we just have to draw a box around the line or point and then check if the pixel is inside this box.
+For lines and points we use the same methods, we just have to draw a box
+around the line or point and then check if the pixel is inside this box.
 The box drawn is not the bounding box but the thickness of the line or point.
 
 We have two problems left.
 
-First, lines and edges will not look smooth because we only interpolate the color of the vertices. They will look chunky
-because we fully color the pixel if the center is inside the box. To fix this we can use anti-aliasing. Anti-aliasing is a technique used to
-smooth the edges of a line or point. We can do this by checking how much of the pixel is covered by the line and then color the pixel
-accordingly.
+First, lines and edges will not look smooth because we only interpolate the color of the vertices.
+They will look chunky because we fully color the pixel if the center is inside the box.
+To fix this we can use anti-aliasing. Anti-aliasing is a technique used to
+smooth the edges of a line or point. We can do this by checking how much of the pixel
+is covered by the line and then color the pixel accordingly.
 
-Second, what if we have two triangles that overlap? We can't just draw the second triangle over the first one. To fix this we can use a depth buffer.
-You might have asked yourself why we need a z coordinate for the vertices. This is because we can use the z coordinate to determine which pixel is
-in front of each other. When we rasterize a pixel we write the z value into an depth buffer and then we check if the z value of the next pixel is
-smaller than the z value in the depth buffer. If it is we draw the pixel and write the new depth into the depth buffer, if not we skip it.
+Second, what if we have two triangles that overlap?
+We can't just draw the second triangle over the first one.
+To fix this we can use a depth buffer. You might have asked yourself why
+we need a z coordinate for the vertices. This is because we can use the z coordinate
+to determine which pixel is in front of each other. When we rasterize a pixel
+we write the z value into an depth buffer and then we check if the z value of the next pixel is
+smaller than the z value in the depth buffer. If it is we, draw the pixel and write the new depth
+into the depth buffer, if not we skip it.
 
 \subsection{Fragment Shader}
 
-The fragment shader is the last programmable stage of the pipeline. It takes the fragment data from the rasterization stage and performs
+The fragment shader is the last programmable stage of the pipeline.
+It takes the fragment data from the rasterization stage and performs
 operations on each fragment. This is where we can calculate the color of the fragment.
 
 To do so we need to interpolate the vertex colors.
-Fortunately, we already know a way on getting the relative position of a point to a triangles vertices, the barycentric coordinates.
-We can use the barycentric coordinates to interpolate the color of a vertex to get the color of the pixel.
+Fortunately, we already know a way on getting the relative position
+of a point to a triangles vertices, the barycentric coordinates.
+We can use the barycentric coordinates to interpolate
+the color of a vertex to get the color of the pixel.
 
-But how do we get the baricentric coordinates of a pixel? We can use the same method as before, by calculating the area of the triangle
-between to vertices and the pixel. So we take the cross product of on side vector and the vector from the first vertex to the pixel
-and divide it by 2 to get its area. We do this for all 3 sides and then divide them by the area of the full triangle to get the barycentric coordinates.
+But how do we get the baricentric coordinates of a pixel?
+We can use the same method as before, by calculating the area of the triangle
+between to vertices and the pixel. So we take the cross product of one side vector
+and the vector from the first vertex to the pixel
+and divide it by 2 to get its area. We do this for all 3 sides and then divide them
+by the area of the full triangle to get the barycentric coordinates.
 
-For example when we have green vertex A\{1,2\}, red vertex B\{2,3\} and blue vertex C\{3,2\} and the coordinates of the pixel are
+For example when we have green vertex A\{1,2\}, red vertex B\{2,3\}
+and blue vertex C\{3,2\} and the coordinates of the pixel are
 \{2,2.5\} we can calculate the barycentric coordinates like this:
 
 \[
@@ -1411,11 +1521,14 @@ For example when we have green vertex A\{1,2\}, red vertex B\{2,3\} and blue ver
 	\end{aligned}
 \]
 
-So the barycentric coordinates are \{0.25, 0.25, 0.5\}. If you're confused on why I'm using the area times 2, it's because we can safe the
-computation of the actual area because we are only caring about the relative position of the pixel to the vertices, so as long as everything stays
+So the barycentric coordinates are \{0.25, 0.25, 0.5\}.
+If you're confused on why I'm using the area times 2, it's because we can safe the
+computation of the actual area because we are only caring about
+the relative position of the pixel to the vertices, so as long as everything stays
 at the same scale it will give us the same answer.
 
-Next we interpolate the colors of the vertices linearly to get the color of the pixel. This is done by multiplying the color of each vertex
+Next we interpolate the colors of the vertices linearly to get the color of the pixel.
+This is done by multiplying the color of each vertex
 with the barycentric coordinates and adding them together.
 
 \[
@@ -1433,78 +1546,105 @@ with the barycentric coordinates and adding them together.
 Which will give us this color: \{63.75, 63.75, 127.5\}.
 We repeat this for every fragment inside the triangle and then we have our rasterized image.
 
-But we can do more than just interpolate the color of the vertices. We can also apply lighting, textures and more.
+But we can do more than just interpolate the color of the vertices.
+We can also apply lighting, textures and more.
 
 \subsection{Blending}
 
-The last stage of the pipeline is blending. Blending is used to create transparency and some other graphical effects.
-There isn't much to say about blending. It gives us many options to blend the color of the fragment but all of the operations are
-performed by the GPU, so we don't have to worry about it. When blending is complete we have our final framebuffer that we can display.
+The last stage of the pipeline is blending. Blending is used to create transparency
+and some other graphical effects. There isn't much to say about blending.
+It gives us many options to blend the color of the fragment but all of the operations are
+performed by the GPU, so we don't have to worry about it.
+When blending is complete we have our final framebuffer that we can display.
 
 \section{Drawing Process}
 
 \subsection{Framebuffers}
 
-A Framebuffer consists of multiple attachments. An attachment is the buffer that holds either the color or depth of each fragment.
+A Framebuffer consists of multiple attachments. An attachment is the buffer
+that holds either the color or depth of each fragment.
 These buffers are written to by the pipeline and then presented to the screen.
-The color attachment is used to store the color of each fragment, while the depth attachment is used to store the depth of each fragment.
-The depth attachment is used to save the z coordinate of each fragment to prevent drawing over fragments if they are not visible. \cite{framebuffers}
+The color attachment is used to store the color of each fragment,
+while the depth attachment is used to store the depth of each fragment.
+The depth attachment is used to save the z coordinate of each fragment to prevent
+drawing over fragments if they are not visible. \cite{framebuffers}
 
 \subsection{Render Pass}
 
-A render pass holds the information about how many color and depth attachments we have and how they are used in the pipeline.
-It can consist of multiple subpasses, which are used to render the scene in multiple steps. For example, we can render the scene
+A render pass holds the information about how many color and depth attachments
+we have and how they are used in the pipeline.
+It can consist of multiple subpasses, which are used to render the scene in multiple steps.
+For example, we can render the scene
 in one subpass and then apply post processing in another subpass. \cite{render-pass}
 
 \subsection{Swapchain}
 
-The swapchain is used to present the final framebuffer to the screen. It consists of usually 2 (Double Buffering) or more framebuffers.
+The swapchain is used to present the final framebuffer to the screen.
+It consists of usually 2 (Double Buffering) or more framebuffers.
 On a swapchain we can present one framebuffer while we render to another framebuffer.
-The presented framebuffer is called the front buffer and the rendered framebuffer is called the back buffer.
-Every time a new frame is rendered the front and back buffers are swapped. This is done to prevent screen tearing.
-You know when the screen is cut into 2 different images? That's screen tearing. It happens when the GPU is rendering to the framebuffer
-while the screen is reading from it. But that only happens when we have V-Sync disabled.
+The presented framebuffer is called the front buffer and the rendered framebuffer
+is called the back buffer. Every time a new frame is rendered the
+front and back buffers are swapped. This is done to prevent screen tearing.
+You know when the screen is cut into 2 different images? That's screen tearing.
+It happens when the GPU is rendering to the framebuffer while the screen is reading from it.
+But that only happens when we have V-Sync disabled.
 
-There are two problems with Double Buffering. It can cause input lag. This is because the GPU has to wait for the swapchain to swap the framebuffers
-before it can render the next frame. To fix this we can use Triple Buffering. The other problem occures when the GPU takes longer than one frame.
-This will cause the swapchain to wait for the GPU to finish rendering the frame before it can swap the framebuffers. This will cause the frame
-to drop and the game to stutter. To fix this we can use a third buffer to render to while the GPU is rendering the frame. This way the GPU can
+There are two problems with Double Buffering. It can cause input lag.
+This is because the GPU has to wait for the swapchain to swap the framebuffers
+before it can render the next frame. To fix this we can use Triple Buffering.
+The other problem occures when the GPU takes longer than one frame.
+This will cause the swapchain to wait for the GPU to finish rendering the frame
+before it can swap the framebuffers. This will cause the frame
+to drop and the game to stutter. To fix this we can use a third buffer
+to render to while the GPU is rendering the frame. This way the GPU can
 swap the framebuffers without waiting for the GPU to finish rendering the frame. \cite{swapchain}
 
 \section{Conclusion}
 
-This was a brief overview of the Vulkan pipeline and its rendering. Now that we have a basic understanding of the pipeline we can start
-programming our first Vulkan application. In the next chapter we will set up the Vulkan environment and create a window to render to.
+This was a brief overview of the Vulkan pipeline and its rendering.
+Now that we have a basic understanding of the pipeline we can start
+programming our first Vulkan application. In the next chapter we will set up
+the Vulkan environment and create a window to render to.
 
 \chapter{Setting up Vulkan}
 
-Because the Setup of Vulkan is highly dependent on your operating system and IDE I will only give a brief overview of the setup process.
+Because the Setup of Vulkan is highly dependent on your operating system and IDE
+I will only give a brief overview of the setup process.
 
-Let's start by setting up our development environment. First of all we need to to install the Vulkan SDK. You can download it from the
+Let's start by setting up our development environment.
+First of all we need to to install the Vulkan SDK. You can download it from the
 \href{https://vulkan.lunarg.com/sdk/home}{LunarG} website or use your preferred package manager.
 
-Now verify if your GPU and drivers support Vulkan. To do so go into the Bin folder of the Vulkan SDK and run the
-\textit{vkcube.exe} program. If it runs without any errors and display a cube you are good to go. If not you have to update your drivers or
-include the Vulkan runtime in your system.
+Now verify if your GPU and drivers support Vulkan.
+To do so go into the Bin folder of the Vulkan SDK and run the
+\textit{vkcube.exe} program. If it runs without any errors and display a cube you are good to go.
+If not you have to update your drivers or include the Vulkan runtime in your system.
 
-Next we'll need to install GLFW, a library for creating windows and handling input. We will use it to create a window for our application.
+Next we'll need to install GLFW, a library for creating windows and handling input.
+We will use it to create a window for our application.
 You can download the 64-bit binaries from the \href{https://www.glfw.org/download.html}{GLFW} website or
-use your package manager. After downloading the binaries, extract them to a location that is easy to access.
+use your package manager. After downloading the binaries,
+extract them to a location that is easy to access.
 
-Because Vulkan does not include a library for linear algebra operations we will use the \href{https://github.com/g-truc/glm}{OpenGL Mathematics}
+Because Vulkan does not include a library for
+linear algebra operations we will use the \href{https://github.com/g-truc/glm}{OpenGL Mathematics}
 (GLM) library. Again, download the library and extract it to a location that is easy to access.
 
 Don't forget to install a C++ and GLSL compiler when needed.
 
 Next you will need to either setup your IDE or write a Makefile to compile your program.
 
-This is a very brief overview of the setup process, because explaining the setup for every operating system and IDE would be too much.
-Please read through this \href{https://vulkan-tutorial.com/Development_environment}{Vulkan Tutorial} to get a more detailed explanation.
+This is a very brief overview of the setup process,
+because explaining the setup for every operating system and IDE would be too much.
+Please read through this \href{https://vulkan-tutorial.com/Development_environment}{Vulkan Tutorial}
+to get a more detailed explanation.
 
 \section{Creating a Window}
 
-Before we can start rendering we need to create an application window, because vulkan is only a graphics API and doesn't provide a way to create a window.
-Do not worry about implementing a window from scratch, because there are libraries for creating windows for vulkan. We will use the
+Before we can start rendering we need to create an application window,
+because vulkan is only a graphics API and doesn't provide a way to create a window.
+Do not worry about implementing a window from scratch,
+because there are libraries for creating windows for vulkan. We will use the
 previously installed open source and multi-platform library GLFW (Graphics Library Framework)
 which provides us with a simple API that we can use to create a window and handle input. \cite{glfw}
 
@@ -1514,7 +1654,7 @@ of our game engine will be stored. In this folder create a new header file calle
 Inside we first need to include the GLFW header file and the define of \\
 GLFW\textunderscore INCLUDE\textunderscore VULKAN to include the vulkan header files.
 
-\begin{lstlisting}[language=C++, caption = {Include GLFW and Vulkan}]
+\begin{lstlisting}[language=C++]
   #define GLFW_INCLUDE_VULKAN
   #include <GLFW/glfw3.h>
 \end{lstlisting}
@@ -1524,7 +1664,8 @@ the namespace \textit{engine}, but feel free to use the actual name of your engi
 Inside we create our class Window with an constructor that takes the width, height
 and name of the window as arguments. We also add an empty destructor to clean up the window.
 
-\begin{lstlisting}[language=C++, caption = {Window Class}]
+\begin{lstlisting}[language=C++]
+  #include <string>
   namespace engine {
     class Window {
     public:
@@ -1534,19 +1675,12 @@ and name of the window as arguments. We also add an empty destructor to clean up
   }
 \end{lstlisting}
 
-Because the name is a string we need to include the it.
-
-\begin{lstlisting}[language=C++, caption = {Include String}]
-  #include <string>
-\end{lstlisting}
-
 The job of the constructor is to initialize a window with the given width, height and name.
 So let's create a private helper function that initializes the window. We will call it
 \textit{initWindow}. Let's also store the width, height and name of the window in private variables.
 After initializing the window we will need a pointer to the window object, so we can access it later.
 
-\begin{lstlisting}[language=C++, caption = {Window Class}]
-namespace engine {
+\begin{lstlisting}[language=C++]
   class Window {
       public:
         Window(int width, int height, std::string name);
@@ -1560,11 +1694,525 @@ namespace engine {
         std::string name;
         GLFWwindow* window;
     };
+\end{lstlisting}
+
+
+That's the header file for now. Let's implement the defined functions in the source file.
+In the Window.cpp file we include the window.hpp file add the namespace and
+call the initWindow function in the constructor and set the width, height and name of the class.
+
+\begin{lstlisting}[language=C++]
+#include "window.hpp"
+
+namespace engine {
+  Window::Window(int width, int height, std::string name)
+  : width(width), height(height), name(name) {
+      initWindow();
+    }
 }
 \end{lstlisting}
 
-That's the header file for now. Let's implement the defined functions in the source file.
-In the Window.cpp file we 
+Let's implement the \textit{initWindow} function. First we need to initialize GLFW with the
+\textit{glfwInit} function. Then we set two window hints with the \textit{glfwWindowHint} function.
+The first hint is the \textit{GLFW\textunderscore CLIENT\textunderscore API} and we set it to
+\textit{GLFW\textunderscore NO\textunderscore API}. This tells
+GLFW to not create context for the OpenGL API, because it was originaly designed for OpenGL. \cite{client-api-hint}
+The second hint is called \textit{GLFW\textunderscore RESIZABLE} and will be set to \textit{GLFW\textunderscore FALSE}
+for now, but will be changed later, when implementing a resizable windows.
+
+Once we're done with setting up the window we can create it with the \textit{glfwCreateWindow} function.
+It takes the width, height, title as a char pointer, a \textit{GLFWmonitor} pointer, to create a full screen
+window and a 5th parameter that is OpenGL specific. Pass in our variables, set the monitor pointer to a
+\textit{nullptr}, making our window use windowed mode and do the same for the last parameter.
+
+The output will be a pointer to our created \textit{GLFWwindow} that we can store in our \textit{*window}
+variable.
+
+\begin{lstlisting}[language=C++] 
+void Window::initWindow() {
+  glfwInit();
+
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+  window = 
+    glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+}
+\end{lstlisting}
+
+Finally we implement our destructor. It will destroy the window with \textit{glfwDestroyWindow()}
+and terminate GLFW with \textit{glfwTerminate()}.
+
+\begin{lstlisting}[language=C++]
+Window::~Window() {
+  glfwDestroyWindow(window);
+  glfwTerminate();
+}
+\end{lstlisting}
+
+Let's test our window by creating a application that creates a window.
+Create a app header and source file in the src folder. In the header file we include the window header file,
+define a constant \textit{WIDTH} and \textit{HEIGHT} and create a private window object.
+We also need a public \textit{run} function that initializes the window and runs the main loop.
+
+\newpage
+
+\begin{lstlisting}[language=C++]
+#include "core/window.hpp"
+
+namespace engine {
+  class App {
+    public:
+      static constexpr int WIDTH = 800;
+      static constexpr int HEIGHT = 600;
+
+      void run();
+    private:
+      Window window{WIDTH, HEIGHT, "Vulkan Application"};
+  };
+}
+\end{lstlisting}
+
+In the source file we include the app header file and check in the \textit{run} function if the window
+should be closed. While it is not closed we poll the events with \textit{glfwPollEvents()}.
+
+For checking if the window should be closed we create a boolean function \textit{shouldClose} in the
+window class and set it to the return value of \textit{glfwWindowShouldClose(window)}.
+
+\begin{lstlisting}[language=C++]
+#include "app.hpp"
+
+namespace engine {
+  void App::run() {
+    while (!window.shouldClose()) {
+      glfwPollEvents();
+    }
+  }
+} 
+\end{lstlisting}
+
+In the window class add the public \textit{shouldClose} function.
+Because it is very simple we can just implement it in the header file.
+
+\begin{lstlisting}[language=C++]
+bool shouldClose() { return glfwWindowShouldClose(window); }
+\end{lstlisting}
+
+Now we can create a main.cpp that runs the application.
+If it fails we return \textit{EXIT\textunderscore FAILURE} and the error.
+If it succeeds we return \textit{EXIT\textunderscore SUCCESS}.
+We don't need a header file for the main.cpp.
+
+\begin{lstlisting}[language=C++]
+#include "app.hpp"
+#include <iostream>
+
+int main() {
+  engine::App app{};
+
+  try {
+    app.run();
+  } catch (const std::exception &e) {
+    std::cerr << e.what() << '\n';
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
+\end{lstlisting}
+
+When running our program it should show us a non-resizable window with the title "Vulkan Application".
+
+Great! But we should also remove the windows copy constructor and operator. We don't want to copy the window object,
+because we're working with a pointer to the window object. This means that when we copy the window object
+we also copy the pointer. When we now delete the original object we also delete the \textit{GLFWwindow}, what
+will leave our copy with a dangling pointer. To prevent this potential bug we delete
+the copy constructor and copy operator in the window header file.
+
+\begin{lstlisting}
+  Window(const Window &) = delete;
+  Window &operator=(const Window &) = delete;
+\end{lstlisting}
+
+\subsection{Why non-resizable window}
+
+Our current window is not resizable. I've made this decision because when we will
+create our SwapChain later it is bound to the windows width an height. So when we
+resize or window the SwapChain will not be valid anymore. We will get at it once
+we have the base of our engine set up.
+
+\section{Devices}
+
+Let's go ahead and setup Vulkan. To do so we have to create an Instance,
+a Surface, pick a physical device aka graphics card, create a logical device
+and optionally setup validation layers and create a command pool.
+
+What each of these are will be explained further in a second. You might
+feel disoriented and confused sometimes when going through this code, but
+don't feel discouraged even if you don't understand anything on the first go.
+Keep copying the code and come back to this part eventually when you feel more
+comfortable with the whole system of Vulkan.
+
+\subsection{Vulkan instance}
+
+The first thing we need to do is to create a Vulkan instance.
+A vulkan instance is the connection between our application and the Vulkan library.
+
+Let's start by creating a new header file in the core folder called \textit{device.hpp}
+and include the Vulkan header file. In here we will create a constructor, a destructor
+a private function to create the Vulkan instance and a private variable to store the instance.
+
+\begin{lstlisting}[language=C++]
+#include <vulkan/vulkan.h>
+#include "window.hpp"
+
+namespace engine {
+  class Device {
+      public:
+        Device(Window &window);
+        ~Device();
+      private:
+        void createInstance();
+        VkInstance instance;
+        Window &window;
+
+        VkSurfaceKHR surface_;
+    };
+}
+\end{lstlisting}
+
+Create the source file and include the header file. In the constructor we call the
+\textit{createInstance} function.
+
+\begin{lstlisting}[language=C++]
+#include "device.hpp"
+
+namespace engine {
+  Device::Device(Window &window) : window{window} {
+    createInstance();
+  }
+}
+\end{lstlisting}
+
+To create an instance we need to fill out a struct called \textit{VkInstanceCreateInfo}.
+This struct holds information about the application and the Vulkan instance.
+The applications information is stored in a struct called \textit{VkApplicationInfo}.
+The application info is optional but it is good practice to fill it out. It contains
+the name and the version of the application, the engine and the version of the Vulkan API.
+
+\begin{lstlisting}[language=C++]
+
+void Device::createInstance() {
+  VkApplicationInfo appInfo = {};
+  appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+  appInfo.pApplicationName = "Vulkan Application";
+  appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+  appInfo.pEngineName = "No Engine";
+  appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+  appInfo.apiVersion = VK_API_VERSION_1_3;
+}
+\end{lstlisting}
+
+Please note the \textit{sType} member of the struct. This member is used to tell Vulkan
+what type of struct we are using. Why we need this? Vulkan has another member called
+\textit{pNext} that is used to extend the struct with additional information. It basically
+creates a linked list of structs by pointing to the next struct. The porblem is that there is
+no way to know what type of struct is next in the list. The implementation reads the first 4 bytes
+of the next struct, which is the \textit{sType} member, to determine the type of the struct and
+cast the pointer to the correct struct.
+
+Next we create the \textit{VkInstanceCreateInfo} struct and fill it with the application info.
+We also add the extension data from GLFW.
+For that we will create a private function called \textit{getRequiredExtensions} that returns
+the required extensions as a vector of strings.
+
+\begin{lstlisting}[language=C++]
+VkInstanceCreateInfo createInfo = {};
+createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+createInfo.pApplicationInfo = &appInfo;
+
+std::vector<const char *> extensions = getRequiredExtensions();
+createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+createInfo.ppEnabledExtensionNames = extensions.data();
+\end{lstlisting}
+
+The \textit{getRequiredExtensions} function is used to get the required Vulkan extensions
+that GLFW needs to create a window with Vulkan. We can get the required extensions with the
+\textit{glfwGetRequiredInstanceExtensions} function. To return the extensions as a vector of strings
+we need the size of the extensions and a pointer to the extensions as an array. Then we call the function
+\textit{glfwGetRequiredInstanceExtensions} which returns the extensions as an array of strings and the size
+to the pointer we passed as a parameter to the function. We then copy the extensions to a vector of strings
+and return it.
+
+\begin{lstlisting}[language=C++]
+std::vector<const char *> getRequiredExtensions() {
+  uint32_t glfwExtensionCount = 0;
+  const char **glfwExtensions;
+  glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+  std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+  return extensions;
+}
+\end{lstlisting}
+
+Don't forget to add the \textit{getRequiredExtensions} function to the header file.
+
+Finally we create the Vulkan instance with the \textit{vkCreateInstance} function in the
+\textit{createInstance} function. We pass the \textit{VkInstanceCreateInfo} struct, a pointer to
+a custom allocator, that we will leave as \textit{nullptr} and a pointer to the instance variable.
+Custom allocators are used to allocate a range of memory for Vulkan objects. This optimizes memory usage, by
+not having to allocate memory for each object separately, but allocating a range of memory and then
+sub-allocating the memory for the objects from this range. But we don't need to worry about this for now.
+
+We also have to check if the instance was created successfully. We can do this by checking if the
+functions return value is \textit{VK\textunderscore SUCCESS}. If not we throw an exception with an error message.
+
+\begin{lstlisting}[language=C++]
+if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) 
+		throw std::runtime_error("Failed to create Vulkan instance");
+\end{lstlisting}
+
+Great! Now our instance is created, but there is one more thing I would like to
+add to it. Because vulkan is designed to be fast, it doesn't
+provide much error checking. To enable error checking we can use validation layers.
+Validation layers hook into the function calls of Vulkan and perform additional checks
+operation.
+
+\subsection{Validation Layers}
+
+Let's start off by creating a public constant bool enableValidationLayers in the device class header file.
+If we want to enable validation layers we set the \textit{NDBUG} macro to 0, otherwise to 1.
+
+\begin{lstlisting}[language=C++]
+#ifdef NDEBUG
+  const bool enableValidationLayers = false;
+#else
+  const bool enableValidationLayers = true;
+#endif
+\end{lstlisting}
+
+Next we add a private vector of strings called \textit{validationLayers} that contains the names of the
+validation layers we want to enable.
+We will use the \textit{VK\textunderscore LAYER\textunderscore KHRONOS\textunderscore validation}
+layer to use the standard error checking provided by Vulkan.
+
+\begin{lstlisting}[language=C++]
+const std::vector<const char *> validationLayers = {
+  "VK_LAYER_KHRONOS_validation"
+};
+\end{lstlisting}
+
+Now we have to check if the validation layers, we want to enable, are supported by Vulkan.
+To do so we create a private function called \textit{checkValidationLayerSupport} that returns a boolean.
+We will use the \textit{vkEnumerateInstanceLayerProperties} function to get the available layers.
+
+First we will create and pass a pointer to a variable that will hold the number of available layers.
+Then we will create a vector of \textit{VkLayerProperties} that will hold the available layers.
+
+Then we will iterate thorugh the available layers and check if the the validation layer is in the available layers.
+If it is we return true, otherwise we return false.
+
+\begin{lstlisting}[language=C++]
+bool Device::checkValidationLayerSupport() {
+  uint32_t layerCount;
+  vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+  std::vector<VkLayerProperties> availableLayers(layerCount);
+  vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+  for (const char *layerName : validationLayers) {
+      bool layerFound = false;
+
+      for (const auto layerProperty : availableLayers) {
+          if (strcmp(layerName, layerProperty.layerName) == 0) {
+              layerFound = true;
+              break;
+            }
+        }
+
+      if (!layerFound)
+      return false;
+    }
+  return true;
+}
+\end{lstlisting}
+
+At the top of the \textit{createInstance} function we will check if the validation layers are supported
+when the \textit{enableValidationLayers} constant is set to true. If the validation layers are not
+supported we throw an exception with an error message.
+
+\begin{lstlisting}[language=C++]
+if (enableValidationLayers && !checkValidationLayerSupport())
+  throw std::runtime_error("Requested validation layers are not supported!");
+\end{lstlisting}
+
+GLFW needs another extension to make the validation layers works. This extension is called
+\textit{VK\textunderscore EXT\textunderscore DEBUG\textunderscore UTILS\textunderscore EXTENSION\textunderscore NAME}.
+So let's add this extension to the \textit{getRequiredExtensions} function.
+
+\begin{lstlisting}[language=C++]
+std::vector<const char *> getRequiredExtensions() {
+  uint32_t glfwExtensionCount = 0;
+  const char **glfwExtensions;
+  glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+  std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+  if (enableValidationLayers)
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+  return extensions;
+}
+\end{lstlisting}
+
+To activate the validation layers we have to add them to the \textit{VkInstanceCreateInfo} struct.
+We also have to add a debug messenger to get the validation layer messages. To do so we can
+use the \textit{VkDebugUtilsMessengerCreateInfoEXT} struct that we will use to extend the
+\textit{VkInstanceCreateInfo} struct. Let's add a private function called \textit{populateDebugMessenger}
+that takes a \textit{VkDebugUtilsMessengerCreateInfoEXT} struct reference as an argument fills it with
+the desired values. Then we add the debug messenger to the \textit{VkInstanceCreateInfo} struct.
+
+\begin{lstlisting}[language=C++]
+if (enableValidationLayers) {
+createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+createInfo.ppEnabledLayerNames = validationLayers.data();
+
+VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+populateDebugMessenger(debugCreateInfo);
+
+createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
+
+} else {
+createInfo.enabledLayerCount = 0;
+createInfo.pNext = nullptr;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+void Device::populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
+  createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+  createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+  createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+                                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+  createInfo.pfnUserCallback = debugCallback;
+  createInfo.pUserData = nullptr;
+}
+\end{lstlisting}
+
+The \textit{messageSeverity} member of the \textit{VkDebugUtilsMessengerCreateInfoEXT} struct
+is used to determine which message severity levels should be used. We basically have 4 levels of
+severity. Verbose, Info, Warning and Error. Each of them is assigned a bit. For example the
+\textit{VK\textunderscore DEBUG\textunderscore UTILS\textunderscore MESSAGE\textunderscore SEVERITY\textunderscore WARNING\textunderscore BIT\textunderscore EXT}
+is equal to 0x00000100 and the \textit{VK\textunderscore DEBUG\textunderscore UTILS\textunderscore MESSAGE\textunderscore SEVERITY\textunderscore ERROR\textunderscore BIT\textunderscore EXT}
+is equal to 0x00001000. We can combine these bits with the bitwise OR operator to get the desired severity level
+0x00001100. When we get a message it has a severity level assigned to it. This level is then AND combinded to the
+\textit{messageSeverity} member. The same is done with the \textit{messageType} member.
+
+If the results are not 0 the \textit{pfnUserCallback} function is called that
+outputs the message.  If you want to pass user data to the callback function you can do so with the
+\textit{pUserData} member.
+
+Let's implement the \textit{debugCallback} function.
+It takes the severity, type, pCallbackData and pUserData as arguments and returns a \textit{VkBool32}
+which has to be \textit{VK\textunderscore FALSE}.
+
+\begin{lstlisting}[language=C++]
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+VkDebugUtilsMessageTypeFlagsEXT messageType,
+const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+void *pUserData) {
+		std::cerr << "Debug callback" << pCallbackData->pMessage << std::endl;
+		return VK_FALSE;
+	}
+\end{lstlisting}
+
+The \textit{VKAPI\textunderscore ATTR} and \textit{VKAPI\textunderscore CALL} are enables Vulkan to
+use the correct calling convention for the function. For now we will just output the message to the
+console but you can do whatever you want with the message.
+
+Next we have to create the debug messenger with the \textit{vkCreateDebugUtilsMessengerEXT} function.
+But before we can do that we have to load the function with the \textit{vkGetInstanceProcAddr} function.
+We'll start off by adding a function in the constructor that setups the debug messenger and then
+use a generic function to load the function and create the messenger. Let's also add a private
+variable that stores the debug messenger.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+void setupDebugMessenger();
+VkDebugUtilsMessengerEXT debugMessenger;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+Device::Device() {
+  createInstance();
+  setupDebugMessenger();
+}
+
+void Device::setupDebugMessenger() {
+  if (!enableValidationLayers) return;
+
+  VkDebugUtilsMessengerCreateInfoEXT createInfo;
+  populateDebugMessenger(createInfo);
+
+  if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+    throw std::runtime_error("Failed to set up debug messenger");
+}
+
+VkResult CreateDebugUtilsMessengerEXT(
+  VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+  VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) 
+      return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    else return VK_ERROR_EXTENSION_NOT_PRESENT;
+\end{lstlisting}
+
+The \textit{CreateDebugUtilsMessengerEXT} function trys to load the \textit{vkCreateDebugUtilsMessengerEXT}
+function with the \textit{vkGetInstanceProcAddr} function. If the function is loaded successfully
+we create the debug messenger with that function and return the result. If the function is not loaded
+we return \textit{VK\textunderscore ERROR\textunderscore EXTENSION\textunderscore NOT\textunderscore PRESENT}.
+
+\subsection{Surface}
+
+Now that we have some error checking and a window, we need a surface to render on.
+GLFW provides us with a function to create a surface. Let's add a private function,
+in the window class, called
+\textit{createWindowSurface} that creates a surface with the \textit{glfwCreateWindowSurface} function.
+It takes the instance and a pointer to the surface as arguments. So add a private variable
+to store the surface and a \textit{createSurface} function in the device class.
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+Device::Device(Window &window) : window{window} {
+		createInstance();
+		setupDebugMessenger();
+		createSurface();
+	}
+
+void Device::createSurface() {
+	window.createWindowSurface(instance, &surface);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//window.cpp
+void Window::createWindowSurface(VkInstance instance, VkSurfaceKHR *surface) {
+	if (glfwCreateWindowSurface(instance, window, nullptr, surface) != VK_SUCCESS)
+		throw std::runtime_error("Surface creation failed!");
+}
+\end{lstlisting}
+
+\section{Pipeline Creation}
+
+Let's go and create our first Vulkan pipeline. We will keep it simple and ignore
+buffers and perspectiv projection for now.
+
 
 \printbibliography[
 	heading=bibintoc, title={Bibliography}
@@ -1572,4 +2220,4 @@ In the Window.cpp file we
 
 \listoffigures
 
-\end {document}
+\end{document}
