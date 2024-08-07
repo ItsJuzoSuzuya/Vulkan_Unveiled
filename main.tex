@@ -14,55 +14,54 @@ Graphics Programming}} \author {Nick Schefner}
 
 Dear Reader,
 
-Welcome to "Mastering Vulkan: A Professional Guide for Beginners."  It is
-with great pleasure and excitement that I extend my sincerest greetings
+Welcome to "Vulkan Unveiled: A Beginner's Guide to Professional Graphics Programming".
+It is with great pleasure and excitement that I extend my sincerest greetings
 to you as you embark on this journey into the world of Vulkan API.
 Before we start, I would like to introduce myself to you.
 
 I began my journey with the Vulkan API about 3 months ago when I embarked
-on the creation of my own game engine, “Magma”.  Before that, I have
+on the creation of my own game engine “Magma”, which is just a very basic
+implementation of a game engine. Before that, I have
 started my programming journey with the well known Unity Game Engine
 and learned many basics on how games and graphics behave. I also have
 experience with Glium, which is an OpenGL Wrapper for Rust. For those
 unfamiliar, Glium further abstracts OpenGL, which made it easier to
 understand the logic and functionalities of my application.  I’m deeply
-invested on creating a precise representation of the provided topic,
+invested in creating a precise representation of the Vulkan API.
 which will also be my ground base on further deepening my knowledge and
 understanding.	While researching and writing this book, I anticipate
 learning a great deal myself.  Nonetheless, I am committed to providing
-you with a comprehensive understanding of visual programming through
+you with a comprehensive understanding of graphics programming throughout
 this book.
 
-Graphical programming is a hard topic with a steep learning curve,
+Graphical programming is a complex topic with a steep learning curve,
 I often feel that I missed the dots connecting every aspect of the
 underlying technologies when first getting started in this field as a
-game dev. Therefor it might be quite overwhelming at first, to understand
+game dev. Therefore it might be quite overwhelming at first, to understand
 how the graphics that we see every day are created and displayed onto
 our displays. It does not help that Vulkan expands on that complexity
-and provides us with many options to explicitly control certain rendering
-processes like memory management or command buffer construction to provide
-portability and flexibility, whereas older graphic APIs abstracted these
-processes to simplify the rendering for us developers.
+and provides us with an API that is very low level, whereas older graphic
+APIs abstract many of the processes, that Vulkan requires us to handle
+ourself.
 
 Because Vulkan requires us to explicitly control the hardware resources,
 you need even more knowledge about the multiple hardware components and
-rendering possibilities that modern GPUs allow us to twist and tweak.
+rendering possibilities that modern GPUs allow us to employ.
 
 The main idea off this book is to slowly introduce someone who has had
 no contact with graphical programming so far, but is excited to dive
 into an interesting topic that is a must know for every aspiring future
-game developer or artist that does not want to rely on the existing
-ecosystems. We will first learn to understand the GPU and its usage. I
-will then focus on explaining pipelines, buffers, swap chains and other
-components of the render system and explain in detail how they work
+game developer or artist. We will first learn to understand the GPU and
+its usage. I will then focus on explaining pipelines, buffers, swap chains
+and other components of the render system and explain in detail how they work
 and are linked together. Besides that I will explain how Vulkan manages
-each of these components and give an example on how its implementations
-would look.
+each of these components and give an example on how a possible implementation
+could look like.
 
 I also want to give a special thanks to Brendan Galea for his “Vulkan
 (c++) Game Engine” series, that helped me out a lot on understanding
 not just Vulkan as an API but also the basics of graphical programming
-and its Components.
+and its components.
 
 Lastly, I want to assure you that while learning Vulkan may seem daunting
 at first, with time and patience, anyone interested in this topic can
@@ -83,11 +82,14 @@ it is not very good at executing multiple commands at the same
 time. Sure we have multi threading but the CPU is limited to just a
 few cores. \cite{CDW-cpu_vs_gpu} On the other hand, the GPU is mainly
 build on processing mathematically complex operations like matrix
-multiplications, that are not just executed once but a multiple
-of times. \cite{NVIDIA-cpu-gpu} Because the GPU focuses on speed
-and parallelism, it is designed to neglect the need for complex
-control structures and caching, which are the main focus of the
-CPU. \cite{CUDA_Programming_Guide}
+multiplications, that are not just executed once but multiple
+times. \cite{NVIDIA-cpu-gpu} Because the GPU focuses on speed
+and parallelism, it is designed to use more of the accessible
+transistors for processing data. This is beneficial for parallel
+computations because the GPU can hide memory access latencies with
+computation. The CPU on the other hand has an additional cache layer
+and a more complex control logic that makes sequential computations
+faster. \cite{CUDA_Programming_Guide}
 
 Imagine creating a animation where the color of your full screen changes
 between red and green. In that case you have a single command, the color
@@ -96,28 +98,30 @@ we would have to wait for the CPU to execute the command on every pixel
 one after another, which would take a lot of time. With the GPU we can
 execute the command on every pixel simultaneously, which is much faster.
 
-While a CPU usually has 4 to 16 cores, GPUs can have up to almost 16,400
-cores. \cite{NVIDIA-rtx-4090} But that doesn't mean that the GPU is 1000
+While a CPU usually just has a hand full of cores, GPUs have multiple
+thousands of cores. \cite{NVIDIA-rtx-4090}
+But that doesn't mean that the GPU is 1000
 times faster than the CPU. The compute units of the GPU are much slower
 than the cores of the CPU, but because they can run in parallel they are
 more suitable for graphical computations. \cite{CUDA_Programming_Guide}
 
 The GPU also has its own memory called the video random access memory
-(VRAM) which is used to store the processed data. I don't want to go into
-detail about the VRAM because it is not relevant for understanding Vulkan,
-but it is important to add that the VRAM allows simultaneously reading
-and writing data, which is a big advantage over the CPU. \cite{vram}
+(VRAM) which is used to store processed and unprocessed data.
+I don't want to go into detail about the VRAM because it is not relevant
+for understanding Vulkan, but it is important to add that the VRAM
+allows simultaneously reading and writing data, which is a big advantage
+over the CPU. \cite{vram}
 
 It might also be interesting that when the VRAM is full, rendering
 speed and performance will drop because we need to get the data from a
 slower memory source like the DRAM.  Therefore it is important to manage
-data efficiently and to not overload the VRAM by loading to many or to
-detailed textures.
+data efficiently and to not overload the VRAM by, for example, loading
+to many or to detailed textures.
 
 \section{Basic Architecture of the GPU}
 
 I've already mentioned that the GPU can take one instruction and
-execute it on multiple data at the same time. This is called SIMD
+execute it on multiple threads at the same time. This is called SIMD
 (Single Instruction, Multiple Data). \cite{cherry_gpu_architecture}
 
 The GPU is made up of thousands of small cores, which are called CUDA
@@ -126,7 +130,7 @@ and ROCm compute units on AMD graphics, which I will neglect to
 simplify this topic. \cite{rocm} CUDA stands for "Compute Unified
 Device Architecture" and is a low level parallel computing platform
 and programming model that comes with an API for writing programs
-that can handle the power and advantages of the GPU in an high level
+that can handle the power and advantages of the GPU in a high level
 language like c or c++. \cite{CUDA_Programming_Guide} Don't worry, we
 will not use CUDA or an assembly language in this book, because Vulkan
 abstracts the usage of the GPU for us, but it is important to understand
@@ -137,7 +141,7 @@ main building blocks of the GPU.  Each SM has its own control logic,
 memory and execution units. \cite{CUDA_Programming_Guide} These SMs are
 then combined into a grid called the GPU.  When the GPU is invoked by
 the CPU, a free SM will be assigned to performing the requested tasks
-and then return the results to the CPU. \cite{CUDA_Programming_Guide}
+and then return the results to the CPU if needed. \cite{CUDA_Programming_Guide}
 
 The GPU also consists of a memory hierarchy, which is used to store the
 data that is processed by the GPU. The memory hierarchy looks like this:
@@ -159,7 +163,7 @@ core. \cite{CUDA_Programming_Guide}
 \section {Summary}
 
 Okay that was a lot of information, so let's summarize the really
-important bits what we have learned so far.
+important bits of what we have learned so far.
 
 The GPU was created to process graphical data much faster than a CPU
 could ever do. It allows us to execute the same command on multiple
@@ -172,7 +176,7 @@ important to optimize your data to prevent overloading the VRAM.
 
 \chapter{Graphics Rendering Pipeline}
 
-\section{What is the Graphics Pipeline?}
+\section{What is the graphics pipeline?}
 
 When we talk about the graphics pipeline, I want to make clear that we
 are not talking about a physical pipeline that is used to transport data
@@ -186,28 +190,117 @@ The graphics pipeline is an abstraction layer that is located on the
 GPU and is used to process incoming data to create the image that we see
 on our screen. \cite{vkGuide} This saves us from writing low level code
 explicitly targeting the GPU, which would be a massive task to do.
+The name pipeline comes from the fact that we pass data through
+multiple stages that process the data in a specific way. Once the data
+has passed through all stages, it is ready to be displayed on the screen.
 
 Please note that the pipeline is implemented differently in every graphics
-API, but the basic ideas stay the same. We feed the pipeline with some
+API, but the basic ideas remains the same. We feed the pipeline with some
 graphical data, which then performs operations to transform the data into
-an 2D image that can be displayed on our screen. The processed data
-is then stored in a so called framebuffer, which I will explain later.
+a 2D image that can be displayed on our screen. The processed data
+is then stored in a framebuffer, which will be explained later.
 \cite{vkGuide}
 
-There is actually other pipeline types, like the compute or raytracing
+There are other pipeline types, like the compute or raytracing
 pipeline, made for different tasks, but we will focus on the graphics
 pipeline for now.
 
-The graphics pipeline is invoked by a draw command,
-while the compute pipeline is invoked by a dispatch
-command. \cite{build-pipeline} \\
-\cite{vulkan-tutorial-compute-shader}
+The graphics pipeline is invoked by a draw command, which starts the
+data processing. \cite{build-pipeline}
 
 \section{The Basics}
 
-To understand the graphics pipeline, we first need to understand the
+To understand the graphics pipeline, we first need to understand
 how the 2D image on our screen is created from the 3D data that we
 provide to the pipeline.
+
+\subsection{Verices and Indices}
+
+Every model that we see is made up of off either triangles, points or
+isolines. These shapes are called primitives and are created by connecting
+vertices so that they form the corners of the primitive. For points we
+only need one vertex.
+A single vertex can contain multiple attributes like position \{x, y, z\},
+color \{r, g, b, a\} or texture coordinates \{u, v\}. \cite{vulkan-vertex-input}
+
+\begin{figure}[hbtp]
+	\centering \includesvg[width=0.60\textwidth]{vektor_triangle.svg}
+	\caption{Triangle with vertices}
+\end{figure} \FloatBarrier
+
+When we want to reuse certain vertices, for example when
+drawing a square, we can add indices.  These indices tell the
+input assembler what vertices need to be combined to form a
+triangle. \cite{vulkan-tutorial-index-buffer}
+
+For example: A square has 4 vertices because it has 4 corners. When we want
+to draw the square we have to create two triangles, which means we need 2 *
+3 indices.
+
+Vertices: \{0, 1, 2, 3\} Indices: \{\textcolor{red}{0, 1, 2} ,
+\textcolor{blue}{0, 2, 3}\}
+
+\begin{figure}[hbtp]
+	\centering \includesvg[width=0.50\textwidth]{vi_quad.svg}
+	\caption{Square
+		with vertices created using indices}
+\end{figure} \FloatBarrier
+
+Here you can see that the first triangle is created by using the
+vertices\{\textcolor{red}{0, 1, 2}\} and the second triangle is created by using
+the vertices\{\textcolor{blue}{0, 2, 3}\}. I've added the colors just
+to clarify which indices are used to create which triangles.
+
+\subsection{Buffers}
+
+Now that we know what vertices and indices are, we can talk about how we
+provide the GPU with this data. There the buffers come into play. A buffer
+is basically an array of data that can be bind to the graphics Pipeline.
+When the pipeline is created, we need to provide it with the layout of the
+buffer, which tells the pipeline how the data in the buffer is structured.
+\cite{vulkan-tutorial-vertex-buffer}
+
+In the Vertex Buffer we store the attributes of each vertex as an
+array. An attribute can be a position, color or any other related data
+of the Vertex. \cite{vulkan-tutorial-vertex-buffer}
+
+\begin{figure}[hbtp]
+	\centering \includesvg[width=1\textwidth]{Vertexbuffer.svg}
+	\caption{Interleaved Vertex Buffer}
+\end{figure} \FloatBarrier
+
+You can see that each attribute has a specific location in the buffer.
+These locations tell the pipeline what bytes belong together. So when
+accessing the buffers 0st location it gets an vec3(x,y,z).  The pipeline
+also needs to know by what offset, in bytes, each location is separated.
+In this case it would be 12 bytes for the color, because the position
+contains 3 floats, which are 4 bytes each if you use single precision
+floats and 8 bytes each when you use double precision floats. \cite{vulkan-tutorial-vertex-buffer}
+
+This example shows a single buffer containing all attributes in
+an interleaved pattern, but we can also create one buffer for each
+attribute and then attach them into a single vertexbuffer. This is called
+a non-interleaved pattern.
+
+\begin{figure}[hbtp]
+	\includesvg[width=1\textwidth]{non-int-vertexbuffer.svg}
+	\caption{Non-Interleaved Vertex Buffer}
+\end{figure} \FloatBarrier
+
+Each attribute has has its own binding, to tell the pipeline what location
+is assigned to the data. So the first binding will always be the position
+until you get to the next binding, which will be the color in this case.
+\cite{vulkan-tutorial-vertex-buffer}
+
+Usually we will use interleaved buffers, but in some cases, when we need
+different attributes for different tasks, we can use non-interleaved
+buffers.
+
+The Indexbuffer on the other hand is just an simple array of integers.
+\cite{vulkan-tutorial-index-buffer}
+
+
+\subsection{Coordinate Systems}
 
 \begin{figure}[hbtp]
 	\centering \includegraphics[width=\textwidth]{coordinate-systems.png}
@@ -215,9 +308,12 @@ provide to the pipeline.
 \end{figure}
 \FloatBarrier
 
-We start with the world space, which is the 3D space that we use to
-define the positions of our objects in the scene. The world space is
-then transformed into the view space, which is the space that the
+We start with the local space, which is the space that we use to define
+our objects. Often the objects are centered around the origin of the
+local space, but it is up to the modeler to decide where the object is
+located. The local space is then transformed into the world space, which
+is the 3D space that we use to define the positions of our objects in the scene.
+The world space is then transformed into the view space, which is the space that the
 camera sees. \cite{fig:view-frustum}
 
 But wait, camera? If you have worked with 3D graphics before, you know
@@ -239,33 +335,26 @@ If you have never touched linear algebra before, I suggest you to go over
 2Blue1Brown's Essence of Linear Algebra series on YouTube. It is a great
 introduction to linear algebra and will help you understand the further topics.
 
-\subsection{Homogeneous Coordinates}
-
-When we want to transform a 3D point, we can use a 4x4 matrix to
-transform the point. But why a 4x4 matrix? Because we need to add a
-fourth coordinate to the point, which is called the w coordinate. This
-coordinate will be used to add perspective to the point, so
-that the point or object will appear smaller when it is further away
-from the camera. It achieves this by dividing the x, y and z coordinates
-by the w coordinate.
-
 \subsection{Matrix Transformations}
 
 When we have an box in 3D space, we can represent its position as an
-array of 4 floats, which are the x, y, z and w coordinates of its center.
+array of 3 floats, which are the x, y and z coordinates of its center.
 To move the box, we need to add or subtract a value from the x, y or
 z coordinate but how can we do that? We can multiply our position with a translation matrix to
 move the box. Wait how do we multiply matrices? It's simple. We multiply
 the rows of the first matrix with the columns of the second matrix and add them
 together. The result is the value of the new matrix at the position where the row and
 column intersect.
+
+For example, when we have two matrices A and B, we multiply them like this:
+
 \[
 	\begin{bmatrix}
 		a & b & c \\
 		d & e & f \\
 		g & h & i \\
 	\end{bmatrix}
-	x
+	\cdot
 	\begin{bmatrix}
 		j & k & l \\
 		m & n & o \\
@@ -285,7 +374,37 @@ column intersect.
 \end{figure}
 \FloatBarrier
 
-Therefor we can create a translation that moves the box by \{tx, ty, tz\}
+As long as the number of columns in the first matrix is equal to the number
+of rows in the second matrix, we can multiply them. The result will have
+the same number of rows as the first matrix and the same number of columns
+as the second matrix.
+
+When we have a position \{x, y, z\} we cannot just move it by \{tx, ty, tz\}
+because multiplying the position with the translation vector would just
+multiply the coordinates. But what we need is to add the wanted translation
+to the corresponding coordinate.
+To do so we need to add a 4th coordinate to the position, which is called
+the homogeneous coordinate. This coordinate is usually set to 1 and is used
+to set the proportions of the clip space. Don't worry about the clip space
+for now, we will talk about it later.
+
+Homogeneous coordinates are used to represent the position of a point with 4
+coordinates instead of 3. They have the special property that the homogeneous
+coordinates are a multiple of the cartesian coordinates by the w coordinate.
+
+So when we have a point \{1, 2, 3\} in 3D space, we can represent it as
+\{1, 2, 3, 1\} in homogeneous coordinates but also as \{2, 4, 6, 2\} or
+\{3, 6, 9, 3\} and so on. We will keep the w coordinate at 1, because it is
+the easiest to work with.
+
+Our position would then be \{x, y, z, 1\}. Because the w coordinate is the
+fourth coordinate, we can multiply the position with a 4x4 matrix where
+the forth column is the translation vector. This will add the translation
+to the position as long as we keep the diagonal values of the matrix to 1,
+so that we don't loose the original position in the calculation.
+
+Therefore we can create the translation that moves the box by \{tx, ty, tz\}
+like this:
 
 \[
 	\begin{bmatrix}
@@ -294,7 +413,7 @@ Therefor we can create a translation that moves the box by \{tx, ty, tz\}
 		0 & 0 & 1 & tz \\
 		0 & 0 & 0 & 1  \\
 	\end{bmatrix}
-	x
+	\cdot
 	\begin{bmatrix}
 		x \\
 		y \\
@@ -311,7 +430,7 @@ Therefor we can create a translation that moves the box by \{tx, ty, tz\}
 \]
 
 Please note that the w coordinate is changing the x, y and z coordinates,
-to adjust the movement to the perspective of the camera.
+to adjust the position to our clip space proportions.
 
 But what if we want to rotate the box? We can't just add or
 subtract a value from the boxes center to rotate it. We need to tackle each
@@ -355,12 +474,14 @@ z-axis: \[
 Let's rotate the line around the y axis:
 
 \[
+	P1 =
 	\begin{bmatrix}
 		cos(\delta) & 0 & -sin(\delta) & 0 \\
 		0           & 1 & 0            & 0 \\
 		sin(\delta) & 0 & cos(\delta)  & 0 \\
 		0           & 0 & 0            & 1 \\
 	\end{bmatrix}
+	\cdot
 	\begin{bmatrix}
 		0 \\
 		0 \\
@@ -377,12 +498,14 @@ Let's rotate the line around the y axis:
 \]
 
 \[
+	P2 =
 	\begin{bmatrix}
 		cos(\delta) & 0 & -sin(\delta) & 0 \\
 		0           & 1 & 0            & 0 \\
 		sin(\delta) & 0 & cos(\delta)  & 0 \\
 		0           & 0 & 0            & 1 \\
 	\end{bmatrix}
+	\cdot
 	\begin{bmatrix}
 		1 \\
 		0 \\
@@ -398,21 +521,21 @@ Let's rotate the line around the y axis:
 	\end{bmatrix}
 \]
 
-You can see that the origin of the line stays the same, but the direction
+You can see that the origin \(P1\) of the line stays the same, but the end point \(P2\)
 of the line has changed. This is because we actually rotate the entire
 world space and not the object itself. But because the object is in the
 world space, it will also be rotated.
 
-Scaling of an object is a bit simpler than rotation. We just multiply
+Scaling an object is a bit simpler than rotation. We just multiply
 the position of the object with a scaling matrix that
 looks like this:
 
 \[
 	\begin{bmatrix}
-		x & 0 & 0 & 0 \\
-		0 & y & 0 & 0 \\
-		0 & 0 & z & 0 \\
-		0 & 0 & 0 & 1 \\
+		s_x & 0   & 0   & 0 \\
+		0   & s_y & 0   & 0 \\
+		0   & 0   & s_z & 0 \\
+		0   & 0   & 0   & 1 \\
 	\end{bmatrix}
 \]
 
@@ -420,6 +543,11 @@ You might see that we simply multiply the x, y and z coordinates with the
 scaling factor we want to apply to that axis. So when we want to scale an
 object by 2 on the x axis, we would multiply the x coordinate with 2 and
 leave the y and z coordinates as they are.
+
+A thing that is important to note is that when applying transformations,
+we apply them to the entire world space. This means when rotating, scaling or
+moving an object, we are actually rotating, scaling or moving the entire world,
+which will also rotate, scale or move the object.
 
 \subsection{View Space}
 
@@ -453,13 +581,8 @@ position relative to the camera.
 	\end{bmatrix}
 \]
 
-Looking at the result, we can see that it doesn't really make sense to keep
-the w coordinate for the camera, because the camera is not a 3D object.
-Therefor we can set the w coordinate of the camera to 1. This will make the homogeneous
-coordinates of the camera \{x, y, z, 1\} equal to \{x, y, z\} in 3D space.
-
 Now that the camera is the origin of the view space, we need to rotate everything,
-so that the camera is looking down the z axis. Lets say we have a camera that is
+so that the camera is looking down the z axis. Lets say we have a camera that
 is looking down this direction: \{x,y,z\}. We can create a rotation matrix that
 rotates the world space so that the camera is looking down the z axis \{0, 0, z\}.
 
@@ -516,73 +639,10 @@ after rotating it around the z axis and the z axis itself
 	cos(\theta)
 \]
 
-Let's calculate the angles for the camera direction \{1, 1, 1\}.
-
-\[
-	\theta_z = cos^{-1}(\frac{1}{\sqrt{1^2 + 1^2}})
-	=
-	cos^{-1}(\frac{1}{\sqrt{2}})
-	=
-	45\degree
-\]
-
-Now that we have the z angle, we can rotate everything by 45 degrees around the z axis.
-
-\[
-	\begin{bmatrix}
-		cos(\theta_z)  & sin(\theta_z) & 0  & 0 \\
-		-sin(\theta_z) & cos(\theta_z) & -1 & 0 \\
-		0              & 0             & 1  & 0 \\
-		0              & 0             & 0  & 1 \\
-	\end{bmatrix}
-	\cdot
-	\begin{bmatrix}
-		1 \\
-		1 \\
-		1 \\
-		1 \\
-	\end{bmatrix}
-	=
-	\begin{bmatrix}
-		\sqrt{2} \\
-		0        \\
-		1        \\
-		1        \\
-	\end{bmatrix}
-\]
-
-Now we calculate the angle for the y axis.
-
-\[
-	\theta_y = cos^{-1}(\frac{1}{\sqrt{\sqrt{2}^2 + 1^2}})
-	=
-	cos^{-1}(\frac{1}{\sqrt{3}})
-	=
-	54.7\degree
-\]
-
-\[
-	\begin{bmatrix}
-		cos(\theta_y) & 0 & -sin(\theta_y) & 0 \\
-		0             & 1 & 0              & 0 \\
-		sin(\theta_y) & 0 & cos(\theta_y)  & 0 \\
-		0             & 0 & 0              & 1 \\
-	\end{bmatrix}
-	\cdot
-	\begin{bmatrix}
-		\sqrt{2} \\
-		0        \\
-		1        \\
-		1        \\
-	\end{bmatrix}
-	=
-	\begin{bmatrix}
-		0        \\
-		0        \\
-		\sqrt{3} \\
-		1        \\
-	\end{bmatrix}
-\]
+Luckily we don't need to calculate the angles by hand, we can use the
+GLM library to calculate the rotation matrix for us. The GLM library is a
+header only library that provides us with many useful functions for
+mathematical operations.
 
 Don't forget to perform all of this for every object in the world space.
 The result will be the view space, where the camera is the origin and
@@ -590,25 +650,23 @@ the objects are rotated so that the camera is looking down the z axis.
 
 \subsection{Projection Transformation}
 
-The next step is the transformation from the view space to the canonical
-view volume (CVV). The CVV is a that is used to define what we can see
-on the screen. It is also called the clip space, because it is used to
-clip everything that is outside of the view frustum.
+The next step is the transformation from the view space to the clip
+space. The clip space is used to define what we can see
+on the screen, by clipping everything that is outside of the view frustum.
 
-\begin{figure}[hbtp]
-	\centering \includegraphics[width=0.80\textwidth]{cvv.png}
-	\caption{Canonical View Volume \cite{fig:cvv}}
-\end{figure} \FloatBarrier
-
-This task involves transforming the view frustum into a orthographic view
+This task involves transforming the view frustum into an orthographic view
 volume, which is a cube with the size of the near plane and the same depth
 as the frustum. Then we move the orthographic view volume to the origin
-and scale it to the size of the cvv.
+and scale it to the size of the clip space, which is plus and minus the
+w coordinate on all axes. The w coordinate is almost always set to 1 by the user,
+so the clip space is a cube with the length of 2 on all axes except the z axis,
+because the negative z axis is the behind the camera we just have the positive
+z axis.
 
 Let's start with the transformation of the view frustum to the orthographic
 view volume. We basically need to scale the objects so that the far plane is
 the same size as the near plane. Normally the near plane is 0.1 units away and the far
-plane is 100 units away.
+plane is 100 units away but that's up to the user to decide.
 
 When we're looking at the frustum from the side, we can see that the camera and
 the far plane create a triangle that can be divided into two right triangles at the
@@ -634,7 +692,7 @@ When we solve this for yn, we get:
 	yn = \frac{y * n}{z}
 \]
 
-The same can be applied for the x axis:
+The same can be applied for the x axis aka the width of the object:
 
 \[
 	xn = \frac{x * n}{z}
@@ -645,13 +703,15 @@ The z axis stays the same.
 So when we have a point \{x, y, z\} in the view space, we need to transform it to \\
 \(\{\frac{x * n}{z}, \frac{y * n}{z}, z\}\) to get the orthographic view volume. Unfortunately
 there is no way we can divide the x and y value with z with just 3 dimensions.
-We need to add a 4th coordinate to the point to be able to
-divide by z. This is called the perspective divide.
+Here the w coordinate saves us again.
 
-To do so we add a homogeneous variable to the point and transfer the z coordinate to this new w
-variable. This will allow us to divide the x, y and z coordinate by the z coordinate.
+We transfer the z coordinate to the w variable.
+This will allow us to divide the x, y and z coordinate by the z coordinate.
 So what we want is to transform the point \{x, y, z, w\} to \(\{x * n, y * n, z^2, z\}\).
 Keep in mind that the homogeneous coordinate is the same as the 3D coordinate after dividing by w.
+This division is called the perspective divide.
+So after the perspective divide we get \(\{\frac{x * n}{z}, \frac{y * n}{z}, z\}\) which are
+called normalized device coordinates (NDC) or the canonical view volume (CVV).
 
 Okay so what we need is a 4x4 matrix that multiplies the x and y coordinate with n and the z coordinate
 with itself. We also need to multiply the w coordinate with z,
@@ -717,6 +777,11 @@ With this we can now calculate m1 and m2.
 	\end{aligned}
 \]
 
+One thing that has to be looked out for is that the near plane and far plane
+are not the same because that would result in a division by zero. Also we don't
+want the near plane to be 0 because that would result in weird behavior and clipping
+into other objects.
+
 Therefor the final matrix looks like this:
 
 \[
@@ -739,7 +804,7 @@ scale it to the size of the CVV. The CVV looks like this from the front:
 	\caption{Canonical View Volume Front}
 \end{figure} \FloatBarrier
 
-It is a coordinate system where the y axis is flipped and therefore the positive of the z axis
+It is a coordinate system where the y axis is pointing downwards and the positive of the z axis
 is pointing away from us. Each axis ranges from -1 to 1 except the z axis,
 which ranges from 0 to 1. This is because the everything negative on the z axis
 is behind us and therefor not visible.
@@ -854,8 +919,9 @@ understand this topic and until then, do what programmers do best. Copy and past
 The Vulkan pipeline consists of multiple stages. Some of them are fixed
 and can not be changed, while others are programmable to act as we
 want them to. These changeable stages are called shaders and are usually
-written in the OpenGL Shading Language (GLSL). These shaders have to be
-given to the pipeline as compiled SPIR-V bytecode. \cite{spirv}
+written in the OpenGL Shading Language (GLSL). Optionally it is possible
+to use other shading languages like the High Level Shading Language (HLSL).
+These shaders have to be given to the pipeline as compiled SPIR-V bytecode. \cite{spirv}
 
 Lets take a look at the Vulkan pipeline and its stages:
 
@@ -896,86 +962,7 @@ in the order they were recorded. \cite{command-buffers}
 \subsection{Input Assembler}
 
 The input assembler is the first stage of the graphics pipeline. It takes
-a vertex and index buffer. \cite{vulkan-spec-pipelines} Before we talk
-about the input assembler, lets define what a vertex, index and buffer is.
-
-Basically every model that we see is made up of triangles, and vertices
-are the corners of these triangles. A single vertex can contain multiple
-attributes like position \{x, y, z\}, color \{r, g, b, a\} or texture
-coordinates \{u, v\}. \cite{vulkan-vertex-input}
-
-\begin{figure}[hbtp]
-	\centering \includesvg[width=0.60\textwidth]{vektor_triangle.svg}
-	\caption{Triangle with vertices}
-\end{figure} \FloatBarrier
-
-When we want to reuse certain vertices, for example when
-drawing a quad, we can add indices.  These indices tell the
-input assembler what vertices need to be combined to form a
-triangle. \cite{vulkan-tutorial-index-buffer}
-
-For example: A quad has 4 vertices because it has 4 corners. When we want
-to draw the quad we have to create two triangles, which means we need 2 *
-3 indices.
-
-Vertices: \{0, 1, 2, 3\} Indices: \{\textcolor{red}{0, 1, 2} ,
-\textcolor{blue}{0, 2, 3}\}
-
-\begin{figure}[hbtp]
-	\centering \includesvg[width=0.50\textwidth]{vi_quad.svg}
-	\caption{Quad
-		with vertices created using indices}
-\end{figure} \FloatBarrier
-
-Here you can see that the first triangle is created by using the vertices
-\{\textcolor{red}{0, 1, 2}\} and the second triangle is created by using
-the vertices \{\textcolor{blue}{0, 2, 3}\}. I've added the colors just
-to clarify which indices are used to create which triangles.
-
-Now that we know what vertices and indices are, we can talk about how we
-provide the GPU with this data. There the buffers come into play. A buffer
-is basically an array of data that can be bind to the graphics Pipeline.
-When the pipeline is created, we need to provide it with the layout of the
-buffer, which tells the pipeline how the data in the buffer is structured.
-\cite{vulkan-tutorial-vertex-buffer}
-
-In the Vertex Buffer we store the attributes of each vertex as an
-array. An attribute can be a position, color or any other related data
-of the Vertex. \cite{vulkan-tutorial-vertex-buffer}
-
-\begin{figure}[hbtp]
-	\centering \includesvg[width=1\textwidth]{Vertexbuffer.svg}
-	\caption{Interleaved Vertex Buffer}
-\end{figure} \FloatBarrier
-
-You can see that each attribute has a specific location in the buffer.
-These locations tell the pipeline what bytes belong together. So when
-accessing the buffers 0st location it gets an vec3(x,y,z).  The pipeline
-also needs to know by what offset, in bytes, each vertex is separated.
-In this case it would be 24 bytes, because position and color both
-contain 3 floats, which are 4 bytes each. \cite{vulkan-tutorial-vertex-buffer}
-
-This example shows a single buffer containing all attributes in
-an interleaved pattern, but we can also create one buffer for each
-attribute and then attach them into a single vertexbuffer. This is called
-a non-interleaved pattern.
-
-\begin{figure}[hbtp]
-	\includesvg[width=1\textwidth]{non-int-vertexbuffer.svg}
-	\caption{Non-Interleaved Vertex Buffer}
-\end{figure} \FloatBarrier
-
-Each attribute has has its own binding, to tell the pipeline what location
-is assigned to the data. So the first binding will always be the position
-until you get to the next binding, which will be the color in this case.
-\cite{vulkan-tutorial-vertex-buffer}
-
-Usually we will use interleaved buffers, but in some cases, when we need
-different attributes for different tasks, we can use non-interleaved
-buffers.
-
-The Indexbuffer on the other hand is just an simple array of integers.
-\cite{vulkan-tutorial-index-buffer}
+a vertex and index buffer. \cite{vulkan-spec-pipelines}
 
 Okay we can now finally talk about the input assembler. The input
 assembler takes the vertices and indices to create primitives types like
@@ -1022,8 +1009,8 @@ But we need to program the transformation ourselves. We can use our new
 knowledge of matrices to transform the vertices. To do so we pass the
 model, view and projection matrix to the vertex shader via resource descriptors.
 
-Resource descriptors are used to pass data to the shaders during the
-rendering process. There are multiple types of descriptors, but we will
+When we want to pass data during the rendering process to the shaders,
+we have to use resource descriptors. There are multiple types of descriptors, but we will
 focus on the uniform buffer descriptor (UBO) which passes data to the shaders
 in the form of a buffer.
 
@@ -1045,7 +1032,7 @@ normalized device coordinates.
 
 The tessellation stage is actually divided in 3 stages. The tessellation
 control shader, tessellation primitive generator (tessellator) and the tessellation
-evaluation shader. Please note that the Tessellation stage is optional and will
+evaluation shader. Please note that the tessellation stage is optional and will
 only be executed if both shaders are defined in the pipeline.\cite{tessellation}
 
 If you are not familiar with tessellation, it is a technique used to
@@ -1059,11 +1046,11 @@ It also passes the vertex positions to the evaluation shader. \cite{tessellation
 
 After setting the tessellation levels, the tessellator subdivides a patch, which is
 a new primitive type, into smaller patches.
-This can be done in 3 ways: Triangles, Quads or Isolines.
+This can be done in 3 ways: triangles, quads or isolines.
 Lets first talk about the tessellation of a triangle.
 
 Vulkan uses barycentric coordinates to subdivide the triangle. Barycentric
-coordinates consist, in the case of a triangle, of 3 variables (u,v,w) that sum up to 1.
+coordinates consist, in the case of a triangle, of three variables (u,v,w) that sum up to 1.
 Each variable represents the relative position of a vertex in the triangle with 1 being directly
 on the vertex. So when we have a triangle with vertices A, B and C, the barycentric coordinates
 could be \{0, 0, 1\} for A, \{0, 1, 0\} for B and \{1, 0, 0\} for C, depending on the selected
@@ -1093,9 +1080,9 @@ and when we sum them up they need to equal 1.
 
 First the inner tessellation levels subdivides the patches edges into the desired amount of segments and
 creates temporary vertices on the edges of the patch. These vertices are then used to create an
-inner triangle by taking the 2 neighboring vertices of the outer triangles corners and extending perpendicular
+inner triangle by taking the two neighboring vertices of the outer triangles corners and extending perpendicular
 lines to the edge of the outer triangle. Where these two lines intersect, a new vertex is created. When you
-do this for all 3 corners it creates the corners of the inner triangle. \cite{tessellation}
+do this for all three corners it creates the corners of the inner triangle. \cite{tessellation}
 
 \begin{figure}[hbtp]
 	\centering \includegraphics[width=0.4\textwidth]{innertri.png}
@@ -1103,11 +1090,11 @@ do this for all 3 corners it creates the corners of the inner triangle. \cite{te
 	\cite{fig:inner-tessellation}
 \end{figure} \FloatBarrier
 
-You can see that the inner tessellation level of 4 cuts each edge of the outer triangle into 4 segments.
+You can see that the inner tessellation level of four cuts each edge of the outer triangle into four segments.
 This is done by calculating the barycentric coordinates of the temporary vertices on the edges. Let's
 calculate the barycentric coordinates of the first vertex on the left edge AB.
 
-We need 3 points where u is always 0 because the vertices are on the opposite edge of the corner {1,0,0}
+We need three points where u is always zero because the vertices are on the opposite edge of the corner {1,0,0}
 To get the distance of one segment we divide the edge length by the desired segments length.
 
 So the length of one segment is \(\frac{1}{4}\).
@@ -1118,7 +1105,7 @@ We do the same for each edge and then calculate the intersection of the
 perpendicular lines to get the inner triangles corner vertices.
 
 For the bottom left corner of the inner triangle we take the
-2 vertices of the outer triangle \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\)
+two vertices of the outer triangle \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\)
 and \{\(\frac{1}{4}\), 0, \(\frac{3}{4}\}\).
 
 Now we need to get the direction of the perpendicular line.
@@ -1174,7 +1161,7 @@ To get the intersection we simply set the functions equal to each other and solv
 \]
 
 Voil\`a, that's how we get the corners of the inner triangle.
-Now vulkan subdivides the inner triangles edges by n-2 with n being the
+Now Vulkan subdivides the inner triangles edges by n-2 with n being the
 inner tessellation level. Because our tessellation level is 4
 we subdivide the first inner triangles edges into 2 pieces.
 The vertex dividing the inner edge is then calculated by projecting a
@@ -1203,10 +1190,10 @@ So we can just calculate the barycentric coordinates as if we were in
 an x,y coordinate system. \cite{tessellation}
 
 Quads have 4 outer tessellation levels that subdivide the outer edges
-and 2 inner tessellation levels that subdivide the area of the quad
-into smaller quads. The first inner tessellation level divides the columns
+and 2 inner tessellation levels that subdivide the area of the square
+into smaller squares. The first inner tessellation level divides the columns
 and the second inner tessellation level divides the rows.
-At the end the tessellator fills the area of the quad with triangles. \cite{tessellation}
+At the end the tessellator fills the area of the square with triangles. \cite{tessellation}
 
 Isolines on the other hand is a set of horizontal lines that have a length
 of 1 on the u axis and are equally spaced on the v axis.
@@ -1254,7 +1241,7 @@ the new vertex position would be calculated like this:
 \]
 
 After that we can transform them further, adding curvature or displacement to the vertices.
-When using a quad we can adjust the vertices
+When using a square we can adjust the vertices
 by using a 2D texture like a height map to displace the vertices. \cite{tessellation}
 
 One last thing to mention is that when we use a tessellation shader
@@ -1270,8 +1257,8 @@ primitives and is great at procedural generation of geometry.
 That includes creating particles, grass or fur. It takes all the vertices of a primitive
 and generates new vertices that are then combined to
 either points, line strips or triangle strips.
-For example, we could take a single point and create a quad around it by emitting 4 new vertices.
-These will then be combined to 2 triangles by the pipeline, forming a quad. \cite{geometry-shader}
+For example, we could take a single point and create a square around it by emitting 4 new vertices.
+These will then be combined to 2 triangles by the pipeline, forming a square. \cite{geometry-shader}
 
 I will not go further into explaining the geometry shader because its
 implementation is very dependent on the use case. It is enough to know
@@ -1329,7 +1316,7 @@ scissors to only render a part of the viewport.
 \subsection{Rasterization}
 
 This stage of the pipeline converts our primitives into a 2D image.
-It takes our viewport and checks which pixels are covered by the
+It takes our viewport and checks which pixels aka fragments are covered by the
 primitives and then fills them with the color of the primitive.
 
 Let's take a look on how this is done. Again, there are multiple primitives that can be rasterized:
@@ -1417,18 +1404,18 @@ both or none of the triangles are discarded. \cite{rasterization}
 
 Next we take the vertices of each triangle and determine its bounding box.
 A bounding box is basically the smallest rectangle that
-contains the whole triangle. By doing this we don't have to check every pixel
-if it is inside the triangle, but only the pixels that are
+contains the whole triangle. By doing this we don't have to check every fragment
+if it is inside the triangle, but only the fragments that are
 inside the bounding box. This is done by taking the minimum
 and maximum x and y coordinates of the triangle's vertices.
 
-Next we iterate through every pixels center inside the bounding box,
+Next we iterate through every fragments center inside the bounding box,
 and check if it is inside the triangle.
 A point is inside the triangle if it is to the right of all
 the triangles edge vectors when it is clockwise oriented
 and to the left when it is counter clockwise oriented.
 We can check this by calculating the cross product of the edge vectors and the vector
-from the first vertex to the pixels position. If the cross product is positive
+from the first vertex to the fragments position. If the cross product is positive
 the point is to the right of the edge, if it is negative it is to the left.
 If the cross product is 0 the point is on the edge.
 
@@ -1449,44 +1436,44 @@ which means that it is pointing upwards, because the y axis is flipped.
 Is the edge a top or left edge? Then the point is inside the triangle,
 otherwise an offset is added to move the point outside of the triangle.
 
-Some of you might not like the idea of checking every pixel inside the bounding box,
+Some of you might not like the idea of checking every fragment inside the bounding box,
 because it is very inefficient. There is actually a way to rasterize
 a triangle without a bounding box. To do so we have to take a look at
 a fact that comes from using the barycentric coordinates.
 When we go through the triangle and calculate one of the barycentric coordinates
 we can see that the step size we take is always the same
-when we go from one pixel in the triangle to the next.
+when we go from one fragment in the triangle to the next.
 This comes from an intresting property of the barycentric coordinates.
-When we go from one pixel to the next the barycentric coordinates
+When we go from one fragment to the next the barycentric coordinates
 change by a constant amount. This means that we can rasterize a triangle by only checking
-the barycentric coordinates of the first pixel and then adding a constant amount
+the barycentric coordinates of the first fragment and then adding a constant amount
 to the barycentric coordinates to get the barycentric coordinates.
 If the barycentric coordinates are inside the triangle we draw the pixel, if not we skip it.
 
 We can calculate the constant amount by calculating the barycentric coordinates
 of the next pixel and then subtracting the barycentric coordinates
-of the current pixel from them. This will give us the constant amount we have to add
-to the barycentric coordinates to get the barycentric coordinates of the next pixel.
+of the current fragment from them. This will give us the constant amount we have to add
+to the barycentric coordinates to get the barycentric coordinates of the next fragment.
 
 For lines and points we use the same methods, we just have to draw a box
-around the line or point and then check if the pixel is inside this box.
+around the line or point and then check if the fragment is inside this box.
 The box drawn is not the bounding box but the thickness of the line or point.
 
 We have two problems left.
 
 First, lines and edges will not look smooth because we only interpolate the color of the vertices.
-They will look chunky because we fully color the pixel if the center is inside the box.
+They will look chunky because we fully color the fragment if the center is inside the box.
 To fix this we can use anti-aliasing. Anti-aliasing is a technique used to
-smooth the edges of a line or point. We can do this by checking how much of the pixel
-is covered by the line and then color the pixel accordingly.
+smooth the edges of a line or point. We can do this by checking how much of the fragment
+is covered by the line and then color the fragment accordingly.
 
 Second, what if we have two triangles that overlap?
 We can't just draw the second triangle over the first one.
 To fix this we can use a depth buffer. You might have asked yourself why
 we need a z coordinate for the vertices. This is because we can use the z coordinate
-to determine which pixel is in front of each other. When we rasterize a pixel
-we write the z value into an depth buffer and then we check if the z value of the next pixel is
-smaller than the z value in the depth buffer. If it is we, draw the pixel and write the new depth
+to determine which fragment is in front of each other. When we rasterize a fragment
+we write the z value into an depth buffer and then we check if the z value of the next fragment is
+smaller than the z value in the depth buffer. If it is we, draw the fragment and write the new depth
 into the depth buffer, if not we skip it.
 
 \subsection{Fragment Shader}
@@ -1528,22 +1515,23 @@ the relative position of the pixel to the vertices, so as long as everything sta
 at the same scale it will give us the same answer.
 
 Next we interpolate the colors of the vertices linearly to get the color of the pixel.
-This is done by multiplying the color of each vertex
+This is done by multiplying the color of each vertex, which are floats in the range of 0 to 1,
 with the barycentric coordinates and adding them together.
 
 \[
 	\begin{aligned}
-		r & = 0.25 \cdot A_r + 0.25 \cdot B_r + 0.5 \cdot C_r     \\
-		g & = 0.25 \cdot A_g + 0.25 \cdot B_g + 0.5 \cdot C_g     \\
-		b & = 0.25 \cdot A_b + 0.25 \cdot B_b + 0.5 \cdot C_b     \\
+		r & = 0.25 \cdot A_r + 0.25 \cdot B_r + 0.5 \cdot C_r  \\
+		g & = 0.25 \cdot A_g + 0.25 \cdot B_g + 0.5 \cdot C_g  \\
+		b & = 0.25 \cdot A_b + 0.25 \cdot B_b + 0.5 \cdot C_b  \\
 		\\
-		r & = 0.25 \cdot 0 + 0.25 \cdot 255 + 0.5 \cdot 0 = 63.75 \\
-		g & = 0.25 \cdot 255 + 0.25 \cdot 0 + 0.5 \cdot 0 = 63.75 \\
-		b & = 0.25 \cdot 0 + 0.25 \cdot 0 + 0.5 \cdot 255 = 127.5 \\
+		r & = 0.25 \cdot 0 + 0.25 \cdot 1 + 0.5 \cdot 0 = 0.5  \\
+		g & = 0.25 \cdot 1 + 0.25 \cdot 0 + 0.5 \cdot 0 = 0.25 \\
+		b & = 0.25 \cdot 0 + 0.25 \cdot 0 + 0.5 \cdot 1 = 0.25 \\
 	\end{aligned}
 \]
 
-Which will give us this color: \{63.75, 63.75, 127.5\}.
+Which will give us this color: \{0.5, 0.25, 0.25\}. This will then be converted to the color
+space of our surface, which can be sRGB, displayP3 or some other supported color space.
 We repeat this for every fragment inside the triangle and then we have our rasterized image.
 
 But we can do more than just interpolate the color of the vertices.
@@ -1561,7 +1549,7 @@ When blending is complete we have our final framebuffer that we can display.
 
 \subsection{Framebuffers}
 
-A Framebuffer consists of multiple attachments. An attachment is the buffer
+A framebuffer consists of multiple attachments. An attachment is the buffer
 that holds either the color or depth of each fragment.
 These buffers are written to by the pipeline and then presented to the screen.
 The color attachment is used to store the color of each fragment,
@@ -1662,7 +1650,7 @@ GLFW\textunderscore INCLUDE\textunderscore VULKAN to include the vulkan header f
 Next we add a namespace that we want to use for our engine. In my case I will use
 the namespace \textit{engine}, but feel free to use the actual name of your engine.
 Inside we create our class Window with an constructor that takes the width, height
-and name of the window as arguments. We also add an empty destructor to clean up the window.
+and name of the window as arguments. We also add a destructor to clean up the window.
 
 \begin{lstlisting}[language=C++]
   #include <string>
@@ -1841,7 +1829,7 @@ create our SwapChain later it is bound to the windows width an height. So when w
 resize or window the SwapChain will not be valid anymore. We will get at it once
 we have the base of our engine set up.
 
-\section{Devices}
+\section{Device}
 
 Let's go ahead and setup Vulkan. To do so we have to create an Instance,
 a Surface, pick a physical device aka graphics card, create a logical device
@@ -1860,7 +1848,8 @@ A vulkan instance is the connection between our application and the Vulkan libra
 
 Let's start by creating a new header file in the core folder called \textit{device.hpp}
 and include the Vulkan header file. In here we will create a constructor, a destructor
-a private function to create the Vulkan instance and a private variable to store the instance.
+a private function to create the Vulkan instance and a private variable to store the instance
+and a reference to the window object. We'll also delete the copy and move operators.
 
 \begin{lstlisting}[language=C++]
 #include <vulkan/vulkan.h>
@@ -1871,6 +1860,12 @@ namespace engine {
       public:
         Device(Window &window);
         ~Device();
+        
+        Device(const Device &) = delete;
+        Device &operator=(const Device &) = delete;
+        Device(const Device &&) = delete;
+        Device &operator=(const Device &&) = delete;
+
       private:
         void createInstance();
         VkInstance instance;
@@ -1973,6 +1968,15 @@ if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create Vulkan instance");
 \end{lstlisting}
 
+Finally we have to clean up the instance in the destructor. We can do this by calling the
+\textit{vkDestroyInstance} function with the instance as a parameter.
+
+\begin{lstlisting}[language=C++]
+Device::~Device() {
+  vkDestroyInstance(instance, nullptr);
+}
+\end{lstlisting}
+
 Great! Now our instance is created, but there is one more thing I would like to
 add to it. Because vulkan is designed to be fast, it doesn't
 provide much error checking. To enable error checking we can use validation layers.
@@ -2042,6 +2046,8 @@ At the top of the \textit{createInstance} function we will check if the validati
 when the \textit{enableValidationLayers} constant is set to true. If the validation layers are not
 supported we throw an exception with an error message.
 
+\newpage
+
 \begin{lstlisting}[language=C++]
 if (enableValidationLayers && !checkValidationLayerSupport())
   throw std::runtime_error("Requested validation layers are not supported!");
@@ -2072,6 +2078,8 @@ use the \textit{VkDebugUtilsMessengerCreateInfoEXT} struct that we will use to e
 \textit{VkInstanceCreateInfo} struct. Let's add a private function called \textit{populateDebugMessenger}
 that takes a \textit{VkDebugUtilsMessengerCreateInfoEXT} struct reference as an argument fills it with
 the desired values. Then we add the debug messenger to the \textit{VkInstanceCreateInfo} struct.
+
+\newpage
 
 \begin{lstlisting}[language=C++]
 if (enableValidationLayers) {
@@ -2107,7 +2115,8 @@ The \textit{messageSeverity} member of the \textit{VkDebugUtilsMessengerCreateIn
 is used to determine which message severity levels should be used. We basically have 4 levels of
 severity. Verbose, Info, Warning and Error. Each of them is assigned a bit. For example the
 \textit{VK\textunderscore DEBUG\textunderscore UTILS\textunderscore MESSAGE\textunderscore SEVERITY\textunderscore WARNING\textunderscore BIT\textunderscore EXT}
-is equal to 0x00000100 and the \textit{VK\textunderscore DEBUG\textunderscore UTILS\textunderscore MESSAGE\textunderscore SEVERITY\textunderscore ERROR\textunderscore BIT\textunderscore EXT}
+is equal to 0x00000100 and the \\
+\textit{VK\textunderscore DEBUG\textunderscore UTILS\textunderscore MESSAGE\textunderscore SEVERITY\textunderscore ERROR\textunderscore BIT\textunderscore EXT}
 is equal to 0x00001000. We can combine these bits with the bitwise OR operator to get the desired severity level
 0x00001100. When we get a message it has a severity level assigned to it. This level is then AND combinded to the
 \textit{messageSeverity} member. The same is done with the \textit{messageType} member.
@@ -2141,6 +2150,8 @@ We'll start off by adding a function in the constructor that setups the debug me
 use a generic function to load the function and create the messenger. Let's also add a private
 variable that stores the debug messenger.
 
+\newpage
+
 \begin{lstlisting}[language=C++]
 //device.hpp
 void setupDebugMessenger();
@@ -2149,7 +2160,7 @@ VkDebugUtilsMessengerEXT debugMessenger;
 
 \begin{lstlisting}[language=C++]
 //device.cpp
-Device::Device() {
+Device::Device(Window &window) : window{window} {
   createInstance();
   setupDebugMessenger();
 }
@@ -2177,6 +2188,29 @@ The \textit{CreateDebugUtilsMessengerEXT} function trys to load the \textit{vkCr
 function with the \textit{vkGetInstanceProcAddr} function. If the function is loaded successfully
 we create the debug messenger with that function and return the result. If the function is not loaded
 we return \textit{VK\textunderscore ERROR\textunderscore EXTENSION\textunderscore NOT\textunderscore PRESENT}.
+
+And don't forget to destroy the debug messenger in the destructor if the validation layers are enabled.
+To do so we'll have to load the \textit{vkDestroyDebugUtilsMessengerEXT} function with the same
+function we used to load the \textit{vkCreateDebugUtilsMessengerEXT} function. Let's add a lokal helper function
+to the device class that destroys the debug messenger called \textit{destroyDebugUtilsMessengerEXT}.
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+Device::~Device() {
+  if (enableValidationLayers)
+    destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+
+  vkDestroyInstance(instance, nullptr);
+}
+
+void destroyDebugUtilsMessengerEXT(VkInstance instance, 
+  VkDebugUtilsMessengerEXT debugMessenger, 
+  const VkAllocationCallbacks *pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) 
+      func(instance, debugMessenger, pAllocator);
+  }
+\end{lstlisting}
 
 \subsection{Surface}
 
@@ -2208,10 +2242,461 @@ void Window::createWindowSurface(VkInstance instance, VkSurfaceKHR *surface) {
 }
 \end{lstlisting}
 
+We also have to destroy the surface in the destructor of the device class.
+
+\begin{lstlisting}[language=C++]
+Device::~Device() {
+  if (enableValidationLayers)
+    destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+
+  vkDestroySurfaceKHR(instance, surface, nullptr);
+  vkDestroyInstance(instance, nullptr);
+}
+\end{lstlisting}
+
+\subsection{Physical Device}
+
+The physical device is the actual graphics card that we will use to render our scene. We
+can use either one or multiple physical devices to render our scene. But for now we will
+only use one.
+
+The first thing we need to do is to get the available physical devices. Then we check each of them
+until we find a suitable device.
+
+Let's begin with defining our helper functions \textit{pickPhysicalDevice} and \textit{isDeviceSuitable}
+and a private variable to store the physical device.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+private:
+...
+VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+VkPhysicalDeviceProperties properties;
+void pickPhysicalDevice();
+bool isDeviceSuitable(VkPhysicalDevice device);
+\end{lstlisting}
+
+Next we call the \textit{pickPhysicalDevice} function in our constructor. Inside the function we
+first need to get all available physical devices with the \textit{vkEnumeratePhysicalDevices} function.
+Then we iterate through the devices and check until we find a suitable device with the \textit{isDeviceSuitable}
+function. In case the loop ends without finding a suitable device we check if the physical device is
+\textit{VK\textunderscore NULL\textunderscore HANDLE}. If it is we throw an exception with an error message.
+Finally we get the properties of our device with \textit{vkGetPhysicalDeviceProperties} and store it in a private variable.
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+Device::Device(Window &window) : window{window} {
+  ...
+  pickPhysicalDevice();
+}
+
+void Device::pickPhysicalDevice(){
+  uint32_t deviceCount = 0;
+  vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
+  if(deviceCount == 0)
+    throw std::runtime_error("Failed to find a GPU that supports Vulkan!");
+
+  std::vector<VkPhysicalDevice> devices(deviceCount);
+  vkEnumeratePhysicalDevices(instance, &deviceCount, &devices);
+
+  for(const auto &device : devices){
+    if(isDeviceSuitable(device)){
+      physicalDevice = device;
+      break;
+    }
+  }
+
+  if(physicalDevice == VK_NULL_HANDLE)
+    throw std::runtime_error("No Device was suitable!");
+
+  vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+  \\optional
+  std::cout << "Physical Device: " << properties.deviceName << std::endl;
+}
+\end{lstlisting}
+
+The \textit{isDeviceSuitable} function is used to check if the device is suitable for our application.
+In here we will check if the device can process graphics, present images on the surface, supports the required extensions
+and if it is swapchain adequate.
+
+Okay, let's start by checking if the device supports graphics commands. This data is stored in
+the \textit{VkQueueFamilyProperties} struct and needs to be queried with the \textit{vkGetPhysicalDeviceQueueFamilyProperties}
+function from the physical device.
+
+Before I explain further I have to explain what a queue and a queue family is. Do you remember
+when I mentioned Command Buffers? These are used to send commands to the GPU. For example, to run a
+graphics pipeline we would add the \textit{vkCmdDraw} command to the command buffer. This command
+buffer then has to be submitted to a queue. A queue determines the order in which the command buffers
+are executed.
+
+But here is the catch. Not all queues can execute all command buffers. One queue might be able to
+execute graphics commands, while another queue might be able to execute compute commands and so on.
+Therefore we have to check if the device supports the required queues, which are graphics for now.
+
+We can get the available queues with the \textit{vkGetPhysicalDeviceQueueFamilyProperties} function.
+It returns all queues with the same capabilities as a queue family. So when the GPU has 2 queues
+that can execute graphics commands we get a queue family with a queue count of 2 and a flag that
+indicates that it can execute graphics commands.
+
+Let's go ahead and add a private function called \textit{findQueueFamilies} that returns a struct
+that contains the indices of the graphics and present queue family. We will call this struct
+\textit{QueueFamilyIndices} and it will contain an optional uint32\_t for the graphics queue family,
+an optional uint32\_t for the present queue family and a function \textit{isComplete} that returns
+true if the graphics and present queue family are set.
+
+Inside \textit{findQueueFamilies} we can check if the queue family can execute graphics commands by iterating through each queue family
+and checking if its \textit{queueFlags} member has the \textit{VK\textunderscore QUEUE\textunderscore GRAPHICS\textunderscore BIT} set.
+If it is we set the graphics queue family index to the current index. We also check for a queue family that can present images
+on a given surface with the \textit{vkGetPhysicalDeviceSurfaceSupportKHR} function. If it does we set the present queue family index
+to the current index.
+
+We will then return the \textit{QueueFamilyIndices} struct from the \textit{findQueueFamilies} function. We will need the indices
+to create the device.
+
+\begin{lstlisting}[language=C++]
+\\device.hpp
+
+struct QueueFamilyIndices {
+  std::optional<uint32_t> graphicsFamily;
+  std::optional<uint32_t> presentFamily;
+
+  bool isComplete() {
+    return graphicsFamily.has_value() && presentFamily.has_value();
+  }
+};
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+\\device.cpp
+
+bool Device::isDeviceSuitable(VkPhysicalDevice device) {
+  QueueFamilyIndices indices = findQueueFamilies(device);
+
+  return indices.isComplete();
+}
+
+QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) {
+  QueueFamilyIndices indices;
+
+  uint32_t queueFamilyCount = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+  int i = 0;
+  for (const auto &queueFamily : queueFamilies) {
+    if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+      indices.graphicsFamily = i;
+
+    VkBool32 presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+    if (queueFamily.queueCount > 0 && presentSupport)
+      indices.presentFamily = i;
+
+    if (indices.isComplete())
+      break;
+
+    i++;
+  }
+
+  return indices;
+}
+\end{lstlisting}
+
+Now we check if the device supports the required extensions. For that we will create another helper function
+called \textit{checkDeviceExtensionSupport} that returns a boolean. We will use the \textit{vkEnumerateDeviceExtensionProperties}
+to get the available extensions. Then we will create a set of strings that contains the required extensions which will be the
+\textit{VK\textunderscore KHR\textunderscore SWAPCHAIN\textunderscore EXTENSION\textunderscore NAME} for now. We will then iterate through
+the available extensions and remove the required extensions from the set. If the set is empty we return true, otherwise false.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+
+private:
+  bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+  const std::vector<const char *> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  };
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+bool Device::isDeviceSuitable(VkPhysicalDevice device) {
+  QueueFamilyIndices indices = findQueueFamilies(device);
+  bool extensionsSupported = checkDeviceExtensionSupport(device);
+
+	return indices.isComplete() && extensionsSupported;
+}
+
+bool Device::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+  uint32_t extensionCount;
+  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+  std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+  for (const auto &extension : availableExtensions)
+    requiredExtensions.erase(extension.extensionName);
+
+  return requiredExtensions.empty();
+}
+\end{lstlisting}
+
+Another thing we have to check is if the device is adequate for a swapchain and simultaneously
+get some required data for creating the swapchain.
+
+Each device has a set of capabilities, like the minimum and maximum images for a swapchain
+and the minimum and maximum width and height of the image, that we can get with the
+\textit{vkGetPhysicalDeviceSurfaceCapabilitiesKHR} function.
+
+We also need the formats and the present modes that the device supports via the
+\textit{vkGetPhysicalDeviceSurfaceFormatsKHR} and the \textit{vkGetPhysicalDeviceSurfacePresentModesKHR}
+functions.
+
+Let's go ahead and create another struct called \textit{SwapChainSupportDetails} that stores the capabilities,
+formats and present modes.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+
+struct SwapChainSupportDetails{
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
+}
+\end{lstlisting}
+
+Next we create a function called \textit{querySwapChainSupport} that returns our
+\textit{SwapChainSupportDetails} struct with the data.
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+
+bool Device::isDeviceSuitable(VkPhysicalDevice device){
+  ...
+  bool swapChainAdequate = false;
+  if(extensionsSupported){
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+    swapChainAdequate = !swapChainSupport.formats.empty() &&
+                        !swapChainSupport.presentModes.empty();
+  }
+
+  return indices.isComplete() && extensionsSupported && swapChainAdequate;
+}
+
+SwapChainSupportDetails Device::querySwapChainSupport(VkPhysicalDevice device){
+  SwapChainSupportDetails details;
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities);
+
+  uint32_t formatCount;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, nullptr);
+
+  if(formatCount != 0){
+    details.formats.resize(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, details.formats.data());
+  }
+
+  uint32_t presentModeCount;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, nullptr);
+
+  if(presentModeCount != 0){
+    details.presentModes.resize(presentModeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, details.presentModes.data());
+  }
+
+  return details;
+}
+\end{lstlisting}
+
+Finally we check if the device supports anisotropic filtering. Anisotropic filtering is a technique
+that enhances the image quality of textures on surfaces, by reducing blurriness that can occur when
+rendering texture on a sharp angle. We'll look deeper into this topic later.
+
+We can check if the device supports anisotropic filtering by checking the \textit{VkPhysicalDeviceFeatures}
+struct that contains the features of the device. \textit{vkGetPhysicalDeviceFeatures} returns the features
+of the device, which contains the boolean \textit{samplerAnisotropy} member.
+
+\begin{lstlisting}[language=C++]
+bool Device::isDeviceSuitable(VkPhysicalDevice device){
+  ...
+  VkPhysicalDeviceFeatures supportedFeatures;
+  vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+  return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+}
+\end{lstlisting}
+
+That's it we have now picked a physical device that is suitable for our application. But please note that
+we just take the first suitable device we find, which is not the best practice. You should rather
+rate the devices by certain factors. For example, you could favor a dedicated GPU over an integrated GPU.
+
+For now we will just take the first suitable device we find.
+
+\subsection{Logical Device}
+
+We currently have a physical device but no interface to interact with it. This interface is provided
+by a logical device that we will create in the next step. Let's add a private function called
+\textit{createLogicalDevice} that creates the logical device and a private variable to store the device.
+We'll also create our queues here and will need a \textit{VkQueue} variable for each queue;
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+private:
+  ...
+  VkDevice device_;
+  VkQueue graphicsQueue_;
+  VkQueue presentQueue_;
+  void createLogicalDevice();
+\end{lstlisting}
+
+The logical device is created with the \textit{vkCreateDevice} function. We have to specify the
+queues that we want to create for the device. We do so by populating the \textit{VkDeviceQueueCreateInfo}
+struct and add it to the \textit{VkDeviceCreateInfo} struct. We'll need to specify the queue family index,
+the amount of queues and the priority of the queues. We'll keep the same priority for all queues for now,
+but you can adjust the priority to your needs. We also have to specify the device features in an
+\textit{VkPhysicalDeviceFeatures} struct, that we want to enable, which will be sampler anisotropy for now.
+We also have to specify the extensions that we want to enable,
+which is the swapchain extension in our \textit{deviceExtensions} vector.
+
+When we create the logical device we also have to check if the creation was successful. If not we throw
+an exception with an error message. After that we retrieve the queues from the device with the
+\textit{vkGetDeviceQueue} function.
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+Device::Device(Window &window) : window{window} {
+  ...
+  createLogicalDevice();
+}
+
+void Device::createLogicalDevice(){
+  QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+  std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+
+  float queuePriority = 1.0f;
+  for(uint32_t queueFamily : uniqueQueueFamilies){
+    VkDeviceQueueCreateInfo queueCreateInfo = {};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = queueFamily;
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+    queueCreateInfos.push_back(queueCreateInfo);
+  }
+
+  VkPhysicalDeviceFeatures deviceFeatures = {};
+  deviceFeatures.samplerAnisotropy = VK_TRUE;
+
+  VkDeviceCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+  createInfo.pQueueCreateInfos = queueCreateInfos.data();
+  createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+  createInfo.pEnabledFeatures = &deviceFeatures;
+  createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+
+  if(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device_) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create logical device!");
+
+  vkGetDeviceQueue(device_, indices.graphicsFamily.value(), 0, &graphicsQueue_);
+  vkGetDeviceQueue(device_, indices.presentFamily.value(), 0, &presentQueue_);
+}
+\end{lstlisting}
+
+Now we have to make sure that the logical device is destroyed in the cunstructor.
+We can do this by calling the \textit{vkDestroyDevice} function.
+
+\begin{lstlisting}[language=C++]
+Device::~Device() {
+  vkDestroyDevice(device_, nullptr);
+
+  if (enableValidationLayers)
+		destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+
+  vkDestroySurfaceKHR(instance, surface_, nullptr);
+  vkDestroyInstance(instance, nullptr);
+}
+\end{lstlisting}
+
+\subsection{Command Pool}
+
+The last step that this chapter will cover is the creation of a command pool. A command pool is used
+to manage the memory for storing buffers. From the command pool we can allocate command buffers that
+store the commands that we want to send to the GPU.
+
+Let's add a private variable to store the command pool and a private function to create the command pool
+called \textit{createCommandPool}. Inside the function we have to again populate a struct, which will be
+the \textit{VkCommandPoolCreateInfo} struct. We have to specify the queue family index that the command pool
+will create the command buffers for. We will use the graphics queue family index, because thats the commands
+we want to send to the GPU.
+
+The \textit{VkCommandPoolCreateInfo} struct also has a \textit{flags} member. By setting the
+member to the
+\textit{VK\textunderscore COMMAND\textunderscore POOL\textunderscore CREATE\textunderscore RESET\textunderscore COMMAND\textunderscore BUFFER\textunderscore BIT}
+we can reset command buffers individually with the \textit{vkResetCommandBuffer} function or via the implicit
+reset that occurs when calling \textit{vkBeginCommandBuffer}.
+
+We then create the command pool with the \textit{vkCreateCommandPool} function and check if the creation
+was successful. If not we throw an exception with an error message. We also have to destroy the command pool
+in the destructor.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+private:
+  ...
+  VkCommandPool commandPool;
+  void createCommandPool();
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+Device::Device(Window &window) : window{window} {
+		...
+		createCommandPool();
+	}
+
+void Device::createCommandPool(){
+  QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+  VkCommandPoolCreateInfo poolInfo = {};
+  poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+  poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+  if(vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create command pool!");
+}
+
+Device::~Device() {
+  vkDestroyCommandPool(device_, commandPool, nullptr);
+  ...
+}
+\end{lstlisting}
+
+And that's it for the device class. Let's recap what we have done so far. We have created a Vulkan instance
+that allows us to interact with the Vulkan API. We also added validation layers to get additional error checking
+and a debug messenger to output the error messages. We have created a surface to render on and picked a physical
+device that is suitable to render our scene for the given surface. Then we created a logical device that is used
+to interact with the physical device. We also created a command pool to manage the memory for storing command buffers.
+
+You might ask yourself why we didn't split the code into multiple classes, like the instance, the surface, the device and
+the command pool class. The reason is that all of them rely on each other. For example the surface relies on the instance
+and to pick the physical device we need to check if the device supports the surface. Having all of them in one class
+also saves us from writing classes that will only be used once. But you can split the code into multiple classes if you want.
+
+In the next chapters we will come back to the device class and add functionalities like creating buffers. But for now
+we will move on to the swapchain.
+
 \section{Pipeline Creation}
 
 Let's go and create our first Vulkan pipeline. We will keep it simple and ignore
-buffers and perspectiv projection for now.
+buffers and perspective projection for now.
 
 
 \printbibliography[
