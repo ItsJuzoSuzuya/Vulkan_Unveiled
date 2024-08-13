@@ -28,7 +28,7 @@ experience with Glium, which is an OpenGL Wrapper for Rust. For those
 unfamiliar, Glium further abstracts OpenGL, which made it easier to
 understand the logic and functionalities of my application.  I’m deeply
 invested in creating a precise representation of the Vulkan API.
-which will also be my ground base on further deepening my knowledge and
+Which will also be my ground base on further deepening my knowledge and
 understanding.	While researching and writing this book, I anticipate
 learning a great deal myself.  Nonetheless, I am committed to providing
 you with a comprehensive understanding of graphics programming throughout
@@ -1568,7 +1568,8 @@ in one subpass and then apply post processing in another subpass. \cite{render-p
 \subsection{Swapchain}
 
 The swapchain is used to present the final framebuffer to the screen.
-It consists of usually 2 (Double Buffering) or more framebuffers.
+It consists of usually 2 (Double Buffering) or more framebuffers. The best implementation
+is to use Triple Buffering, which uses 3 framebuffers.
 On a swapchain we can present one framebuffer while we render to another framebuffer.
 The presented framebuffer is called the front buffer and the rendered framebuffer
 is called the back buffer. Every time a new frame is rendered the
@@ -2690,8 +2691,370 @@ the command pool class. The reason is that all of them rely on each other. For e
 and to pick the physical device we need to check if the device supports the surface. Having all of them in one class
 also saves us from writing classes that will only be used once. But you can split the code into multiple classes if you want.
 
+But we are not done yet. We have to instantiate the device class in the application class. We can do that directly in the
+header file. Let's add a private variable to the application class that stores the device.
+
+\begin{lstlisting}[language=C++]
+//app.hpp
+private:
+  ...
+  Device device{window};
+\end{lstlisting}
+
+
 In the next chapters we will come back to the device class and add functionalities like creating buffers. But for now
 we will move on to the swapchain.
+
+\section{Swapchain}
+
+When we picked our physical device we also queried the swapchain support details. We will use this data to create
+the swapchain. Let's add a new file called \textit{swapchain.cpp} and \textit{swapchain.hpp} to the project.
+
+Let's start off by creating a new class called \textit{Swapchain} in the \textit{swapchain.hpp} file and adding a
+constructor that takes a reference to the device and a \textit{VkExtent2D} struct as arguments. The extent is the
+resolution of the swapchain images. We will also add a function called \textit{createSwapchain} that creates the swapchain.
+We'll also delete the copy constructor and the copy assignment operator.
+
+Because the \textit{querySwapChainSupport} function can return multiple formats present modes we will add private
+functions that chooses a format and present mode from the available formats and present modes.
+
+We also need a function that chooses the extent of the swapchain images. You might assume that the extent of the
+swapchain images matches the extent of the window. But this is not always the case. GLFW measures the resolution
+in screen coordinates but Vulkan measures the resolution in pixels. This means that our swapchain extent needs
+to be in pixels as well. The problem is that when using high DPI displays, the extent in screen coordinates
+will be smaller than the extent in pixels. We can get the extent in pixels with the \textit{glfwGetFramebufferSize}
+function, but we have the extent already defined in the windowExtent variable. We will use the window extent
+and then clamp it to the minimum and maximum extent that the device supports.
+After the creation of the swapchain we will also get the swapchain images from it and store them in a vector of
+\textit{VkImages}.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+namespace engine {
+class SwapChain {
+public:
+  SwapChain (Device &device, VkExtent2D extent);
+  ~SwapChain ();
+
+  SwapChain (const Swapchain &) = delete;
+  SwapChain &operator=(const Swapchain &) = delete;
+
+private:
+  Device &device;
+  VkExtent2D windowExtent;
+
+  VkSwapchainKHR swapChain;
+  std::vector<VkImage> swapChainImages;
+
+  void createSwapChain();
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+  VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+};
+}
+
+\end{lstlisting}
+
+The constructor calls the \textit{createSwapChain} function. Inside of it we have
+to populate the \textit{VkSwapchainCreateInfoKHR} struct. It requires the surface,
+the min image count, the image format and color space, the image extent, the image
+array layers, the image usage, the sharing mode, the queue family indices, the
+pre transform, the composite alpha, the present mode, the clipped and the old swapchain.
+
+We get the surface from the device, but currently it is a private variable. We will
+need a getter function to the device class that returns the surface. We will also get
+data like the min image count from the swapchain support details. Therefore we will add
+a public function that calls the \textit{querySwapChainSupport} function. We will do the same
+for the \textit{findQueueFamilies} function. To create the swapchain we also need the
+logical device. We could add a getter function to the device class that returns the logical
+device, but I rather define a conversion operator that returns the device when we access the
+device instance.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+VkSurfaceKHR surface() { return surface_; }
+operator VkDevice() const { return device_; }
+
+SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(device_); }
+QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(physicalDevice); }
+\end{lstlisting}
+
+In the \textit{swapchain.cpp} file we will implement the \textit{createSwapChain} function.
+We will also implement the \textit{chooseSwapSurfaceFormat}, \textit{chooseSwapPresentMode}
+and \textit{chooseSwapExtent} functions.
+
+Because they rely on the swapchain support details we will start off by calling the
+\textit{getSwapChainSupport} function. We will then call the \textit{chooseSwapSurfaceFormat}.
+
+\begin{lstlisting}[language=C++]
+//swapchain.cpp
+SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
+  createSwapChain();
+}
+
+void SwapChain::createSwapChain() {
+  SwapChainSupportDetails swapChainSupport = device.getSwapChainSupport();
+
+  VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+  VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+  VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+}
+\end{lstlisting}
+
+\subsection{Swapchain Surface Format}
+
+The \textit{VkSurfaceFormatKHR} struct contains a format and a color space member. The format
+defines in what order and size the R, G, B and A components are stored. We will use the
+\textit{VK\textunderscore FORMAT\textunderscore B8G8R8A8\textunderscore SRGB} format, that stores
+the components in the order B, G, R and A with 8 bits each. The reason
+we use the \textit{SRGB} format is that it is the most common format and is supported and optimized
+on most devices. The color space is used to determine if the SRGB color space is supported. We will
+iterate through the available formats and check if the format and color space are supported. If they
+are we return the format. If not we return the first format. You could add additional checks to
+choose the best format but for now we will assume that sRGB is supported.
+
+\begin{lstlisting}[language=C++]
+VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
+  for (const auto &availableFormat : availableFormats) {
+    if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      return availableFormat;
+  }
+
+  return availableFormats[0];
+}
+\end{lstlisting}
+
+\subsection{Swapchain Present Mode}
+
+The present mode determines how the images are presented to the screen. To understand this we
+have to take a deeper look into the swapchain. The swapchain contains multiple framebuffers.
+A framebuffer is an array of pixel values that are used to render an image. The swapchain
+contains multiple framebuffers that are used to render multiple images.
+If we use triple buffering, which means that we have 3 framebuffers, it could look like this:
+The first framebuffer is the one that is currently being displayed on the screen.
+The second framebuffer is the one
+that is being rendered to and the third framebuffer is the one that is waiting to be rendered to.
+
+Let's take a look at the first present mode called \\
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore IMMEDIATE\textunderscore KHR}.
+This mode will display the image as soon as it is done rendering.
+The problem is, that each monitor has a refresh rate that defines when the swapchain
+swaps the framebuffers. The moment the display is refreshed is called a vertical blank.
+If the vertical blank happens while the image is being rendered we get a screen tearing effect.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=\textwidth]{screen_tearing.jpg}
+	\caption{Screen Tearing} \cite{fig:screen_tearing}
+\end{figure}
+
+Here you can see that 2 images are displayed at the same time. The top image is the new one that has
+not managed to fully render yet and the bottom image is the old one that was being displayed before the
+refresh. Remember that we overwrite the old image with the new one when rendering. Because not every pixel
+was done rendering when the refresh happened we get the rendered part and the old part displayed at the same time.
+This is obviously not optimal and we want to avoid this. So let's move on to the next one.
+
+The next present mode is called
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR}.
+FIFO stands for first in first out. This mode handles the images in a queue. Each fully rendered image
+is added to the queue and the image that is at its front is displayed. The
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR}
+only swaps the framebuffers when the vertical blank happens and takes the framebuffer's image that is at the front
+of the queue, which avoids the screen tearing effect. The problem with this mode is that if the queue is full,
+aka each framebuffer's image is rendered but not displayed yet, the GPU has to wait until the vertical blank happens
+to continue rendering, which caps the frame rate to the refresh rate of the monitor. This is called V-Sync and
+causes a delay between the rendering and the displaying of the image, but is guaranteed
+to be available and has a lower energy consumption than the other modes that have the GPU rendering without a break.
+Therefore this mode is the most common mode for mobile devices, but is still widely used for desktop applications.
+
+There is a similar version of the
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR} mode called \\
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore RELAXED\textunderscore KHR}.
+This mode only differs from the previous mode in the way it handles a empty queue. If the queue is empty, aka no
+framebuffer's image is rendered yet, the swapchain will swap the framebuffers immediately and display a teared image. This mode
+is used when we have a long rendering time and want to avoid waiting for the queue to be filled.
+
+Finally we have the \\
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore MAILBOX\textunderscore KHR} mode.
+This is also the mode that we will be using. This mode is similar to the
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR} mode,
+with the difference that the swapchain will not let the GPU idle when the queue is full. Instead it will
+discard the image that is at the front of the queue and start rendering again. This constant rendering
+will provide us with the lowest latency but also the highest energy consumption. But that should not
+be a problem for our application.
+
+We will simply iterate through the available present modes and return the \\
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore MAILBOX\textunderscore KHR} mode
+if it is available. If not we will return the \textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR} mode.
+
+\begin{lstlisting}[language=C++]
+VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+  for (const auto &availablePresentMode : availablePresentModes) {
+      if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+      return availablePresentMode;
+    }
+
+  return VK_PRESENT_MODE_FIFO_KHR;
+}
+\end{lstlisting}
+
+\subsection{Swapchain Extent}
+
+Like mentioned before we have to choose the extent of the swapchain images. We get the extent
+from the devices capabilities. If the width and height of the extent are set to the maximum
+value of uint32\_t, we are indicated that the extent is defined in screen coordinates and we
+have to get the extent from our windowExtent variable. We then have to clamp
+the extent to the minimum and maximum extent that the device supports tho. If the width and height
+are not set to the maximum value we can use the extent directly because that tells us that the extent
+is already in pixels.
+
+\begin{lstlisting}[language=C++]
+VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+  if (capabilities.currentExtent.width != UINT32_MAX)
+    return capabilities.currentExtent;
+  else {
+    VkExtent2D actualExtent = windowExtent;
+
+    actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+    actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+    return actualExtent;
+  }
+}
+\end{lstlisting}
+
+\subsection{Image Count}
+
+The final thing we have to do is to set the min image count of the swapchain. The image count is the amount
+of images that the swapchain will contain aka the amount of framebuffers. We will use one more than the
+minimum image count that the device supports, for the min image count of the swapchain. This is because
+we otherwise would have to wait for the driver to complete internal operations before we can acquire the
+next image. Because we increase the min image count
+by one we have to check if it is bigger than the max image count. If it is we set the min image count to the
+max image count. Except if the max image count of the device is 0, which means that there is no maximum image count.
+
+\begin{lstlisting}[language=C++]
+uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+  imageCount = swapChainSupport.capabilities.maxImageCount;
+\end{lstlisting}
+
+\subsection{Swapchain Creation}
+
+Now that we have all the data we need we can create the swapchain. We will populate the
+\textit{VkSwapchainCreateInfoKHR} struct with the data we have and additionally set the
+image array layers to 1, which is the amount of layers that the image has. This is always
+1 unless you are working with stereoscopic 3D applications. We also have to set the image
+usage to
+\textit{VK\textunderscore IMAGE\textunderscore USAGE\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore BIT},
+which means that we will render directly to the image.
+
+\begin{lstlisting}[language=C++]
+VkSwapchainCreateInfoKHR createInfo = {};
+createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+createInfo.surface = surface;
+createInfo.minImageCount = imageCount;
+createInfo.imageFormat = surfaceFormat.format;
+createInfo.imageColorSpace = surfaceFormat.colorSpace;
+createInfo.imageExtent = extent;
+createInfo.imageArrayLayers = 1;
+createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+\end{lstlisting}
+
+But that's not all. We also have to specify the sharing mode of the swapchain. The sharing mode
+determines how the images are shared between multiple queue families. We use 2 queue families, the
+graphics queue family and the present queue family. Now we have 2 cases. The first case is that the
+graphics queue family and the present queue family have the same index. In this case we set the sharing
+mode to exclusive. This means that an image is owned by one queue family at a time and has to be
+explicitly transferred to the other queue family. In this case the count of queue families and the
+queue family indices that are used are not relevant. The second case is that the graphics queue family
+and the present queue family have different indices. In this case we set the sharing mode to concurrent.
+This means that an image can be used by multiple queue families without explicit ownership transfers.
+It is important to note that the queue family indices are relevant in this case, because the swapchain needs
+to know what queue families can access the image.
+
+We'll start off by getting the queue family indices from the device. We will then check if the graphics
+queue family and the present queue family are different. If they are we set the sharing mode to concurrent
+and set the queue family indices and their count. If they are the same we set the sharing mode to exclusive.
+
+\begin{lstlisting}[language=C++]
+QueueFamilyIndices indices = device.findQueueFamilies();
+if (indices.graphicsFamily != indices.presentFamily) {
+  createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+  createInfo.queueFamilyIndexCount = 2;
+  uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+  createInfo.pQueueFamilyIndices = queueFamilyIndices;
+} else {
+  createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+}
+\end{lstlisting}
+
+We're still not done yet! We also have to specify if and what kind of transformation we want
+to apply to the images. For example we might want to flip or rotate the image. We don't want
+anything to happen to the image so we set the pre transform to the current transform. We get
+the current transform from the swapchain support details capabilities. We also have to specify
+the composite alpha. The composite alpha is used to blend the window with other windows in the
+system. We want to ignore the alpha channel so we set the composite alpha to the opaque bit.
+Finally we specify our present mode, the clipped flag and the old swapchain. The clipped flag
+indicates that we don't need the pixels that are obscured by other windows. If you need the
+pixels to predict future frames you can set the clipped flag to false but we will keep it true.
+The old swapchain is used to create a new swapchain from an old one. We will set it to
+\textit{VK\textunderscore NULL\textunderscore HANDLE}, but will come back to this later.
+
+\begin{lstlisting}[language=C++]
+createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+createInfo.presentMode = presentMode;
+createInfo.clipped = VK_TRUE;
+createInfo.oldSwapchain = VK_NULL_HANDLE;
+\end{lstlisting}
+
+Now that we have the create info struct we can create the swapchain with the \textit{vkCreateSwapchainKHR}
+function, that takes the device, the create info struct, a custom allocator and a pointer to the swapchain
+variable that we also have to add to our header. We again will check for an error and throw an runtime
+error if the creation was not successful.
+
+\begin{lstlisting}[language=C++]
+if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+  throw std::runtime_error("Failed to create swap chain!");
+\end{lstlisting}
+
+After the creation of the swapchain we need to store the images of the swapchain. We can get the images
+with the \textit{vkGetSwapchainImagesKHR} function. We have to specify the device, the swapchain, a pointer
+to the image count and a pointer to the images. We will store the images in the \textit{swapChainImages}
+vector. Then we should also create a variable for the image format and the extent of the swapchain images
+and store them in the class.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+private:
+  ...
+  VkSwapchainKHR swapChain;
+  VkFormat swapChainImageFormat;
+  VkExtent2D swapChainExtent;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+swapChainImages.resize(imageCount);
+vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+
+swapChainImageFormat = surfaceFormat.format;
+swapChainExtent = extent;
+\end{lstlisting}
+
+If you ask yourself why we have to get the image count first and then resize the vector, it is because
+we have only defined the minimum image count of the swapchain in the imageCount variable. The actual
+image count could be different.
+
+Now we have to make sure that the swapchain is destroyed in the destructor. We can do this by calling
+the \textit{vkDestroySwapchainKHR} function.
+
+\begin{lstlisting}[language=C++]
+SwapChain::~SwapChain() {
+  vkDestroySwapchainKHR(device, swapChain, nullptr);
+}
+\end{lstlisting}
 
 \section{Pipeline Creation}
 

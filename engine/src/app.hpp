@@ -1,4 +1,4 @@
-#include "core/window.hpp"
+#include "core/device.hpp"
 
 namespace engine {
 class App {
@@ -10,5 +10,6 @@ public:
 
 private:
   Window window{WIDTH, HEIGHT, "Vulkan Application"};
+  Device device{window};
 };
 } // namespace engine

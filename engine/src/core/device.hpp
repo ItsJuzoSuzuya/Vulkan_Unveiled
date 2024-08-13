@@ -32,6 +32,17 @@ public:
   Device(const Device &&) = delete;
   Device &operator=(const Device &&) = delete;
 
+  VkSurfaceKHR surface() { return surface_; }
+  operator VkDevice() { return device_; }
+
+  SwapChainSupportDetails getSwapChainSupport() {
+    return querySwapChainSupport(physicalDevice);
+  }
+
+  QueueFamilyIndices findQueueFamilies() {
+    return findQueueFamilies(physicalDevice);
+  }
+
 private:
 #ifdef NDEBUG
   const bool enableValidationLayers = false;
