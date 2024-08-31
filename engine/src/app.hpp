@@ -1,4 +1,7 @@
-#include "core/device.hpp"
+#ifndef APP_HPP
+#define APP_HPP
+#include "core/swapchain.hpp"
+#include <memory>
 
 namespace engine {
 class App {
@@ -11,5 +14,8 @@ public:
 private:
   Window window{WIDTH, HEIGHT, "Vulkan Application"};
   Device device{window};
+
+  std::unique_ptr<SwapChain> swapChain;
 };
 } // namespace engine
+#endif

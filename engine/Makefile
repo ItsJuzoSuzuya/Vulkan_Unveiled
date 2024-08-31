@@ -5,7 +5,8 @@ SOURCES := $(shell find src -name '*.cpp')
 HEADERS := $(shell find src -name '*.hpp')
 
 VulkanTest: $(SOURCES) $(HEADERS)
-	clang++ $(CFLAGS) -o App $(SOURCES) $(LDFLAGS)
+	bash src/shaders/compile.sh 
+	clang++ --debug $(CFLAGS) -o App $(SOURCES) $(LDFLAGS)
 
 .PHONY: test clean
 

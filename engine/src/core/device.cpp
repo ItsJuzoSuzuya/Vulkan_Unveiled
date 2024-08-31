@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <cstdint>
 #include <cstring>
+#include <cwchar>
 #include <iostream>
 #include <ostream>
 #include <set>
@@ -137,7 +138,6 @@ void Device::pickPhysicalDevice() {
     throw std::runtime_error("No device was suitable!");
 
   vkGetPhysicalDeviceProperties(physicalDevice, &properties);
-  std::cout << "Physical Device: " << properties.deviceName << std::endl;
 }
 
 void Device::createLogicalDevice() {
@@ -219,7 +219,8 @@ void Device::populateDebugMessenger(
   createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
   createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
   createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
@@ -237,6 +238,10 @@ std::vector<const char *> Device::getRequiredExtensions() {
   if (enableValidationLayers)
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
+  for (const auto &extension : extensions) {
+    std::cout << extension << std::endl;
+  }
+
   return extensions;
 }
 
@@ -247,7 +252,7 @@ bool Device::isDeviceSuitable(VkPhysicalDevice device) {
 
   bool swapChainAdequat = false;
   if (extensionsSupported) {
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+    SwapchainSupportDetails swapChainSupport = querySwapChainSupport(device);
     swapChainAdequat = !swapChainSupport.formats.empty() &&
                        !swapChainSupport.presentModes.empty();
   }
@@ -276,8 +281,7 @@ QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) {
       indices.graphicsFamily = i;
 
     VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface_,
-                                         &presentSupport);
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface_, &presentSupport);
 
     if (queueFamily.queueCount > 0 && presentSupport)
       indices.presentFamily = i;
@@ -310,8 +314,8 @@ bool Device::checkDeviceExtensionSupport(VkPhysicalDevice device) {
   return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails Device::querySwapChainSupport(VkPhysicalDevice device) {
-  SwapChainSupportDetails details;
+SwapchainSupportDetails Device::querySwapChainSupport(VkPhysicalDevice device) {
+  SwapchainSupportDetails details;
   vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_,
                                             &details.capabilities);
 
@@ -335,6 +339,61 @@ SwapChainSupportDetails Device::querySwapChainSupport(VkPhysicalDevice device) {
   }
 
   return details;
+}
+
+VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &candidates,
+                                     VkImageTiling tiling,
+                                     VkFormatFeatureFlags features) {
+  for (VkFormat format : candidates) {
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+    if (tiling == VK_IMAGE_TILING_LINEAR &&
+        (props.linearTilingFeatures & features) == features)
+      return format;
+    else if (tiling == VK_IMAGE_TILING_OPTIMAL &&
+             (props.optimalTilingFeatures & features) == features)
+      return format;
+  }
+
+  throw std::runtime_error("Failed to find a supported format!");
+}
+
+void Device::createImageWithInfo(const VkImageCreateInfo &imageInfo,
+                                 VkMemoryPropertyFlags properties,
+                                 VkImage &image, VkDeviceMemory &imageMemory) {
+  if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create Image!");
+
+  VkMemoryRequirements memRequirements;
+  vkGetImageMemoryRequirements(device_, image, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.memoryTypeIndex =
+      findMemoryType(memRequirements.memoryTypeBits, properties);
+
+  if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) !=
+      VK_SUCCESS)
+    throw std::runtime_error("Failed to allocate image memory!");
+
+  if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS)
+    throw std::runtime_error("Failed to bind image memory!");
+}
+
+uint32_t Device::findMemoryType(uint32_t typeFilter,
+                                VkMemoryPropertyFlags properties) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    if ((typeFilter & (1 << i)) &&
+        (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+      return i;
+  }
+
+  throw std::runtime_error("Failed to find suitable memory type!");
 }
 
 } // namespace engine

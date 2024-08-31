@@ -2726,7 +2726,8 @@ will be smaller than the extent in pixels. We can get the extent in pixels with 
 function, but we have the extent already defined in the windowExtent variable. We will use the window extent
 and then clamp it to the minimum and maximum extent that the device supports.
 After the creation of the swapchain we will also get the swapchain images from it and store them in a vector of
-\textit{VkImages}.
+\textit{VkImages}, which contains the pixels and the main memory of the texture, but misses the information about
+how the image can be read.
 
 \begin{lstlisting}[language=C++]
 //swapchain.hpp
@@ -2952,7 +2953,7 @@ which means that we will render directly to the image.
 \begin{lstlisting}[language=C++]
 VkSwapchainCreateInfoKHR createInfo = {};
 createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-createInfo.surface = surface;
+createInfo.surface = device.surface();
 createInfo.minImageCount = imageCount;
 createInfo.imageFormat = surfaceFormat.format;
 createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -2979,7 +2980,7 @@ and set the queue family indices and their count. If they are the same we set th
 
 \begin{lstlisting}[language=C++]
 QueueFamilyIndices indices = device.findQueueFamilies();
-if (indices.graphicsFamily != indices.presentFamily) {
+if (indices.graphicsFamily.value() != indices.presentFamily.value()) {
   createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
   createInfo.queueFamilyIndexCount = 2;
   uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -3056,15 +3057,1155 @@ SwapChain::~SwapChain() {
 }
 \end{lstlisting}
 
-\section{Pipeline Creation}
+\subsection{Image Views}
 
-Let's go and create our first Vulkan pipeline. We will keep it simple and ignore
-buffers and perspective projection for now.
+The Swapchain in now created and we have the images stored in the \\
+\textit{swapChainImages} vector. But like mentioned before,
+we cannot read the images directly. It only stores data about the pixels and the main memory of the texture and misses
+information like the format or the mipmapping level. To get the full image data we have to create an image view, that
+stores the missing information. We will need a new function called \textit{createImageViews} that will be called after
+the creation of the swapchain. We will also need a vector to store the image views, that we will size to the amount of
+swapchain images in the function.
 
+For Each image in the \textit{swapChainImages} vector we will create an image view and define the image that we view
+into, the desired format, the view type, the subresource range with the aspect mask, the base mip level, the level count,
+the base array layer and the layer count. The view type defines how many dimensions the image has. We will use the 2D view
+type because our pipeline returns a orthogonal 2D image. The aspect mask defines what the image view will be used for.
+You might ask yourself why we have to define the aspect mask in the image view, when we already defined the image usage
+in the swapchain creation. The reason for that is that we can use one image for multiple purposes. For example we can use
+one image for color and depth attachments. The view might only need the color information, so we have to define the aspect
+mask in the image view to reduce the amount of data that is stored in the view. We will use the color aspect mask for now.
+We will also keep the same format as the swapchain image format, but for some use cases you might want to use a different
+format that is compatible with the surface format.
+
+Before we go further I'd like to explain what mipmapping is and what a mip level is. Mipmapping is a technique that
+is similar to LOD (Level of Detail), but is used for textures. It reduces the textures resolution when the texture
+is far away from the camera. This fixes an interesting problem that occurs when rendering textures. Would we keep the same
+resolution for the texture when the texture is far away from the camera, the texture create a so called moiré pattern.
+It occures because we try to map a high resolution texture on a area that is to small.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=\textwidth]{mipmapping.png}
+	\caption{Mipmapping(left: Moiré pattern, right: Mipmapping)} \cite{fig:mipmapping}
+\end{figure}
+
+By reducing the resolution of the texture we can avoid this problem.
+When we reduce the resolution of the texture we create a new texture that is half the size of the original texture.
+So when we have a texture with a resolution of 256x256 we create a new texture with a resolution of 128x128 and so on,
+until we reach a resolution of 1x1. The different textures are called mip levels.
+
+Now that we now that we can set the base mip level that basically sets the first mip level that is used. We will set it to 0
+we get the original resolution of the texture. The level count defines how many mip levels we want to use. We will set it to 1
+for now. The base array layer defines the first layer that is used. We will set it to 0 because we will only use one layer.
+The layer count defines how many layers we want to use. We will keep it at 1 for now.
+
+\begin{lstlisting}[language=C++]
+SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
+  createSwapChain();
+  createImageViews();
+}
+
+void SwapChain::createImageViews() {
+  swapChainImageViews.resize(swapChainImages.size());
+
+  for (size_t i = 0; i < swapChainImages.size(); i++) {
+    VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = swapChainImages[i];
+    viewInfo.format = swapChainImageFormat;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    if (vkCreateImageView(device, &viewInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+      throw std::runtime_error("Failed to create image views!");
+  }
+}
+\end{lstlisting}
+
+Great! Let's try to run the application. To do so we have to add the swapchain to the application class.
+Because the swapchain takes the device and the extent as arguments we have to add a getter function to the
+surface class that returns the extent. We will also add a conversion operator to the device class that
+returns the device.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+public:
+  ...
+  //returns device_ when we access the device instance 
+  operator VkDevice() const { return device_; }
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//surface.hpp
+public:
+  ...
+  VkExtent2D getExtent() { return{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}; }
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//app.hpp
+private:
+  ...
+  SwapChain swapChain{device, window.getExtent()};
+\end{lstlisting}
+
+If everything is set up correctly so far the code should run.
+
+Okay when closing the application we get an error that tells us to destroy the image views before the device.
+This is important because we have to destroy all child objects before we destroy the parent object.
+
+So let's destroy the image views in the destructor of the swapchain class. We can do this by calling the
+\textit{vkDestroyImageView} function for each image view in the \textit{swapChainImageViews} vector.
+
+\begin{lstlisting}[language=C++]
+SwapChain::~SwapChain() {
+  for (const VkImageView &imageView : swapChainImageViews)
+    vkDestroyImageView(device, imageView, nullptr);
+
+  vkDestroySwapchainKHR(device, swapChain, nullptr);
+}
+\end{lstlisting}
+
+We don't have to destroy the swapchain images because they are destroyed with the swapchain.
+
+\subsection{Render Pass}
+
+Before we can render anything we need to create a render pass. A render pass contains information about
+the amount of color and depth buffers, how many samples are used for them and how the data is handled
+during rendering.
+
+Let's add a new function called \textit{createRenderPass} to the swapchain class.
+
+\begin{lstlisting}[language=C++]
+SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
+  createSwapChain();
+  createImageViews();
+  createRenderPass();
+}
+
+void SwapChain::createRenderPass() {}
+\end{lstlisting}
+
+Inside we will need to create 2 attachments. One for the color buffer and one for the depth buffer.
+Let's start with the color attachment. We will have to populate the \textit{VkAttachmentDescription} struct
+with the format, the sample count, the load and store operation, the stencil load and store operation, the initial
+and the final layout. For the color attachment we will use the swapchain image format. The sample count defines how
+MSAA (Multisample Anti-Aliasing) is handled. Let's rewind shortly how MSAA works.
+
+When we render a polygon we rasterize it into fragments. Each fragment is a pixel that is covered by the polygon.
+The graphics pipeline determines which pixel to color by checking if the polygon covers the center of the pixel.
+But this returns a jagged edge. To fix this we can use MSAA. MSAA works by sampling multiple points in the pixel
+and then averaging the color of the points. This creates a smoother edge. We can define how many samples we want to use
+in each fragment.
+
+Okay back to the color attachment. We will use 1 sample for now. The load operation defines what to do with the data
+in the attachment before rendering. We will clear the frame buffer before rendering, because we don't need it.
+That means we have to set it to \textit{VK\textunderscore ATTACHMENT\textunderscore LOAD\textunderscore OP\textunderscore CLEAR}.
+When you need it to be preserved you can set it to
+\textit{VK\textunderscore ATTACHMENT\textunderscore LOAD\textunderscore OP\textunderscore LOAD}. The store
+operation defines what to do with the data in the attachment after rendering. We will store the data in the frame buffer
+after rendering, with the \textit{VK\textunderscore ATTACHMENT\textunderscore STORE\textunderscore OP\textunderscore STORE}
+value. It is also possible to say that you don't care about the data in the attachment before or after rendering
+by setting the store or load operation to
+\textit{VK\textunderscore ATTACHMENT\textunderscore STORE/LOAD \textunderscore OP\textunderscore DONT\textunderscore CARE}.
+
+The stencil load and store operation are used for the stencil buffer. Wait what is a stencil buffer? A stencil buffer
+is another buffer that allows us to further manipulate pixels combined with the depth buffer. For example we can
+create outlines around objects by creating another object with a slightly bigger size and add a stencil buffer to it with a
+reference value. When rendering the outline we can perform a stencil test that checks if the pixels reference value is
+equal to 1 and only render the pixels that don't pass the test. The stencil load and store operation work the same way
+as the load and store operation We don't really care about the stencil buffer for now so we will set the operations to
+\textit{VK\textunderscore ATTACHMENT\textunderscore STORE/LOAD \textunderscore OP\textunderscore DONT\textunderscore CARE}.
+Finally the initial and final layout define how the image is handled before and after the render pass. The initial layout
+is set to \textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore UNDEFINED} because we don't care about the
+image before the render pass. The final layout is set to
+\textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore PRESENT\textunderscore SRC\textunderscore KHR},
+which means that the image will be presented to the swapchain.
+
+\begin{lstlisting}[language=C++]
+void SwapChain::createRenderPass() {
+  VkAttachmentDescription colorAttachment = {};
+  colorAttachment.format = swapChainImageFormat;
+  colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+  colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+}
+\end{lstlisting}
+
+After that we need to create a \textit{VkAttachmentReference} that stores the index and layout type.
+The color attachment will be our first attachment and has the
+\textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore OPTIMAL}
+
+\begin{lstlisting}[language=C++]
+VkAttachmentReference colorAttachmentRef = {};
+colorAttachmentRef.attachment = 0;
+colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+\end{lstlisting}
+
+Now we do the same for the depth attachment. For the format we will need a helper function that finds us a suitable
+depth format called \textit{findDepthFormat}. This function calls the \textit{findSupportedFormat} function that we
+will need to implement in the device class. The \textit{findSupportedFormat} function takes a vector of formats,
+how the image is stored aka the tiling and the features.
+
+Inside the \textit{findSupportedFormat} function we will iterate through the formats, get their properties with the
+\textit{vkGetPhysicalDeviceFormatProperties} function and check if the properties tiling features are equal to the
+features that we passed to the function. If it is we will return the format. We will check for 2 tilings,
+the linear and the optimal tiling. The linear tiling mode stores the image in a linear order, which means that the
+image is stored in a row like a 2D array. The optimal tiling mode stores the image in an oder that is optimized for
+GPU access. We will use the optimal tiling mode for the depth format. We will check the following formats:
+\textit{VK\textunderscore FORMAT\textunderscore D32\textunderscore SFLOAT},
+\textit{VK\textunderscore FORMAT\textunderscore D32\textunderscore SFLOAT\textunderscore S8\textunderscore UINT} and
+\textit{VK\textunderscore FORMAT\textunderscore D24\textunderscore UNORM\textunderscore S8\textunderscore UINT}.
+
+The first format is a 32 bit float format that is used for depth buffers. The second format is a two channel format
+with a 32 bit float for the depth and a 8 bit unsigned integer for the stencil buffer. The third format is a 24 bit
+float format for the depth and a 8 bit unsigned integer for the stencil buffer. We will parse in all 3 of them but if you need
+a stencil buffer you should use the second or third format. For the features we will use the
+\textit{VK\textunderscore FORMAT\textunderscore FEATURE\textunderscore DEPTH\textunderscore STENCIL\textunderscore ATTACHMENT\textunderscore BIT}.
+
+\begin{lstlisting}[language=C++]
+//swapchain.cpp
+void SwapChain::createRenderPass(){
+  ...
+  VkAttachmentDescription depthAttachment = {};
+  depthAttachment.format = findDepthFormat();
+  depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+  depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+  depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+  depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+  VkAttachmentReference depthAttachmentRef = {};
+  depthAttachmentRef.attachment = 1;
+  depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+}
+
+VkFormat SwapChain::findDepthFormat() {
+  return device.findSupportedFormat(
+    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+    VK_IMAGE_TILING_OPTIMAL,
+    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+  );
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
+  for (VkFormat format : candidates) {
+    VkFormatProperties props;
+    vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
+
+    if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+      return format;
+    else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+      return format;
+  }
+
+  throw std::runtime_error("Failed to find supported format!");
+}
+\end{lstlisting}
+
+We don't care about the depth data after rendering so we set the store operation to
+\textit{VK\textunderscore ATTACHMENT\textunderscore STORE\textunderscore OP\textunderscore DONT\textunderscore CARE}.
+
+A renderpass can consist of multiple subpasses. A subpass is a rendering operation that takes the output of the previous
+subpass as input. We will only use one subpass for now, but using multiple subpasses can be useful for post processing
+effects. We will create a \textit{VkSubpassDescription} struct that contains the pipeline bind point, the amount of color
+attachments, a pointer to the color attachments and a pointer to the depth stencil attachment. There is more data that
+we can add to the subpass description, but don't need for now. The pipeline bind point defines if the subpass is used
+for graphics or compute operations. We will use the graphics pipeline bind point.
+
+\begin{lstlisting}[language=C++]
+void SwapChain::createRenderPass() {
+  ...
+  VkSubpassDescription subpass = {};
+  subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount = 1;
+  subpass.pColorAttachments = &colorAttachmentRef;
+  subpass.pDepthStencilAttachment = &depthAttachmentRef;
+}
+\end{lstlisting}
+
+There is one problem with the subpass description. When we have multiple subpasses we might get a case where one subpass
+writes to an attachment and the next subpass reads from it, while the first subpass is not finished. This turns out
+to be a race condition and is falsifying the results. To avoid this we can use subpass dependencies. A subpass dependency
+tells the render pass when to start and end the subpass. We will create a \textit{VkSubpassDependency} struct that contains
+the indices of the previous and the next subpass, the stage mask and the access mask. The \textit{srcSubpass} defines
+where the dependency starts and the \textit{dstSubpass} defines where the dependency ends. In our case our dependency
+starts outside of the subpass, which means that we have to set the \textit{srcSubpass} to
+\textit{VK\textunderscore SUBPASS\textunderscore EXTERNAL}. Because we only have one subpass we can set the
+\textit{dstSubpass} to 0. The stage mask defines what stages of the pipeline the dependency is waiting for. We will
+wait for the color attachment output stage, which refers to any operations that render to the color attachment, and
+the early fragment test stage, which refers to the depth and stencil tests. The access mask defines what kind of
+operations the dependency will wait for. The source will not wait for any operations, so we set it to 0. The destination
+will wait until the color attachment is written to and the depth and stencil buffer is written to. We will set it to
+\textit{VK\textunderscore ACCESS\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore WRITE\textunderscore BIT}
+and \textit{VK\textunderscore ACCESS\textunderscore DEPTH\textunderscore STENCIL\textunderscore ATTACHMENT\textunderscore WRITE\textunderscore BIT}.
+
+\begin{lstlisting}[language=C++]
+void SwapChain::createRenderPass() {
+  ...
+  VkSubpassDependency dependency = {};
+  dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+  dependency.dstSubpass = 0;
+  dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  dependency.srcAccessMask = 0;
+  dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+}
+\end{lstlisting}
+
+Now that we know how the attachments and subpasses are connected we can create the render pass. We will create a
+\textit{VkRenderPass} variable in the header of the swapchain class. Then we will
+populate the \textit{VkRenderPassCreateInfo} struct with the color and depth attachment, the subpass, the dependency
+and the attachment count. Let's first go ahead and create an array of attachments that contains the color and depth
+attachment. Then we add the sType and the other data to the render pass create info, create the render pass and
+throw an error if the creation was not successful.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+private:
+  ...
+  VkRenderPass renderPass;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+void SwapChain::createRenderPass() {
+  ...
+  std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+
+  VkRenderPassCreateInfo renderPassInfo = {};
+  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+  renderPassInfo.pAttachments = attachments.data();
+  renderPassInfo.subpassCount = 1;
+  renderPassInfo.pSubpasses = &subpass;
+  renderPassInfo.dependencyCount = 1;
+  renderPassInfo.pDependencies = &dependency;
+
+  if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create render pass!");
+}
+\end{lstlisting}
+
+Finally we have to make sure to destroy the render pass.
+
+\begin{lstlisting}[language=C++]
+SwapChain::~SwapChain() {
+  ...
+  vkDestroyRenderPass(device, renderPass, nullptr);
+}
+\end{lstlisting}
+
+\subsection{Depth resources}
+
+Just like the color image we have to create an depth image and an depth image view. We will create a new function
+called \textit{createDepthResources} that will be called after the creation of the render pass. We will also need
+a new variable in the header of the swapchain class that stores the depth images and the depth image views. We will need one
+depth image and one depth image view for each swapchain image. The problem is that when we create the depth image on the CPU we
+need to allocate memory on the GPU and then bind the image to that memory, because we need the data there.
+For that we will need a new function in the device class called \textit{createImageWithInfo}.
+This function will take an image info struct, a memory property flag, a pointer to the image and a pointer to the image memory.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+private:
+  ...
+  void createDepthResources();
+
+  std::vector<VkImage> depthImages;
+  std::vector<VkDeviceMemory> depthImageMemories;
+  std::vector<VkImageView> depthImageViews;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
+  createSwapChain();
+  createImageViews();
+  createRenderPass();
+  createDepthResources();
+}
+
+void SwapChain::createDepthResources() {
+  depthImages.resize(swapChainImages.size());
+  depthImageMemories.resize(swapChainImages.size());
+  depthImageViews.resize(swapChainImages.size());
+
+  VkFormat depthFormat = findDepthFormat();
+  swapChainDepthFormat = depthFormat;
+
+  for (size_t i = 0; i < swapChainImages.size(); i++) {
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = swapChainExtent.width;
+    imageInfo.extent.height = swapChainExtent.height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = depthFormat;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags = 0;
+
+    device.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImages[i], depthImageMemories[i]);
+
+    VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = depthImages[i];
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = depthFormat;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT; 
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    if (vkCreateImageView(device, &viewInfo, nullptr, &depthImageViews[i]) != VK_SUCCESS)
+      throw std::runtime_error("Failed to create image views!");
+ }
+}
+\end{lstlisting}
+
+The \textit{createImageWithInfo} function first creates the image with the \textit{vkCreateImage} function. Then it
+gets the memory requirements of the image with the \textit{vkGetImageMemoryRequirements} function. We will then
+populate the \textit{VkMemoryAllocateInfo} struct with the sType, allocation size and the memory type index. We will
+get the memory type index with the \textit{findMemoryType} function that we will implement next. After that we
+allocate the memory with the \textit{vkAllocateMemory} function and bind the memory to the image with the
+\textit{vkBindImageMemory} function.
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+void Device::createImageWithInfo(const VkImageCreateInfo &imageInfo, 
+                                 VkMemoryPropertyFlags properties, 
+                                 VkImage &image, 
+                                 VkDeviceMemory &imageMemory) {
+  if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create image!");
+
+  VkMemoryRequirements memRequirements;
+  vkGetImageMemoryRequirements(device_, image, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+  if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+    throw std::runtime_error("Failed to allocate image memory!");
+
+  if (vkBindImageMemory(device_, image, imageMemory, 0) != VK_SUCCESS)
+    throw std::runtime_error("Failed to bind image memory!");
+}
+\end{lstlisting}
+
+The \textit{findMemoryType} function will iterate through the memory types of the physical device and check if the
+properties are supported. If it is it will return the memory type index.
+
+\begin{lstlisting}[language=C++]
+//device.cpp
+uint32_t Device::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+  for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+    if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+      return i;
+  }
+
+  throw std::runtime_error("Failed to find suitable memory type!");
+}
+\end{lstlisting}
+
+In the if statement we first filter the types by going through the bits of the type filter. Then we check if the
+properties are supported by the memory type. If it is we return the memory type index.
+
+Now that we have the depth resources we have to destroy them and clear the GPU memory in the destructor of the swapchain class.
+
+\begin{lstlisting}[language=C++]
+SwapChain::~SwapChain() {
+  ...
+  for (size_t i = 0; i < depthImages.size(); i++) {
+      vkDestroyImageView(device, depthImageViews[i], nullptr);
+      vkDestroyImage(device, depthImages[i], nullptr);
+      vkFreeMemory(device, depthImageMemories[i], nullptr);
+    }
+}
+\end{lstlisting}
+
+\subsection{Framebuffers}
+
+Now that we have all our resources we can create the framebuffers. A framebuffer consists of the attachments and depth
+resources that are used in the render pass. We will create a new function called \textit{createFramebuffers}
+that will be called after the creation of the depth resources. We will also need a
+new variable in the header of the swapchain class that stores the framebuffers.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+private:
+  ...
+  void createFramebuffers();
+
+  std::vector<VkFramebuffer> framebuffers;
+\end{lstlisting}
+
+To create the framebuffers we will iterate through the image views and create a framebuffer for each image view.
+The create information for the framebuffer takes the render pass, the amount of attachments, the attachments, the width
+and the height of the framebuffer and the layers count the framebuffer is used for. We will set the layers count to 1
+and the width and height to the width and height of the swapchain extent.
+
+\begin{lstlisting}[language=C++]
+SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
+  createSwapChain();
+  createImageViews();
+  createRenderPass();
+  createDepthResources();
+  createFramebuffers();
+}
+
+void SwapChain::createFramebuffers() {
+  framebuffers.resize(swapChainImages.size());
+
+  for (size_t i = 0; i < swapChainImages.size(); i++) {
+    std::array<VkImageView, 2> attachments = {
+      swapChainImageViews[i],
+      depthImageViews[i]
+    };
+
+    VkFramebufferCreateInfo framebufferInfo = {};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferInfo.pAttachments = attachments.data();
+    framebufferInfo.width = swapChainExtent.width;
+    framebufferInfo.height = swapChainExtent.height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS)
+      throw std::runtime_error("Failed to create framebuffer!");
+  }
+}
+\end{lstlisting}
+
+After that we have to destroy the framebuffers in the destructor of the swapchain class.
+
+\begin{lstlisting}[language=C++]
+SwapChain::~SwapChain() {
+  ...
+
+  for (auto framebuffer : framebuffers) {
+    vkDestroyFramebuffer(device, framebuffer, nullptr);
+  }
+}
+\end{lstlisting}
+
+That's it! We now have all the objects that we need to render something. Let's shortly go through the steps that we have
+done so far.
+
+We began by creating the swapchain, which created the images and defined how the images are presented to the surface.
+Then we defined how the images are viewed with the image views. After that we created a render pass, that stores the
+color and depth attachments and ensures that the subpasses are not out of sync. We then created the depth resources that
+include the depth image and the depth image view. Finally we created the framebuffers that store the attachments and depth
+resources that are used in the render pass.
+
+\section{Pipeline}
+
+We can now start with the pipeline creation. Let's go ahead and create a new class called \textit{Pipeline} that will
+contain the pipeline creation. We will need a new function called \textit{createGraphicsPipeline} that will be called
+in the constructor. This function takes the path to the vertex and fragment shader and a PipelineConfigInfo struct that
+we will define in the header of the pipeline class. We will also need a variable that stores the graphics pipeline, the
+device and the shader modules.
+
+\begin{lstlisting}[language=C++]
+//pipeline.hpp
+struct PipelineConfigInfo {
+  PipelineConfigInfo() = default;
+  PipelineConfigInfo(const PipelineConfigInfo &) = delete;
+  PipelineConfigInfo &operator=(const PipelineConfigInfo &) = delete;
+
+  VkPipelineViewportStateCreateInfo viewportInfo;
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+  VkPipelineRasterizationStateCreateInfo rasterizationInfo;
+  VkPipelineMultisampleStateCreateInfo multisampleInfo;
+  VkPipelineColorBlendAttachmentState colorBlendAttachment;
+  VkPipelineColorBlendStateCreateInfo colorBlendInfo;
+  VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+  std::vector<VkDynamicState> dynamicStates;
+  VkPipelineDynamicStateCreateInfo dynamicStateInfo;
+  VkPipelineLayout pipelineLayout = nullptr;
+  VkRenderPass renderPass = nullptr;
+  uint32_t subpass = 0;
+};
+
+class Pipeline {
+public:
+  Pipeline(Device &device, const std::string &vertPath, const std::string &fragPath, const PipelineConfig &configInfo);
+  ~Pipeline();
+
+  Pipeline(const Pipeline &) = delete;
+  Pipeline operator=(const Pipeline &) = delete;
+
+private:
+  Device &device;
+  VkPipeline graphicsPipeline;
+  VkShaderModule vertShaderModule;
+  VkShaderModule fragShaderModule;
+};
+\end{lstlisting}
+
+The PipelineConfigInfo struct contains all the information that we need to create the pipeline, like the create informations
+for the states, the render pass, the subpass and the pipeline layout.
+
+The constructor of the pipeline class will call the \textit{createGraphicsPipeline} function and set our device variable.
+
+In the \textit{createGraphicsPipeline} function we will first check if the config info has a valid pipeline layout and render pass.
+Then we will have to read the shader files and create the shader modules. Let's start off by adding a helper function called
+\textit{readFile} that reads the shader files and returns the content as a vector of chars.
+
+\begin{lstlisting}[language=C++]
+//pipeline.cpp
+std::vector<char> Pipeline::readFile(const std::string &path) {
+  std::ifstream file{path, std::ios::ate | std::ios::binary};
+
+  if (!file.is_open())
+    throw std::runtime_error("Failed to open file: " + path);
+
+  size_t fileSize = static_cast<size_t>(file.tellg());
+  std::vector<char> buffer(fileSize);
+
+  file.seekg(0);
+  file.read(buffer.data(), fileSize);
+
+  file.close();
+  return buffer;
+}
+\end{lstlisting}
+
+This function opens a file. The \textit{std::ios::ate} flag sets the position of the file pointer to the end of the file and the
+\textit{std::ios::binary} flag reads the file as binary. We have binary files because we have to compile our shaders to SPIR-V.
+We go to the end of the file at the beginning because we want to create a buffer with the size of the file. Then we read the
+file into the buffer and return the buffer.
+
+We will do this for both the vertex and the fragment shader. We will then create the shader modules with another helper function.
+The \textit{createShaderModule} function takes a vector of chars and a pointer to the shader module variable.
+
+\begin{lstlisting}[language=C++]
+//pipeline.cpp
+Pipeline::Pipeline(Device &device, const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo)
+: device{device} {
+		createGraphicsPipeline(vertPath, fragPath, configInfo);
+	}
+
+void Pipeline::createGraphicsPipeline(const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo) {
+  assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline. Invalid pipeline layout!");
+  assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline. Invalid render pass!");
+
+  std::vector<char> vertCode = readFile(vertPath);
+  std::vector<char> fragCode = readFile(fragPath);
+
+  createShaderModule(vertCode, &vertShaderModule);
+  createShaderModule(fragCode, &fragShaderModule);
+}
+
+void Pipeline::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule) {
+  VkShaderModuleCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  createInfo.codeSize = code.size();
+  createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+
+  if (vkCreateShaderModule(device, &createInfo, nullptr, shaderModule) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create shader module!");
+}
+\end{lstlisting}
+
+The \textit{createShaderModule} function creates a shader module with the \textit{vkCreateShaderModule} function. The
+\textit{VkShaderModuleCreateInfo} struct contains the size of the code and the code itself. We have to cast the code to
+a \textit{const uint32\textunderscore t} pointer because the code is a vector of chars but is actually binary data.
+This binary data is what the \textit{vkCreateShaderModule} function expects.
+
+\subsection{Shader Stages}
+
+Okay before we go further into the pipeline creation we have to actually write and compile the shaders. We will use the
+GLSL language for the shaders. Let's create a new folder in our src folder called shaders. In this folder we will create
+a \textit{shader.vert} and a \textit{shader.frag} file.
+
+We will start off with a simple vertex shaders that basically just pass the vertex position and the color to the fragment shader.
+GLSL looks very similar to C++ but has some differences. For example we have to define the version of the GLSL language
+at the beginning of the shader. We will use version 460. Next we create some vertex positions, from which we will create a simple triangle.
+We will then have a void main function that sets the \textit{gl\textunderscore Position} variable to the vertex position.
+
+For the fragment shader we will also define the version at the beginning. We will then have a layout out qualifier that outputs the
+color to the next stage. We will then have a void main function that will set the out color to red.
+
+\begin{lstlisting}[language=C++]
+//shader.vert
+#version 460
+
+vec3 positions[3] = vec3[](
+  vec2(0.0, 0.5, 0.0),
+  vec2(-0.5, -0.5, 0.0),
+  vec2(0.5, -0.5, 0.0)
+);
+
+void main() {
+  gl_Position = vec4(positions[gl_VertexIndex], 1.0);
+}
+\end{lstlisting}
+
+You can see that we have this mysterious \textit{gl\textunderscore Position} variable. This is a built-in variable that
+takes the vertex position as a 4D vector. The 4th component is the w component that is used for perspective division.
+This \textit{gl\textunderscore Position} variable is a predefined out variable that is used to pass the vertex position
+to the next stage.
+
+\begin{lstlisting}[language=C++]
+//shader.frag
+#version 460
+layout(location = 0) out vec4 outColor;
+
+void main() {
+  outColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+\end{lstlisting}
+
+Here we set the \textit{outColor} to the color that we passed from the vertex shader. The \textit{outColor} is a 4D vector
+that represents the color of the pixel. The 4th component is the alpha value of the color.
+
+Now that we have them we have to compile them to SPIR-V. We will simply add a compile.sh script that compiles the shaders. We will
+use the \textit{glslc} compiler that comes with the Vulkan SDK. The \textit{glslc} compiler takes the shader file and then compiles
+them to a specified output file. We will compile the vertex shader to \textit{shader.vert.spv} and the fragment shader to
+\textit{shader.frag.spv}.
+
+\begin{lstlisting}[language=bash]
+/usr/local/bin/glslc src/shaders/shader.vert -o src/shaders/shader.vert.spv
+/usr/local/bin/glslc src/shaders/shader.frag -o src/shaders/shader.frag.spv
+\end{lstlisting}
+
+We will execute this script in our makefile before we compile the vulkan application.
+Simply add the following line to the makefile, before the compile line.
+
+\textit{sh src/shaders/compile.sh}
+
+Perfect! Now we have the shaders that the pipeline will read and use. Later you might add more shaders for more complex
+rendering, but the vertex and fragment shader are mandatory.
+
+We now have to create the actual stages and will begin with the shader stages. If you're wondering what the difference
+between a shader module and a shader stage is, the shader module is the binary data that is loaded into the GPU and the
+shader stage is the stage in the pipeline that the shader module is used in. Let's go ahead and create the shader stages.
+
+We will use the \textit{VkPipelineShaderStageCreateInfo} struct to create the shader stages. This struct contains the
+sType, the type of stage, the name and the shader module.
+
+\begin{lstlisting}[language=C++]
+//pipeline.cpp
+void Pipeline::createGraphicsPipeline(const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo) {
+  ...
+  VkPipelineShaderStageCreateInfo shaderStageInfos[2];
+  shaderStageInfos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  shaderStageInfos[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+  shaderStageInfos[0].module = vertShaderModule;
+  shaderStageInfos[0].pName = "main";
+  shaderStageInfos[0].flags = 0;
+  shaderStageInfos[0].pNext = nullptr;
+  shaderStageInfos[0].pSpecializationInfo = nullptr;
+
+  shaderStageInfos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  shaderStageInfos[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  shaderStageInfos[1].module = fragShaderModule;
+  shaderStageInfos[1].pName = "main";
+  shaderStageInfos[1].flags = 0;
+  shaderStageInfos[1].pNext = nullptr;
+  shaderStageInfos[1].pSpecializationInfo = nullptr;
+}
+\end{lstlisting}
+
+\subsection{Vertex Input}
+
+Next we have to define the format of the vertex data that is passed to the vertex shader. To do so we have to create a
+\textit{VkPipelineVertexInputStateCreateInfo} struct that contains the sType, the vertex binding description and the vertex
+attribute descriptions. We'll come back to this once we have the vertex and index buffers. For now we will leave it empty,
+because we have to get the vertex data from models that we will load later.
+
+Because we have the vertex input state info in the config info struct we will use that to create the vertex input state info.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::createGraphicsPipeline(const std::string &vertFilepath,
+                                      const std::string &fragFilepath,
+                                      const PipelineConfigInfo &configInfo) {
+  ...
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+  vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  vertexInputInfo.vertexBindingDescriptionCount = 0;
+  vertexInputInfo.pVertexBindingDescriptions = nullptr;
+  vertexInputInfo.vertexAttributeDescriptionCount = 0;
+  vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+  vertexInputInfo.pNext = nullptr;
+}
+\end{lstlisting}
+
+\subsection{Dynamic States}
+
+While most of the stages are baked into an immutable pipeline object, there are some states that can be changed without
+recreating the pipeline. These states are called dynamic states. We will use dynamic states for the viewport and the scissor.
+
+The viewport is the region of the framebuffer, that will be rendered to. Or in other words, it describes what proportions the image
+will be displayed to the framebuffer. For example you might have a FullHD screen and use that width and height for the swapchain.
+That means you will render in FullHD. Despite that you can define the viewport with half the height, squishing the full image, making
+the image fit in the defined viewport proportions.
+
+The viewport defines the top-left corner with it's x and y coordinate,
+the width and height and it's min and max depth.
+
+The scissor on the other hand cuts the image off. It defines a rectangle, again with an offset and an extent, that
+defines the part of the visible Image.
+
+We will not need any fancy transformations now, but you might want to change the viewport extent when creating cutscenes
+that have the well known black bars called letterboxes. Or you might use scissors to create game effects where the visible
+screen gets smaller and smaller over time.
+
+The pipeline config info struct contains a vector of dynamic states that we will use to create the dynamic state info struct.
+Let's go ahead and add a public static function to the pipeline class called \textit{defaultPipelineConfig} that will populate a
+PipelineConfigInfo struct with default values.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
+  configInfo.dynamicStates = {
+    VK_DYNAMIC_STATE_VIEWPORT,
+    VK_DYNAMIC_STATE_SCISSOR
+  };
+
+  configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStates.size());
+  configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStates.data();
+  configInfo.dynamicStateInfo.flags = 0;
+}
+\end{lstlisting}
+
+Because we have the viewport and scissor set to dynamic we only need to specify the viewport and scissor count in the
+\textit{VkPipelineViewportStateCreateInfo} struct. We will set the viewport and scissor count to 1.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
+		...
+		configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		configInfo.viewportInfo.viewportCount = 1;
+		configInfo.viewportInfo.scissorCount = 1;
+	}
+\end{lstlisting}
+
+We will create the actual viewport and scissor later at drawing time.
+If you don't want to use dynamic states you have to create it first and then reference it in the viewport info struct.
+
+\subsection{Input Assembly}
+
+Now we will define the input assembly state. The input assembly state defines how the vertices are assembled into primitives.
+We will use the \textit{VK\textunderscore PRIMITIVE\textunderscore TOPOLOGY\textunderscore TRIANGLE\textunderscore LIST} topology
+for now. This means that every 3 vertices that we pass to the pipeline will be assembled into one triangle. There is another
+member in the input assembly state struct called the primitive restart enable. This is used to break up lines that are
+created with any strip topology. We don't need this for now, so we will set it to VK\textunderscore FALSE.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
+    ...
+    configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+  }
+\end{lstlisting}
+
+\subsection{Rasterizer}
+
+Next we have to setup the rasterizer. The rasterizer takes the geometry that is outputted by the vertex shader.
+Or if you use the tessellation stage the tessellation stage and the geometry shader. The rasterizer then turns the geometry
+into fragments. It also performs depth testing, face culling and the scissor test. Let's go over the rasterizer state members.
+
+The depth clamp enable is used to clamp the depth values of the fragments that are outside of the near and far planes.
+This means everything that is closer than the near plane will be clamped to the near plane and everything that is further
+than the far plane will be clamped to the far plane. This is useful for shadow mapping, but we don't need it for now.
+
+The rasterizer discard enable is used to discard all the fragments that are outputted by the rasterizer. This might be
+useful when you don't need to output any fragments, but we don't need it for now.
+
+The polygon mode defines how the rasterizer fills the polygons. We will use the fill mode for now, but you can also use
+the line or point mode. The line mode will draw the edges of the polygons and the point mode will draw the vertices of the
+polygons. Any mode other than the fill mode will need you to activate a GPU feature like the
+\textit{VK\textunderscore EXT\textunderscore line\textunderscore rasterization} feature.
+
+The line width is self explanatory. It defines the width of the lines in fragments that are drawn. Setting this
+value to 1.0 will draw the lines with the width of one pixel and anything greater than 1.0 will need us to activate
+the wideLines feature.
+
+The cull mode defines which faces of the polygons are culled. Each surface has two sides, the front and the back side.
+By cutting away aka not rendering the back side of the polygons we can save some performance. We will cull the back side
+of the polygons for now.
+
+The front face defines which side of the polygons is the front side. We determine the front side by looking at the
+vertices of the polygon. When we set the front face to clockwise the front side is the side, where the vertices are
+ordered clockwise.
+
+The last member is the depth bias. We can choose to enable it and set a constant factor to our depth value, a slope factor
+and clamp the depth bias. This is not something that we will use for now so we will disable it.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
+		...
+		configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
+		configInfo.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
+		configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
+		configInfo.rasterizationInfo.lineWidth = 1.0f;
+		configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+		configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
+	}
+\end{lstlisting}
 
 \printbibliography[
 	heading=bibintoc, title={Bibliography}
 ]
+
+\subsection{Multisampling}
+
+Multi sampling is a technique that is used to reduce aliasing. Aliasing is the stair stepping effect that you see on the edges of objects.
+To avoid this we can take multiple samples inside each fragment and then average the color of the samples. This will make the edges
+of the objects look smoother. We will use 1 sample for now and turn of sample shading. Later when rendering more complex scenes
+we will revisit this.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
+    ...
+    configInfo.multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    configInfo.multisampleInfo.sampleShadingEnable = VK_FALSE;
+    configInfo.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+  }
+\end{lstlisting}
+
+\subsection{Depth and Stencil Testing}
+
+When using depth testing we can discard fragments that are behind other fragments. To do that we have to populate the
+\textit{VkPipelineDepthStencilStateCreateInfo} struct. The depth test enable is used to enable the depth test. The depth
+write enable is used to enable writing to the depth buffer. The depth compare op is used to compare the depth of the
+fragments. We will check if the depth of the fragment is less than the depth of the fragment that is already in the
+depth buffer. If it is we will write the fragment to the depth buffer. We can also set the depth bounds test enable
+to enable the depth bounds test. This is used to discard fragments that are outside of the depth bounds. We will not
+need this so we can set it to VK\textunderscore FALSE and ignore the depth bound members. Finally we can also enable the stencil
+test, which we will keep disabled.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
+    ...
+    configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    configInfo.depthStencilInfo.depthTestEnable = VK_TRUE;
+    configInfo.depthStencilInfo.depthWriteEnable = VK_TRUE;
+    configInfo.depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+    configInfo.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+    configInfo.depthStencilInfo.stencilTestEnable = VK_FALSE;
+  }
+\end{lstlisting}
+
+\subsection{Color Blending}
+
+After the fragment colors are calculated by the fragment shader, we have to determine how they are combined with the colors
+that are already in the framebuffer. There are 2 different structures that we have to populate. The first one is a per
+framebuffer struct called \textit{VkPipelineColorBlendAttachmentState}. This struct contains the color write mask and the
+blend enable. If we would enable blending we could set a blend factor for color and alpha values and set
+an mathematical operation to combine the colors. We just want the fragment color to be written to the framebuffer
+so we will disable blending and set the color write mask to the RGBA bits.
+
+The second struct is the \textit{VkPipelineColorBlendStateCreateInfo} struct. This struct stores the color blend attachments
+and defines if and what kind of logical operation is used. We will not apply any logical operations so we will disable it.
+There are many logical operations that you can use, like the copy operation that just copies the source color to the
+destination color, or the and operation that takes the bitwise and of the source and destination color. By disabling the
+logical operation we will just copy the source color to the destination color, so we don't have to set the logical operation.
+Optionally we can set the blend constants that are used in blending operations. We will not need this so we will not set it.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
+		...
+		configInfo.colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		configInfo.colorBlendAttachment.blendEnable = VK_FALSE;
+
+		configInfo.colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		configInfo.colorBlendInfo.logicOpEnable = VK_FALSE;
+		configInfo.colorBlendInfo.attachmentCount = 1;
+		configInfo.colorBlendInfo.pAttachments = &configInfo.colorBlendAttachment;
+	}
+\end{lstlisting}
+
+\subsection{Pipeline layout and renderering system}
+
+Now that we have all states set up that we need for the pipeline we can create the pipeline layout. The pipeline layout
+specifies the uniform variables, like descriptor sets, that are used in the shaders. These uniform variables, stored in the member variables
+\textit{pSetLayouts} and \textit{setLayoutCount}, are later used to pass data like the
+transformation matrix to the shaders. It also specifies the push constants that are used to pass smaller bits of data to the
+shaders. We won't use uniform variables or push constants for now, so we will just have to set the sType.
+
+The thing is that we have to create the pipeline layout before we create the graphics pipeline. So we will
+add a new class called \textit{RenderSystem}. This class will do the following:
+
+\begin{itemize}
+	\item Create the pipeline layout
+	\item Populate the pipeline config info struct
+	\item Create the graphics pipeline
+\end{itemize}
+
+We will need two functions in the render system class. The first function will be the \textit{createPipelineLayout} function
+and the second function will be the \textit{createPipeline} function. The \textit{createPipelineLayout} function will take
+a descriptor set layout and create the pipeline layout. The \textit{createPipeline} function will take the render pass and
+create the graphics pipeline. We will also need a variable that stores the pipeline
+layout, the pipeline and the device. The render system's constructor takes the device reference, render pass and
+the descriptor set layout and first creates the pipeline layout and then the graphics pipeline.
+
+\begin{lstlisting}[language=C++]
+//render_system.hpp
+class RenderSystem {
+public:
+  RenderSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout);
+  ~RenderSystem();
+
+  RenderSystem(const RenderSystem &) = delete;
+  RenderSystem operator=(const RenderSystem &) = delete;
+
+private:
+  Device &device;
+  VkPipelineLayout pipelineLayout;
+  std::unique_ptr<Pipeline> pipeline;
+
+  void createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
+  void createPipeline(VkRenderPass renderPass);
+};
+\end{lstlisting}
+
+For the \textit{VkPipelineLayoutCreateInfo} struct we will set the sType and the descriptor set layout and ignore the
+push constant range members for now. For the case that we won't have a descriptor set layout, we will add the \textit{descriptorSetLayout}
+parameter to a new vector. Doing it like this we can simply determine the size and the data of the vector. The thing is we are
+not at the point that we can use descriptor sets, so we will set the descriptor set layout to \textit{nullptr} and the count to 0;
+
+\begin{lstlisting}[language=C++]
+//render_system.cpp
+RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout) : device{device} {
+  createPipelineLayout(descriptorSetLayout);
+  createPipeline(renderPass);
+}
+
+void RenderSystem::createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout) {
+  std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount =
+      0; // static_cast<uint32_t>(layouts.size());
+  pipelineLayoutInfo.pSetLayouts = nullptr; // layouts.data();
+
+  if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create pipeline layout!");
+}
+\end{lstlisting}
+
+The \textit{createPipeline} function will populate the pipeline config info struct with the default pipeline config and
+then instantiate our pipeline class with the vertex and fragment shader paths and the pipeline config info struct.
+Before we do that, we have to make sure that we have a valid pipeline layout.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::createPipeline(VkRenderPass renderPass) {
+  assert(pipelineLayout != VK_NULL_HANDLE && "Cannot create pipeline before pipeline layout!");
+  
+  PipelineConfigInfo pipelineConfigInfo = {};
+  Pipeline::defaultPipelineConfig(pipelineConfigInfo);
+  pipelineConfigInfo.renderPass = renderPass;
+  pipelineConfigInfo.pipelineLayout = pipelineLayout;
+
+  pipeline = std::make_unique<Pipeline>(device, "src/shaders/shader.vert.spv", "src/shaders/shader.frag.spv", pipelineConfigInfo);
+}
+\end{lstlisting}
+
+Finally we need to destory the pipeline layout in the destructor of the render system class.
+
+\begin{lstlisting}[language=C++]
+RenderSystem::~RenderSystem() {
+  vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+}
+\end{lstlisting}
+
+\subsection{Pipeline creation}
+
+Now that we get the render pass and pipeline layout from the render system we can create the graphics pipeline.
+We will simply populate the \textit{VkGraphicsPipelineCreateInfo} struct with the data that we have and create the
+graphics pipeline with the \textit{vkCreateGraphicsPipelines} function.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::createGraphicsPipeline(const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo) {
+  ...
+  VkGraphicsPipelineCreateInfo pipelineInfo = {};
+  pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+  pipelineInfo.stageCount = 2;
+  pipelineInfo.pStages = shaderStages;
+  pipelineInfo.pVertexInputState = &vertexInputInfo;
+  pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
+  pipelineInfo.pViewportState = &configInfo.viewportInfo;
+  pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
+  pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;
+  pipelineInfo.pDepthStencilState = &configInfo.depthStencilInfo;
+  pipelineInfo.pColorBlendState = &configInfo.colorBlendInfo;
+  pipelineInfo.pDynamicState = &configInfo.dynamicStateInfo;
+
+  pipelineInfo.layout = configInfo.pipelineLayout;
+  pipelineInfo.renderPass = configInfo.renderPass;
+  pipelineInfo.subpass = configInfo.subpass;
+
+  pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+  pipelineInfo.basePipelineIndex = -1;
+
+  pipelineInfo.pNext = nullptr;
+
+  if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create graphics pipeline!");
+}
+\end{lstlisting}
+
+You can see that we also set the base pipeline handle and index to \textit{VK\textunderscore NULL\textunderscore HANDLE}
+and -1. This is used for creating a new pipeline that is based on an existing pipeline. We will not use this for now.
+
+And again we have to clean up our mess. Including the shader modules and the graphics pipeline in the pipeline destructor.
+
+\begin{lstlisting}[language=C++]
+Pipeline::~Pipeline() {
+  vkDestroyShaderModule(device, vertShaderModule, nullptr);
+  vkDestroyShaderModule(device, fragShaderModule, nullptr);
+  vkDestroyPipeline(device, graphicsPipeline, nullptr);
+}
+\end{lstlisting}
+
+That's it for now, let's go ahead and instantiate the render system in our application class.
+We will also need to add a getter function to the swapchain class that returns the render pass.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+VkRenderPass getRenderPass() { return renderPass; }
+
+//app.cpp
+App::App() {
+  RenderSystem renderSystem{device, swapChain.getRenderPass(), nullptr};
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+  }
+}
+\end{lstlisting}
+
 
 \listoffigures
 

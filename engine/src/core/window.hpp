@@ -1,3 +1,5 @@
+#ifndef WINDOW_HPP
+#define WINDOW_HPP
 #include <stdexcept>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
@@ -17,6 +19,10 @@ public:
   Window(const Window &) = delete;
   Window &operator=(const Window &) = delete;
 
+  VkExtent2D getExtent() {
+    return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+  }
+
   void createSurface(VkInstance instance, VkSurfaceKHR *surface) {
     if (glfwCreateWindowSurface(instance, window, nullptr, surface) !=
         VK_SUCCESS)
@@ -33,3 +39,4 @@ private:
   GLFWwindow *window;
 };
 } // namespace engine
+#endif

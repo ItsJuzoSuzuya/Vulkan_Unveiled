@@ -1,3 +1,5 @@
+#ifndef DEVICE_HPP
+#define DEVICE_HPP
 #include "window.hpp"
 #include <cstdint>
 #include <optional>
@@ -16,7 +18,7 @@ struct QueueFamilyIndices {
   }
 };
 
-struct SwapChainSupportDetails {
+struct SwapchainSupportDetails {
   VkSurfaceCapabilitiesKHR capabilities;
   std::vector<VkSurfaceFormatKHR> formats;
   std::vector<VkPresentModeKHR> presentModes;
@@ -33,15 +35,23 @@ public:
   Device &operator=(const Device &&) = delete;
 
   VkSurfaceKHR surface() { return surface_; }
-  operator VkDevice() { return device_; }
+  VkDevice device() { return device_; }
 
-  SwapChainSupportDetails getSwapChainSupport() {
+  SwapchainSupportDetails getSwapChainSupport() {
     return querySwapChainSupport(physicalDevice);
   }
 
   QueueFamilyIndices findQueueFamilies() {
     return findQueueFamilies(physicalDevice);
   }
+
+  VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates,
+                               VkImageTiling tiling,
+                               VkFormatFeatureFlags features);
+
+  void createImageWithInfo(const VkImageCreateInfo &imageInfo,
+                           VkMemoryPropertyFlags properties, VkImage &image,
+                           VkDeviceMemory &imageMemory);
 
 private:
 #ifdef NDEBUG
@@ -65,7 +75,10 @@ private:
   bool isDeviceSuitable(VkPhysicalDevice device);
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+  SwapchainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
+  uint32_t findMemoryType(uint32_t typeFilter,
+                          VkMemoryPropertyFlags properties);
 
   VkInstance instance;
   VkDebugUtilsMessengerEXT debugMessenger;
@@ -85,3 +98,4 @@ private:
       VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 };
 } // namespace engine
+#endif
