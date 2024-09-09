@@ -1,5 +1,6 @@
 #ifndef APP_HPP
 #define APP_HPP
+#include "core/render_system.hpp"
 #include "core/swapchain.hpp"
 #include <memory>
 
@@ -16,6 +17,8 @@ private:
   Device device{window};
 
   std::unique_ptr<SwapChain> swapChain;
+
+  void drawFrame(RenderSystem &renderSystem);
 };
 } // namespace engine
 #endif

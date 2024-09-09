@@ -36,6 +36,8 @@ public:
 
   static void defaultPipelineConfig(PipelineConfigInfo &configInfo);
 
+  void bind(VkCommandBuffer commandBuffer);
+
 private:
   Device &device;
   VkPipeline graphicsPipeline;

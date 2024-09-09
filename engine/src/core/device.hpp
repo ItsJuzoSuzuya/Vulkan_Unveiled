@@ -36,6 +36,9 @@ public:
 
   VkSurfaceKHR surface() { return surface_; }
   VkDevice device() { return device_; }
+  VkCommandPool getCommandPool() { return commandPool; }
+  VkQueue graphicsQueue() { return graphicsQueue_; }
+  VkQueue presentQueue() { return presentQueue_; }
 
   SwapchainSupportDetails getSwapChainSupport() {
     return querySwapChainSupport(physicalDevice);

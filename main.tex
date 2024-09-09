@@ -6,28 +6,47 @@
 Graphics Programming}} \author {Nick Schefner}
 \bibliography{citations.bib}
 
+\begin{acronym}
+	\acro{API}{Application Programming Interface}
+	\acro{CPU}{Central Processing Unit}
+	\acro{GPU}{Graphics Processing Unit}
+	\acro{VRAM}{Video Random Access Memory}
+	\acro{SIMD}{Single Instruction, Multiple Data}
+  \acro{GLM}{OpenGL Mathematics}
+  \acro{NDC}{Normalized Device Coordinates}
+  \acro{CVV}{Canonical View Volume}
+  \acro{SM}{Streaming Multiprocessor}
+  \acro{LOD}{Level of Detail}
+  \acro{GLSL}{OpenGL Shading Language}
+  \acro{Spir-V}{Standard Portable Intermediate Representation}
+  \acro{UBO}{Uniform Buffer Object}
+  \acro{GLFW}{Graphics Library Framework}
+  \acro{MSAA}{Multisample Anti-Aliasing}
+  \acro{HLSL}{High Level Shading Language}
+\end{acronym}
+
 \begin{document} \maketitle
 
 \tableofcontents
 
 \chapter{Introduction}
 
-Dear Reader,
+Dear reader,
 
-Welcome to "Vulkan Unveiled: A Beginner's Guide to Professional Graphics Programming".
+Welcome to "Vulkan Unveiled: A beginner's guide to professional graphics programming".
 It is with great pleasure and excitement that I extend my sincerest greetings
-to you as you embark on this journey into the world of Vulkan API.
+to you as you embark on this journey into the world of the Vulkan \ac{API} .
 Before we start, I would like to introduce myself to you.
 
-I began my journey with the Vulkan API about 3 months ago when I embarked
+I began my journey with the Vulkan \ac{API} about 9 months ago when I embarked
 on the creation of my own game engine “Magma”, which is just a very basic
 implementation of a game engine. Before that, I have
-started my programming journey with the well known Unity Game Engine
+started my programming journey with the well known unity game engine
 and learned many basics on how games and graphics behave. I also have
-experience with Glium, which is an OpenGL Wrapper for Rust. For those
-unfamiliar, Glium further abstracts OpenGL, which made it easier to
+experience with glium, which is an OpenGL wrapper for rust. For those
+unfamiliar, glium further abstracts OpenGL, which made it easier to
 understand the logic and functionalities of my application.  I’m deeply
-invested in creating a precise representation of the Vulkan API.
+invested in creating a precise representation of the Vulkan \ac{API}.
 Which will also be my ground base on further deepening my knowledge and
 understanding.	While researching and writing this book, I anticipate
 learning a great deal myself.  Nonetheless, I am committed to providing
@@ -35,23 +54,23 @@ you with a comprehensive understanding of graphics programming throughout
 this book.
 
 Graphical programming is a complex topic with a steep learning curve,
-I often feel that I missed the dots connecting every aspect of the
+i often feel that I missed the dots connecting every aspect of the
 underlying technologies when first getting started in this field as a
 game dev. Therefore it might be quite overwhelming at first, to understand
 how the graphics that we see every day are created and displayed onto
 our displays. It does not help that Vulkan expands on that complexity
-and provides us with an API that is very low level, whereas older graphic
-APIs abstract many of the processes, that Vulkan requires us to handle
+and provides us with an \ac{API} that is very low level, whereas older graphic
+\ac{API}s abstract many of the processes, that Vulkan requires us to handle
 ourself.
 
 Because Vulkan requires us to explicitly control the hardware resources,
 you need even more knowledge about the multiple hardware components and
-rendering possibilities that modern GPUs allow us to employ.
+rendering possibilities that modern \ac{GPU}s allow us to employ.
 
 The main idea off this book is to slowly introduce someone who has had
 no contact with graphical programming so far, but is excited to dive
 into an interesting topic that is a must know for every aspiring future
-game developer or artist. We will first learn to understand the GPU and
+game developer or artist. We will first learn to understand the \ac{GPU} and
 its usage. I will then focus on explaining pipelines, buffers, swap chains
 and other components of the render system and explain in detail how they work
 and are linked together. Besides that I will explain how Vulkan manages
@@ -59,8 +78,8 @@ each of these components and give an example on how a possible implementation
 could look like.
 
 I also want to give a special thanks to Brendan Galea for his “Vulkan
-(c++) Game Engine” series, that helped me out a lot on understanding
-not just Vulkan as an API but also the basics of graphical programming
+(C++) game engine” series, that helped me out a lot on understanding
+not just Vulkan as an \ac{API} but also the basics of graphical programming
 and its components.
 
 Lastly, I want to assure you that while learning Vulkan may seem daunting
@@ -71,92 +90,92 @@ develop a strong understanding of it.
 
 \section{Why do we need a GPU?}
 
-The graphics processing unit (GPU) is, like the name implies, a hardware
+The graphics processing unit (\ac{GPU}) is, like the name implies, a hardware
 component that is made specifically for processing graphical data. Sure,
 okay, but why do we need a separate hardware component for that?  Why not
-just let the CPU handle the calculations? The answer is simple: speed
+just let the \ac{CPU} handle the calculations? The answer is simple: speed
 and parallelism.
 
-The CPU is great at executing one command after another, but
+The \ac{CPU} is great at executing one command after another, but
 it is not very good at executing multiple commands at the same
-time. Sure we have multi threading but the CPU is limited to just a
-few cores. \cite{CDW-cpu_vs_gpu} On the other hand, the GPU is mainly
+time. Sure we have multi threading but the \ac{CPU} is limited to just a
+few cores. \cite{CDW-cpu_vs_gpu} on the other hand, the \ac{GPU} is mainly
 build on processing mathematically complex operations like matrix
 multiplications, that are not just executed once but multiple
-times. \cite{NVIDIA-cpu-gpu} Because the GPU focuses on speed
+times. \cite{NVIDIA-cpu-gpu} because the \ac{GPU} focuses on speed
 and parallelism, it is designed to use more of the accessible
 transistors for processing data. This is beneficial for parallel
-computations because the GPU can hide memory access latencies with
-computation. The CPU on the other hand has an additional cache layer
+computations because the \ac{GPU} can hide memory access latencies with
+computation. The \ac{CPU} on the other hand has an additional cache layer
 and a more complex control logic that makes sequential computations
 faster. \cite{CUDA_Programming_Guide}
 
 Imagine creating a animation where the color of your full screen changes
 between red and green. In that case you have a single command, the color
-change, which is performed on every pixel on the screen. Using a CPU
-we would have to wait for the CPU to execute the command on every pixel
-one after another, which would take a lot of time. With the GPU we can
+change, which is performed on every pixel on the screen. Using a \ac{CPU}
+we would have to wait for the \ac{CPU} to execute the command on every pixel
+one after another, which would take a lot of time. With the \ac{GPU} we can
 execute the command on every pixel simultaneously, which is much faster.
 
-While a CPU usually just has a hand full of cores, GPUs have multiple
+While a \ac{CPU} usually just has a hand full of cores, \ac{GPU}s have multiple
 thousands of cores. \cite{NVIDIA-rtx-4090}
-But that doesn't mean that the GPU is 1000
-times faster than the CPU. The compute units of the GPU are much slower
-than the cores of the CPU, but because they can run in parallel they are
+but that doesn't mean that the \ac{GPU} is 1000
+times faster than the \ac{CPU}. The compute units of the \ac{GPU} are much slower
+than the cores of the \ac{CPU}, but because they can run in parallel they are
 more suitable for graphical computations. \cite{CUDA_Programming_Guide}
 
-The GPU also has its own memory called the video random access memory
-(VRAM) which is used to store processed and unprocessed data.
-I don't want to go into detail about the VRAM because it is not relevant
-for understanding Vulkan, but it is important to add that the VRAM
+The \ac{GPU} also has its own memory called the \ac{VRAM}
+which is used to store processed and unprocessed data.
+I don't want to go into detail about the \ac{VRAM} because it is not relevant
+for understanding Vulkan, but it is important to add that the \ac{VRAM}
 allows simultaneously reading and writing data, which is a big advantage
-over the CPU. \cite{vram}
+over the \ac{CPU}. \cite{vram}
 
-It might also be interesting that when the VRAM is full, rendering
+It might also be interesting that when the \ac{VRAM} is full, rendering
 speed and performance will drop because we need to get the data from a
 slower memory source like the DRAM.  Therefore it is important to manage
-data efficiently and to not overload the VRAM by, for example, loading
+data efficiently and to not overload the \ac{VRAM} by, for example, loading
 to many or to detailed textures.
 
-\section{Basic Architecture of the GPU}
+\section{Basic architecture of the GPU}
 
-I've already mentioned that the GPU can take one instruction and
-execute it on multiple threads at the same time. This is called SIMD
-(Single Instruction, Multiple Data). \cite{cherry_gpu_architecture}
+I've already mentioned that the \ac{GPU} can take one instruction and
+execute it on multiple threads at the same time. This is called \ac{SIMD}.
+\cite{cherry_gpu_architecture}
 
-The GPU is made up of thousands of small cores, which are called CUDA
+The \ac{GPU} is made up of thousands of small cores, which are called CUDA
 compute units on NVIDIA graphics cards \cite{CUDA_Programming_Guide}
-and ROCm compute units on AMD graphics, which I will neglect to
-simplify this topic. \cite{rocm} CUDA stands for "Compute Unified
-Device Architecture" and is a low level parallel computing platform
-and programming model that comes with an API for writing programs
-that can handle the power and advantages of the GPU in a high level
-language like c or c++. \cite{CUDA_Programming_Guide} Don't worry, we
+and ROCM compute units on AMD graphics, which I will neglect to
+simplify this topic. \cite{rocm} CUDA stands for "compute unified
+device architecture" and is a low level parallel computing platform
+and programming model that comes with an \ac{API} for writing programs
+that can handle the power and advantages of the \ac{GPU}in a high level
+language like c or C++. \cite{CUDA_Programming_Guide} don't worry, we
 will not use CUDA or an assembly language in this book, because Vulkan
-abstracts the usage of the GPU for us, but it is important to understand
-that the GPU is not just a black box that we can throw commands at and
+abstracts the usage of the \ac{GPU} for us, but it is important to understand
+that the \ac{GPU} is not just a black box that we can throw commands at and
 expect it to work. These cores are combined into an array of so called
-streaming multiprocessors (SM) also known as CUDA blocks, which are the
-main building blocks of the GPU.  Each SM has its own control logic,
-memory and execution units. \cite{CUDA_Programming_Guide} These SMs are
-then combined into a grid called the GPU.  When the GPU is invoked by
-the CPU, a free SM will be assigned to performing the requested tasks
-and then return the results to the CPU if needed. \cite{CUDA_Programming_Guide}
+\ac{SM} also known as cuda blocks, which are the
+main building blocks of the \ac{GPU}.  Each \ac{SM} has its own control logic,
+memory and execution units. \cite{CUDA_Programming_Guide} these sms are
+then combined into a grid called the \ac{GPU}.  When the \ac{GPU} is invoked by
+the \ac{CPU}, a free \ac{SM} will be assigned to performing the requested tasks
+and then return the results to the \ac{CPU} if needed. \cite{CUDA_Programming_Guide}
 
-The GPU also consists of a memory hierarchy, which is used to store the
-data that is processed by the GPU. The memory hierarchy looks like this:
+The \ac{GPU} also consists of a memory hierarchy, which is used to store the
+data that is processed by the \ac{GPU}. The memory hierarchy looks like this:
 
 \begin{figure}[hbtp]
 	\centering
 	\includegraphics[width=0.70\textwidth]{simple-gpu-arch.png}
-	\caption{Memory Hierarchy of the GPU \cite{fig:gpu-arch}}
+	\caption{Memory hierarchy of the \ac{GPU} \cite{fig:gpu-arch}}
 \end{figure}
 
 Please note that the VRAM is not part of the memory hierarchy, but is
 connected to the L2 cache. Caches are used to store frequently used
-data and to reduce access times to the main memory. While every SM
-has its own L1 cache, the L2 cache is shared between all SMs. Which
-means that all cores in one SM are sharing one L1 cache. The CPU
+data and to reduce access times to the main memory. While every \ac{SM}
+has its own L1 cache, the L2 cache is shared between all \ac{SM}. Which
+means that all cores in one \ac{SM} are sharing one L1 cache. The \ac{CPU}
 on the other hand has one cache and one memory controller per
 core. \cite{CUDA_Programming_Guide}
 
@@ -165,16 +184,16 @@ core. \cite{CUDA_Programming_Guide}
 Okay that was a lot of information, so let's summarize the really
 important bits of what we have learned so far.
 
-The GPU was created to process graphical data much faster than a CPU
+The \ac{GPU} was created to process graphical data much faster than a \ac{CPU}
 could ever do. It allows us to execute the same command on multiple
 data simultaneously to prevent waiting for a single command to finish,
 which helps us render reoccurring tasks like drawing a texture or model
 much faster.  It is made up of many cores which are combined into an
-array of streaming multiprocessors (SM) to allow better control and
-management of the cores.  The VRAM is the memory of the GPU and its
+array of \ac{SM} to allow better control and
+management of the cores.  The VRAM is the memory of the \ac{GPU} and its
 important to optimize your data to prevent overloading the VRAM.
 
-\chapter{Graphics Rendering Pipeline}
+\chapter{Graphics rendering pipeline}
 
 \section{What is the graphics pipeline?}
 
@@ -182,39 +201,39 @@ When we talk about the graphics pipeline, I want to make clear that we
 are not talking about a physical pipeline that is used to transport data
 from one place to another. I've made that mistake when I first started
 working with pipelines. My first thought was that the pipeline is a tool
-to transport data from the CPU to the GPU, but that's totally wrong.
+to transport data from the \ac{CPU} to the \ac{GPU}, but that's totally wrong.
 
 What is it then? Let's start with a simple definition.
 
 The graphics pipeline is an abstraction layer that is located on the
-GPU and is used to process incoming data to create the image that we see
-on our screen. \cite{vkGuide} This saves us from writing low level code
-explicitly targeting the GPU, which would be a massive task to do.
+\ac{GPU} and is used to process incoming data to create the image that we see
+on our screen. \cite{vkGuide} this saves us from writing low level code
+explicitly targeting the \ac{GPU}, which would be a massive task to do.
 The name pipeline comes from the fact that we pass data through
 multiple stages that process the data in a specific way. Once the data
 has passed through all stages, it is ready to be displayed on the screen.
 
 Please note that the pipeline is implemented differently in every graphics
-API, but the basic ideas remains the same. We feed the pipeline with some
+\ac{API}, but the basic ideas remains the same. We feed the pipeline with some
 graphical data, which then performs operations to transform the data into
 a 2D image that can be displayed on our screen. The processed data
 is then stored in a framebuffer, which will be explained later.
 \cite{vkGuide}
 
-There are other pipeline types, like the compute or raytracing
+There are other pipeline types, like the compute or ray tracing
 pipeline, made for different tasks, but we will focus on the graphics
 pipeline for now.
 
 The graphics pipeline is invoked by a draw command, which starts the
 data processing. \cite{build-pipeline}
 
-\section{The Basics}
+\section{The basics}
 
 To understand the graphics pipeline, we first need to understand
 how the 2D image on our screen is created from the 3D data that we
 provide to the pipeline.
 
-\subsection{Verices and Indices}
+\subsection{Vertices and Indices}
 
 Every model that we see is made up of off either triangles, points or
 isolines. These shapes are called primitives and are created by connecting
@@ -226,7 +245,7 @@ color \{r, g, b, a\} or texture coordinates \{u, v\}. \cite{vulkan-vertex-input}
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.60\textwidth]{vektor_triangle.svg}
 	\caption{Triangle with vertices}
-\end{figure} \FloatBarrier
+\end{figure} \floatbarrier
 
 When we want to reuse certain vertices, for example when
 drawing a square, we can add indices.  These indices tell the
@@ -244,7 +263,7 @@ Vertices: \{0, 1, 2, 3\} Indices: \{\textcolor{red}{0, 1, 2} ,
 	\centering \includesvg[width=0.50\textwidth]{vi_quad.svg}
 	\caption{Square
 		with vertices created using indices}
-\end{figure} \FloatBarrier
+\end{figure} \floatbarrier
 
 Here you can see that the first triangle is created by using the
 vertices\{\textcolor{red}{0, 1, 2}\} and the second triangle is created by using
@@ -254,20 +273,20 @@ to clarify which indices are used to create which triangles.
 \subsection{Buffers}
 
 Now that we know what vertices and indices are, we can talk about how we
-provide the GPU with this data. There the buffers come into play. A buffer
-is basically an array of data that can be bind to the graphics Pipeline.
+provide the \ac{GPU} with this data. There the buffers come into play. A buffer
+is basically an array of data that can be bind to the graphics pipeline.
 When the pipeline is created, we need to provide it with the layout of the
 buffer, which tells the pipeline how the data in the buffer is structured.
 \cite{vulkan-tutorial-vertex-buffer}
 
-In the Vertex Buffer we store the attributes of each vertex as an
+In the vertex buffer we store the attributes of each vertex as an
 array. An attribute can be a position, color or any other related data
-of the Vertex. \cite{vulkan-tutorial-vertex-buffer}
+of the vertex. \cite{vulkan-tutorial-vertex-buffer}
 
 \begin{figure}[hbtp]
-	\centering \includesvg[width=1\textwidth]{Vertexbuffer.svg}
-	\caption{Interleaved Vertex Buffer}
-\end{figure} \FloatBarrier
+	\centering \includesvg[width=1\textwidth]{vertexbuffer.svg}
+	\caption{Interleaved vertex buffer}
+\end{figure} \floatbarrier
 
 You can see that each attribute has a specific location in the buffer.
 These locations tell the pipeline what bytes belong together. So when
@@ -279,13 +298,13 @@ floats and 8 bytes each when you use double precision floats. \cite{vulkan-tutor
 
 This example shows a single buffer containing all attributes in
 an interleaved pattern, but we can also create one buffer for each
-attribute and then attach them into a single vertexbuffer. This is called
+attribute and then attach them into a single vertex buffer. This is called
 a non-interleaved pattern.
 
 \begin{figure}[hbtp]
 	\includesvg[width=1\textwidth]{non-int-vertexbuffer.svg}
-	\caption{Non-Interleaved Vertex Buffer}
-\end{figure} \FloatBarrier
+	\caption{Non-interleaved vertex buffer}
+\end{figure} \floatbarrier
 
 Each attribute has has its own binding, to tell the pipeline what location
 is assigned to the data. So the first binding will always be the position
@@ -296,17 +315,17 @@ Usually we will use interleaved buffers, but in some cases, when we need
 different attributes for different tasks, we can use non-interleaved
 buffers.
 
-The Indexbuffer on the other hand is just an simple array of integers.
+The index buffer on the other hand is just an simple array of integers.
 \cite{vulkan-tutorial-index-buffer}
 
 
-\subsection{Coordinate Systems}
+\subsection{Coordinate systems}
 
 \begin{figure}[hbtp]
 	\centering \includegraphics[width=\textwidth]{coordinate-systems.png}
-	\caption{Coordinate Systems \cite{fig:view-frustum}}
+	\caption{Coordinate systems \cite{fig:view-frustum}}
 \end{figure}
-\FloatBarrier
+\floatbarrier
 
 We start with the local space, which is the space that we use to define
 our objects. Often the objects are centered around the origin of the
@@ -323,19 +342,19 @@ with a near and far plane, that is used to define what we can see.
 
 \begin{figure}[hbtp]
 	\centering \includegraphics[width=0.60\textwidth]{view-frustum.png}
-	\caption{View Frustum \cite{fig:view-frustum}}
+	\caption{View frustum \cite{fig:view-frustum}}
 \end{figure}
-\FloatBarrier
+\floatbarrier
 
 To transform the world space into the view space, we use a view matrix.
 Let's briefly talk about matrix transformations and how multiplication
 can be used to move, rotate or scale objects in 3D space.
 
 If you have never touched linear algebra before, I suggest you to go over
-2Blue1Brown's Essence of Linear Algebra series on YouTube. It is a great
+2Blue1Brown's essence of linear algebra series on YouTube. It is a great
 introduction to linear algebra and will help you understand the further topics.
 
-\subsection{Matrix Transformations}
+\subsection{Matrix transformations}
 
 When we have an box in 3D space, we can represent its position as an
 array of 3 floats, which are the x, y and z coordinates of its center.
@@ -346,7 +365,7 @@ the rows of the first matrix with the columns of the second matrix and add them
 together. The result is the value of the new matrix at the position where the row and
 column intersect.
 
-For example, when we have two matrices A and B, we multiply them like this:
+For example, when we have two matrices a and b, we multiply them like this:
 
 \[
 	\begin{bmatrix}
@@ -370,9 +389,9 @@ For example, when we have two matrices A and B, we multiply them like this:
 
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.60\textwidth]{images/matrix-multiplication.svg}
-	\caption{Matrix Multiplication \cite{fig:matrix-multiplication}}
+	\caption{Matrix multiplication \cite{fig:matrix-multiplication}}
 \end{figure}
-\FloatBarrier
+\floatbarrier
 
 As long as the number of columns in the first matrix is equal to the number
 of rows in the second matrix, we can multiply them. The result will have
@@ -444,7 +463,7 @@ the points \{0, 0, 0\} and \{1, 0, 0\}.
 When we want to rotate this line around an axis by \(\delta\) degrees, we can apply
 the following rotation matrices to the points:
 
-x-axis: \[
+X-axis: \[
 	\begin{bmatrix}
 		1 & 0            & 0           & 0 \\
 		0 & cos(\delta)  & sin(\delta) & 0 \\
@@ -453,7 +472,7 @@ x-axis: \[
 	\end{bmatrix}
 \]
 
-y-axis: \[
+Y-axis: \[
 	\begin{bmatrix}
 		cos(\delta) & 0 & -sin(\delta) & 0 \\
 		0           & 1 & 0            & 0 \\
@@ -462,7 +481,7 @@ y-axis: \[
 	\end{bmatrix}
 \]
 
-z-axis: \[
+Z-axis: \[
 	\begin{bmatrix}
 		cos(\delta)  & sin(\delta) & 0 & 0 \\
 		-sin(\delta) & cos(\delta) & 0 & 0 \\
@@ -549,7 +568,7 @@ we apply them to the entire world space. This means when rotating, scaling or
 moving an object, we are actually rotating, scaling or moving the entire world,
 which will also rotate, scale or move the object.
 
-\subsection{View Space}
+\subsection{View space}
 
 Now that we know how to transform the world space, we can move the camera
 and the objects, so that the camera is the origin of the view space.
@@ -619,7 +638,7 @@ we need to rotate the camera around the z axis.
 	cos(\theta)
 \]
 
-Now we just need to rotate the xz plane around the y axis, so that the camera is looking
+Now we just need to rotate the xz-plane around the y axis, so that the camera is looking
 up the z axis. We can calculate the angle by taking the dot product of the camera direction
 after rotating it around the z axis and the z axis itself
 
@@ -640,7 +659,7 @@ after rotating it around the z axis and the z axis itself
 \]
 
 Luckily we don't need to calculate the angles by hand, we can use the
-GLM library to calculate the rotation matrix for us. The GLM library is a
+\ac{GLM} library to calculate the rotation matrix for us. The \ac{GLM} library is a
 header only library that provides us with many useful functions for
 mathematical operations.
 
@@ -648,7 +667,7 @@ Don't forget to perform all of this for every object in the world space.
 The result will be the view space, where the camera is the origin and
 the objects are rotated so that the camera is looking down the z axis.
 
-\subsection{Projection Transformation}
+\subsection{Projection transformation}
 
 The next step is the transformation from the view space to the clip
 space. The clip space is used to define what we can see
@@ -674,8 +693,8 @@ z axis.
 
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.80\textwidth]{images/perspective.svg}
-	\caption{View Frustum}
-\end{figure} \FloatBarrier
+	\caption{view frustum}
+\end{figure} \floatbarrier
 
 What we need to calculate is yn, which is the new height of the object.
 To do so we use the green triangle and the near planes distance on the z axis
@@ -711,7 +730,7 @@ So what we want is to transform the point \{x, y, z, w\} to \(\{x * n, y * n, z^
 Keep in mind that the homogeneous coordinate is the same as the 3D coordinate after dividing by w.
 This division is called the perspective divide.
 So after the perspective divide we get \(\{\frac{x * n}{z}, \frac{y * n}{z}, z\}\) which are
-called normalized device coordinates (NDC) or the canonical view volume (CVV).
+called \ac{NDC} or the \ac{CVV}.
 
 Okay so what we need is a 4x4 matrix that multiplies the x and y coordinate with n and the z coordinate
 with itself. We also need to multiply the w coordinate with z,
@@ -793,16 +812,16 @@ Therefor the final matrix looks like this:
 	\end{bmatrix}
 \]
 
-This matrix will actually only give us \(z^2\) on the near and far plane. The Objects in between will have
+This matrix will actually only give us \(z^2\) on the near and far plane. The objects in between will have
 a little offset on the z axis but will remain linearly interpolated between the near and far plane.
 
 Now that we have the orthographic view volume, we need to move it to the origin and
-scale it to the size of the CVV. The CVV looks like this from the front:
+scale it to the size of the \ac{CVV}. The \ac{CVV} looks like this from the front:
 
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.60\textwidth]{images/clip-space.svg}
-	\caption{Canonical View Volume Front}
-\end{figure} \FloatBarrier
+	\caption{\ac{CVV} front}
+\end{figure} \floatbarrier
 
 It is a coordinate system where the y axis is pointing downwards and the positive of the z axis
 is pointing away from us. Each axis ranges from -1 to 1 except the z axis,
@@ -829,9 +848,9 @@ For the x and y value we just have to calculate the center of the near plane.
 This is done by adding the opposite sides together and then dividing them by 2.
 So for \(c_x\) we get \(\frac{l + r}{2}\) and for \(c_y\) we get \(\frac{t + b}{2}\).
 
-Next we scale the orthographic view volume to the size of the CVV.
+Next we scale the orthographic view volume to the size of the \ac{CVV}.
 This is done by multiplying the x, y and z coordinate
-with the dimension of the canonical view volume over the size of the orthographic view volume.
+with the dimension of the \ac{CVV} over the size of the orthographic view volume.
 We can get the size from subtracting the right side from the left side for the x axis,
 the top from the bottom for the y axis and the far from the near plane for the z axis.
 So the scaling matrix looks like this:
@@ -874,12 +893,12 @@ This is the projection matrix that is used to transform the view space to the cl
 The clip space is then used to determine what is visible on the screen and what is not.
 Everything that is visible will now be projected onto the 2D screen.
 
-\subsection{Viewport Transformation}
+\subsection{Viewport transformation}
 
 The viewport is the area on the screen where the image is displayed.
 It is defined by the x and y position, the width and height and the
 min and max depth and starts at the top left corner of the screen.
-The viewport transformation is used to transform the NDC to the screen space.
+The viewport transformation is used to transform the \ac{NDC} to the screen space.
 This is done by scaling the x and y coordinate to the width and height of the viewport,
 scaling and moving the z coordinate to the depth range and then adding
 half of the width to the x coordinate and subtracting half of the height from the y coordinate
@@ -889,12 +908,12 @@ to move the origin to the top left corner of the screen.
 	\begin{bmatrix}
 		\frac{width}{2} & 0                & 0                   & \frac{width}{2}  \\
 		0               & \frac{height}{2} & 0                   & \frac{height}{2} \\
-		0               & 0                & maxDepth - minDepth & minDepth         \\
+		0               & 0                & maxdepth - mindepth & mindepth         \\
 		0               & 0                & 0                   & 1                \\
 	\end{bmatrix}
 \]
 
-This will transform the NDC to the screen space, but we can also add an x
+This will transform the \ac{NDC} to the screen space, but we can also add an x
 and y offset to the viewport to move the image around on the screen.
 That would mean we need to add the x and y offset when moving
 the origin to the top left corner of the screen.
@@ -903,36 +922,36 @@ the origin to the top left corner of the screen.
 	\begin{bmatrix}
 		\frac{width}{2} & 0                & 0                   & \frac{width}{2} + x  \\
 		0               & \frac{height}{2} & 0                   & \frac{height}{2} + y \\
-		0               & 0                & maxDepth - minDepth & minDepth             \\
+		0               & 0                & maxdepth - mindepth & mindepth             \\
 		0               & 0                & 0                   & 1                    \\
 	\end{bmatrix}
 \]
 
 Wow that was a lot of complicated math, but it's important to understand how the world is
-projected onto our screen. That's the whole point of 3D graphics after all :P
+projected onto our screen. That's the whole point of 3D graphics after all :p
 
 Don't worry tho if you don't quite understand everything, maybe dive into some other resources to further
 understand this topic and until then, do what programmers do best. Copy and paste it from somewhere else.
 
-\section{Stages of the Pipeline}
+\section{Stages of the pipeline}
 
 The Vulkan pipeline consists of multiple stages. Some of them are fixed
 and can not be changed, while others are programmable to act as we
 want them to. These changeable stages are called shaders and are usually
-written in the OpenGL Shading Language (GLSL). Optionally it is possible
-to use other shading languages like the High Level Shading Language (HLSL).
-These shaders have to be given to the pipeline as compiled SPIR-V bytecode. \cite{spirv}
+written in the \ac{GLSL}. Optionally it is possible
+to use other shading languages like the \ac{HLSL}.
+These shaders have to be given to the pipeline as compiled \ac{Spir-V} bytecode. \cite{spirv}
 
 Lets take a look at the Vulkan pipeline and its stages:
 
 \begin{figure}[hbtp]
 	\fontsize{6}{10}\selectfont
 	\centering \includesvg[width=1\textwidth]{images/pipeline.svg}
-	\caption{Pipeline Structure \cite{fig:pipeline}}
-\end{figure} \FloatBarrier
+	\caption{Pipeline structure \cite{fig:pipeline}}
+\end{figure} \floatbarrier
 
 Okay okay, I know that's a lot and there is stuff I haven't talked about
-yet, like these Buffers, Images and the Push Constants. Don't worry I
+yet, like these buffers, images and the push constants. Don't worry i
 will explain all of these things when going over the stages.
 
 On the left side we have the graphics pipeline and on the right side the
@@ -949,15 +968,14 @@ shaders, but it is important to know that they exist and what they do.
 \subsection{Draw}
 
 The draw "stage" is not really a stage, but the command that starts
-the rendering process. When we call the vkCmdDraw Command on the GPU,
+the rendering process. When we call the vkCmdDraw command on the \ac{GPU},
 the pipeline will start processing the data that we have given to
 it. \cite{vulkan-spec-draw}
 
-The vkCmdDraw Command is part of the Command Buffer, which is used to
-record and execute commands on the GPU. This Command Buffer is then
-submitted to a VkQueue, which will execute the commands on the GPU
+The vkCmdDraw command is part of the command buffer, which is used to
+record and execute commands on the \ac{GPU}. This command buffer is then
+submitted to a vkQueue, which will execute the commands on the \ac{GPU}
 in the order they were recorded. \cite{command-buffers}
-
 
 \subsection{Input Assembler}
 
@@ -972,13 +990,14 @@ points, lines or triangles. \cite{microsoft-ia}
 
 \begin{lstlisting}[language=C++] 
 
-  // Provided by VK_VERSION_1_0 typedef
+  // Provided by VK_VERSION_1_0
   enum VkPrimitiveTopology {
-    VK_PRIMITIVE_TOPOLOGY_POINT_LIST = 0, VK_PRIMITIVE_TOPOLOGY_LINE_LIST
-    = 1, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP =
-    2, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST =
-    3, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP =
-    4, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
+    VK_PRIMITIVE_TOPOLOGY_POINT_LIST = 0,
+    VK_PRIMITIVE_TOPOLOGY_LINE_LIST = 1,
+    VK_PRIMITIVE_TOPOLOGY_LINE_STRIP = 2,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST = 3,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP = 4,
+    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
     VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
     VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
@@ -1011,7 +1030,7 @@ model, view and projection matrix to the vertex shader via resource descriptors.
 
 When we want to pass data during the rendering process to the shaders,
 we have to use resource descriptors. There are multiple types of descriptors, but we will
-focus on the uniform buffer descriptor (UBO) which passes data to the shaders
+focus on the \ac{UBO} which passes data to the shaders
 in the form of a buffer.
 
 But first we have to create a descriptor layout that tells the pipeline
@@ -1026,19 +1045,19 @@ buffer. We can assign a minimum of 128 bytes to the push constants, which
 is enough to pass 2 4x4 matrices to the shaders. \cite{push-constants}
 
 After that the pipeline performs the perspective divide and returns the
-normalized device coordinates.
+\ac{NDC}.
 
 \subsection{Tessellation}
 
 The tessellation stage is actually divided in 3 stages. The tessellation
-control shader, tessellation primitive generator (tessellator) and the tessellation
+control shader, tessellation primitive generator (Tessellator) and the tessellation
 evaluation shader. Please note that the tessellation stage is optional and will
 only be executed if both shaders are defined in the pipeline.\cite{tessellation}
 
 If you are not familiar with tessellation, it is a technique used to
 subdivide a polygon, a shape, into smaller polygons without leaving
 any gaps in between. This can be used to create more detailed models
-without having to pass all the vertex data from the CPU to the GPU. \cite{tessellation}
+without having to pass all the vertex data from the \ac{CPU} to the \ac{GPU}. \cite{tessellation}
 
 The tessellation control shader is used to define how many times
 our primitive should be subdivided, by defining inner and outer tessellation levels.
@@ -1047,13 +1066,13 @@ It also passes the vertex positions to the evaluation shader. \cite{tessellation
 After setting the tessellation levels, the tessellator subdivides a patch, which is
 a new primitive type, into smaller patches.
 This can be done in 3 ways: triangles, quads or isolines.
-Lets first talk about the tessellation of a triangle.
+Let's first talk about the tessellation of a triangle.
 
 Vulkan uses barycentric coordinates to subdivide the triangle. Barycentric
 coordinates consist, in the case of a triangle, of three variables (u,v,w) that sum up to 1.
 Each variable represents the relative position of a vertex in the triangle with 1 being directly
-on the vertex. So when we have a triangle with vertices A, B and C, the barycentric coordinates
-could be \{0, 0, 1\} for A, \{0, 1, 0\} for B and \{1, 0, 0\} for C, depending on the selected
+on the vertex. So when we have a triangle with vertices a, b and c, the barycentric coordinates
+could be \{0, 0, 1\} for a, \{0, 1, 0\} for b and \{1, 0, 0\} for c, depending on the selected
 origin of the triangle. \cite{tessellation}
 
 A point in the triangle ABC, like the center, could be calculated like this:
@@ -1086,16 +1105,16 @@ do this for all three corners it creates the corners of the inner triangle. \cit
 
 \begin{figure}[hbtp]
 	\centering \includegraphics[width=0.4\textwidth]{innertri.png}
-	\caption{Inner Tessellation with 4 segments}
+	\caption{Inner tessellation with 4 segments}
 	\cite{fig:inner-tessellation}
-\end{figure} \FloatBarrier
+\end{figure} \floatbarrier
 
 You can see that the inner tessellation level of four cuts each edge of the outer triangle into four segments.
 This is done by calculating the barycentric coordinates of the temporary vertices on the edges. Let's
-calculate the barycentric coordinates of the first vertex on the left edge AB.
+calculate the barycentric coordinates of the first vertex on the left edge ab.
 
 We need three points where u is always zero because the vertices are on the opposite edge of the corner {1,0,0}
-To get the distance of one segment we divide the edge length by the desired segments length.
+to get the distance of one segment we divide the edge length by the desired segments length.
 
 So the length of one segment is \(\frac{1}{4}\).
 For the first vertex we then get \{0, \(\frac{1}{4}\), \(\frac{3}{4}\}\), for the second
@@ -1117,10 +1136,10 @@ the direction of the height line to get the direction of the
 perpendicular lines for each triangle. \cite{equilateral-triangle}
 
 \begin{figure}[htbp]
-	\centering \includegraphics[width=0.7\textwidth]{Equiletral-Triangle.png}
-	\caption{Equilateral Triangle}
+	\centering \includegraphics[width=0.7\textwidth]{equiletral-triangle.png}
+	\caption{Equilateral triangle}
 	\cite{equilateral-triangle}
-\end{figure} \FloatBarrier
+\end{figure} \floatbarrier
 
 Considering that we can calculate the direction of the perpendicular line:
 
@@ -1174,9 +1193,9 @@ concentric triangles with triangles by connecting the vertices in a way that
 ensures that the triangles are not overlapping. If the inner tessellation level is 2 and
 no outer tessellation level is set, the tessellator will connect the corners
 of the triangle with the center vertex. \cite{tessellation}
-Unfortunately, considering more complicated tessellation, the order in wich the vertices
+unfortunately, considering more complicated tessellation, the order in which the vertices
 are created and connected is implementation dependent,
-which means that it is up to the GPU to decide how the vertices are connected. \cite{tessellation}
+which means that it is up to the \ac{GPU} to decide how the vertices are connected. \cite{tessellation}
 
 After the inner patches are filled, we discard the outer triangles temporary vertices
 and subdivide each edge by it's outer tessellation level.
@@ -1185,7 +1204,7 @@ Now that all the triangles are created, the tessellation primitive generator ass
 the vertices their barycentric coordinates (u,v,w)
 and passes them to the tessellation evaluation shader. \cite{tessellation}
 
-For Quads and isolines the process is similar, but the patch only has 2 barycentric coordinates.
+For quads and isolines the process is similar, but the patch only has 2 barycentric coordinates.
 So we can just calculate the barycentric coordinates as if we were in
 an x,y coordinate system. \cite{tessellation}
 
@@ -1201,10 +1220,10 @@ They only have 2 outer tessellation levels that define how many single lines
 are created and in how many segments they are divided.
 
 \begin{figure}[hbtp]
-	\centering \includegraphics[width=0.4\textwidth]{Tessellation_isoline_6_2.png}
-	\caption{Isoline Tessellation (6, 2)}
+	\centering \includegraphics[width=0.4\textwidth]{tessellation_isoline_6_2.png}
+	\caption{Isoline tessellation (6, 2)}
 	\cite{fig:isoline}
-\end{figure} \FloatBarrier
+\end{figure} \floatbarrier
 
 These were the possible tessellation types that the tessellator
 can work with but there are a few more things to consider for each of them.
@@ -1212,11 +1231,11 @@ For example, we can change the tessellator spacing,
 which defines the spacing of the outer tessellation levels.
 The tessellator spacing can be either equal, fractional even or fractional odd,
 which allow us to have a tessellation level of 2.5 for example. \cite{tessellation}
-We can also control the vertex winding order, which defines which side of the triangle
+we can also control the vertex winding order, which defines which side of the triangle
 is the front and which is the back. This is important
 for culling and lighting calculations. \cite{tessellation}
 
-Please note that all of this is already handled by vulkan
+Please note that all of this is already handled by Vulkan
 and all we have to do is to set the tessellation levels and optionally spacing
 and winding order in the tessellation control shader and pass it over
 to the tessellation primitive generator. \cite{tessellation}
@@ -1229,14 +1248,14 @@ the control shader, to calculate the position of the new vertices in clip space.
 
 To do so we can multiply the barycentric coordinates with the corner vertices
 and add them together to get the new vertex position.
-For a triangle with vertices A, B and C and barycentric coordinates \{u, v, w\}
+For a triangle with vertices a, b and c and barycentric coordinates \{u, v, w\}
 the new vertex position would be calculated like this:
 
 \[
 	\begin{aligned}
-		x & = u \cdot A_x + v \cdot B_x + w \cdot C_x \\
-		y & = u \cdot A_y + v \cdot B_y + w \cdot C_y \\
-		z & = u \cdot A_z + v \cdot B_z + w \cdot C_z \\
+		x & = u \cdot a_x + v \cdot b_x + w \cdot c_x \\
+		y & = u \cdot a_y + v \cdot b_y + w \cdot c_y \\
+		z & = u \cdot a_z + v \cdot b_z + w \cdot c_z \\
 	\end{aligned}
 \]
 
@@ -1247,12 +1266,12 @@ by using a 2D texture like a height map to displace the vertices. \cite{tessella
 One last thing to mention is that when we use a tessellation shader
 we actually skip the perspective projection in the vertex shader and
 instead do it in the tessellation evaluation shader.
-This is because the newly created vertice have to be projected to the clip space
+This is because the newly created vertices have to be projected to the clip space
 along with the original vertices. \cite{tessellation}
 
 \subsection{Geometry Shader}
 
-The next stage is the geometry shader (GS). The GS is used to create new
+The next stage is the geometry shader. The geometry shader is used to create new
 primitives and is great at procedural generation of geometry.
 That includes creating particles, grass or fur. It takes all the vertices of a primitive
 and generates new vertices that are then combined to
@@ -1264,28 +1283,29 @@ I will not go further into explaining the geometry shader because its
 implementation is very dependent on the use case. It is enough to know
 some use cases and that we basically can create new primitives with it.
 
-\subsection{Vertex Post Processing}
+\subsection{Vertex post processing}
 
 After all of the previous stages we can do some post processing on the vertices.
 This is done by the vertex post processing stage.
 Here we have many sub stages that I will go over briefly.
 
-\textbf{Transform Feedback} is used to capture the output of the previous stages
+\textbf{transform feedback} is used to capture the output of the previous stages
 and store it in a feedback buffer. This can be used to
 call a new draw command with the stored data. \cite{vertex-post-processing}
 
-\textbf{Viewport Swizzle} is used to change the orientation of the viewport.
+\textbf{Viewport swizzle} is used to change the orientation of the viewport.
 For example, we can flip the y axis to display the image upside down.
-To achieve this we can define the swizzle for each axis via the VkViewportSwizzleNV struct. \cite{vertex-post-processing}
+To achieve this we can define the swizzle for each axis via the
+\textit{VkViewportSwizzleNV} struct. \cite{vertex-post-processing}
 
 \textbf{Flat shading} is used to color the whole primitive with one color.
 This is done by calculating the color of the first vertex and then
 using this color for the whole primitive. \cite{vertex-post-processing}
 
-\textbf{Primitive Clipping} is used to discard primitives that are outside of the clip space.
+\textbf{Primitive clipping} is used to discard primitives that are outside of the clip space.
 This is done by checking if the primitive is
 completely outside of the clip space and then discarding it. \cite{vertex-post-processing}
-When only a part of the primitive is outside of the clip space,
+when only a part of the primitive is outside of the clip space,
 the pipeline will discard that part and create new vertices on the edge of the clip space,
 where the primitive would intersects the clip space. \cite{vertex-post-processing}
 
@@ -1293,23 +1313,23 @@ Clipping is done by checking if the vertex's x, y and z coordinates
 are in between -w and w or z\textunderscore min and w for z.
 If they are not, the vertex is outside of the clip space and will be discarded.
 
-\textbf{Clipping Shader Outputs} is used to discard the vertex output attributes
+\textbf{Clipping shader outputs} is used to discard the vertex output attributes
 that are outside of the clip space.
 
-\textbf{Controlling Viewport W Scaling} can be used to change the w coordinate of the vertex.
+\textbf{Controlling viewport w scaling} can be used to change the w coordinate of the vertex.
 This can help to adjust the depth of an object.
 
-\textbf{Coordinate Transformation} is the step where our clip coordinates (x,y,z,w)
+\textbf{Coordinate transformation} is the step where our clip coordinates (x,y,z,w)
 are transformed to (x,y,z) by dividing x, y and z by w.
 This step is the perspective divide and provides us with
-normalized device coordinates (NDC) \cite{vertex-post-processing}
+\ac{NDC} \cite{vertex-post-processing}
 
-\textbf{Render Pass Transform} can be enabled to rotate the viewport on the xy plane.
+\textbf{Render pass transform} can be enabled to rotate the viewport on the xy plane.
 This can be used to rotate the image on the screen by either 90, 180 or 270 degrees, using the
-VK\textunderscore SURFACE\textunderscore TRANSFORM\textunderscore ROTATE\textunderscore
-{degree}\textunderscore BIT\textunderscore KHR attribute. \cite{vertex-post-processing}
+\textit{VK\textunderscore SURFACE\textunderscore TRANSFORM\textunderscore ROTATE\textunderscore
+	{degree}\textunderscore BIT\textunderscore KHR} attribute. \cite{vertex-post-processing}
 
-\textbf{Controlling the Viewport} is a stage where vulkan scales the NDC
+\textbf{Controlling the viewport} is a stage where Vulkan scales the \ac{NDC}
 to the dimensions of the viewport. It is also possible to create
 scissors to only render a part of the viewport.
 
@@ -1333,17 +1353,17 @@ We can calculate the area of a triangle using the following formula:
 \]
 
 This probably looks confusing so let me explain it a bit further.
-n is the number of vertices in our triangle, which is 3, while i is the current
+N is the number of vertices in our triangle, which is 3, while I is the current
 vertex's index and \(\oplus\) is basically performing \( i+1\) mod n.
-So when we have a triangle with vertices A, B and C the sum could look like this:
+So when we have a triangle with vertices a, b and c the sum could look like this:
 
-\[A_x \cdot B_y - B_x \cdot A_y + B_x \cdot C_y - C_x \cdot B_y + C_x \cdot A_y - A_x \cdot C_y\]
+\[a_x \cdot b_y - b_x \cdot a_y + b_x \cdot c_y - c_x \cdot b_y + c_x \cdot a_y - a_x \cdot c_y\]
 
-or like this:
+Or like this:
 
-\[A_x \cdot C_y - C_x \cdot A_y + C_x \cdot B_y - B_x \cdot C_y + B_x \cdot A_y - A_x \cdot B_y\]
+\[a_x \cdot c_y - c_x \cdot a_y + c_x \cdot b_y - b_x \cdot c_y + b_x \cdot a_y - a_x \cdot b_y\]
 
-depending on the order of the vertices. If your familiar with vector math you might
+Depending on the order of the vertices. If your familiar with vector math you might
 recognize this as the cross product of two side vectors that originate from the same vertex.
 The cross product of these two vectors gives us a vector that is perpendicular to the triangle,
 which can either point towards us or away from us.
@@ -1357,7 +1377,7 @@ To calculate the cross product we can look at this visual representation:
 \begin{figure}[hbtp]
 	\centering
 	\includegraphics[width=0.5\textwidth]{cross-product.png}
-	\caption{Cross Product} \FloatBarrier
+	\caption{Cross product} \floatbarrier
 \end{figure}
 
 We simply write each vector 2 times under each other, cut out the top and bottom row
@@ -1368,11 +1388,11 @@ In this case we would have:
 
 \[
 	\begin{aligned}
-		 & (B_y - A_y) \cdot 0 - 0 \cdot (C_x - A_x) = 0                                                                                    \\
-		 & 0 \cdot (C_x - A_x) - 0 \cdot (B_x - A_x) = 0                                                                                    \\
-		 & (B_x - A_x) \cdot (C_y - A_y) - (C_x - A_x) \cdot (B_y - A_y) =                                                                  \\
-		 & B_x \cdot C_y - B_x \cdot A_y - A_x \cdot C_y + A_x \cdot A_y - C_x \cdot B_y + C_x \cdot A_y + A_x \cdot B_y - A_x \cdot A_y  = \\
-		 & B_x \cdot C_y - B_x \cdot A_y - A_x \cdot C_y - C_x \cdot B_y + C_x \cdot A_y + A_x \cdot B_y                                    \\
+		 & (b_y - a_y) \cdot 0 - 0 \cdot (c_x - a_x) = 0                                                                                    \\
+		 & 0 \cdot (c_x - a_x) - 0 \cdot (b_x - a_x) = 0                                                                                    \\
+		 & (b_x - a_x) \cdot (c_y - a_y) - (c_x - a_x) \cdot (b_y - a_y) =                                                                  \\
+		 & b_x \cdot c_y - b_x \cdot a_y - a_x \cdot c_y + a_x \cdot a_y - c_x \cdot b_y + c_x \cdot a_y + a_x \cdot b_y - a_x \cdot a_y  = \\
+		 & b_x \cdot c_y - b_x \cdot a_y - a_x \cdot c_y - c_x \cdot b_y + c_x \cdot a_y + a_x \cdot b_y                                    \\
 	\end{aligned}
 \]
 
@@ -1386,19 +1406,20 @@ means that the triangle is facing away from us which is not
 intuitive. So we flip the sign to get a positive vector.
 
 To actually tell the pipeline what negation is considered front facing
-we can set the frontFace attribute in the VkPipelineRasterizationStateCreateInfo
+we can set the front face attribute in the \textit{VkPipelineRasterizationStateCreateInfo}
 to either \\
-VK\textunderscore FRONT\textunderscore FACE\textunderscore CLOCKWISE or
-VK\textunderscore FRONT\textunderscore FACE\textunderscore COUNTER\textunderscore CLOCKWISE.
+\textit{VK\textunderscore FRONT\textunderscore FACE\textunderscore CLOCKWISE} or
+\textit{VK\textunderscore FRONT\textunderscore FACE\textunderscore COUNTER\textunderscore CLOCKWISE}.
 Clockwise means that the triangle is front facing if the area is negative
 and counter clockwise then covers the opposite. \cite{rasterization}
 
-Next they are culled according to the cullMode attribute
-in the VkPipelineRasterizationStateCreateInfo. This can be set to either
-VK\textunderscore CULL\textunderscore MODE\textunderscore NONE, \\
-VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT,
-VK\textunderscore CULL\textunderscore MODE\textunderscore BACK or \\
-VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT\textunderscore AND\textunderscore BACK.
+Next they are culled according to the cull mode attribute
+in the \textit{VkPipelineRasterizationStateCreateInfo}. This can be set to either
+\textit{VK\textunderscore CULL\textunderscore MODE\textunderscore NONE},\\
+\textit{VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT},
+\textit{VK\textunderscore CULL\textunderscore MODE\textunderscore BACK} or
+\\
+\textit{VK\textunderscore CULL\textunderscore MODE\textunderscore FRONT\textunderscore AND\textunderscore BACK}.
 This determines if the front facing, back facing,
 both or none of the triangles are discarded. \cite{rasterization}
 
@@ -1421,7 +1442,7 @@ If the cross product is 0 the point is on the edge.
 
 Okay but what if the point is on an edge of adjacent triangles?
 How do we know which triangle should be drawn?
-For this case graphics APIs usually use the top-left rule.
+For this case graphics apis usually use the top-left rule.
 This rule states that left and top edges are considered to be inside the triangle
 while right and bottom edges are considered to be outside. How do we know which edge is which?
 
@@ -1443,7 +1464,7 @@ a fact that comes from using the barycentric coordinates.
 When we go through the triangle and calculate one of the barycentric coordinates
 we can see that the step size we take is always the same
 when we go from one fragment in the triangle to the next.
-This comes from an intresting property of the barycentric coordinates.
+This comes from an interesting property of the barycentric coordinates.
 When we go from one fragment to the next the barycentric coordinates
 change by a constant amount. This means that we can rasterize a triangle by only checking
 the barycentric coordinates of the first fragment and then adding a constant amount
@@ -1520,9 +1541,9 @@ with the barycentric coordinates and adding them together.
 
 \[
 	\begin{aligned}
-		r & = 0.25 \cdot A_r + 0.25 \cdot B_r + 0.5 \cdot C_r  \\
-		g & = 0.25 \cdot A_g + 0.25 \cdot B_g + 0.5 \cdot C_g  \\
-		b & = 0.25 \cdot A_b + 0.25 \cdot B_b + 0.5 \cdot C_b  \\
+		r & = 0.25 \cdot a_r + 0.25 \cdot b_r + 0.5 \cdot c_r  \\
+		g & = 0.25 \cdot a_g + 0.25 \cdot b_g + 0.5 \cdot c_g  \\
+		b & = 0.25 \cdot a_b + 0.25 \cdot b_b + 0.5 \cdot c_b  \\
 		\\
 		r & = 0.25 \cdot 0 + 0.25 \cdot 1 + 0.5 \cdot 0 = 0.5  \\
 		g & = 0.25 \cdot 1 + 0.25 \cdot 0 + 0.5 \cdot 0 = 0.25 \\
@@ -1531,7 +1552,7 @@ with the barycentric coordinates and adding them together.
 \]
 
 Which will give us this color: \{0.5, 0.25, 0.25\}. This will then be converted to the color
-space of our surface, which can be sRGB, displayP3 or some other supported color space.
+space of our surface, which can be SRGB, DisplayP3 or some other supported color space.
 We repeat this for every fragment inside the triangle and then we have our rasterized image.
 
 But we can do more than just interpolate the color of the vertices.
@@ -1542,10 +1563,10 @@ We can also apply lighting, textures and more.
 The last stage of the pipeline is blending. Blending is used to create transparency
 and some other graphical effects. There isn't much to say about blending.
 It gives us many options to blend the color of the fragment but all of the operations are
-performed by the GPU, so we don't have to worry about it.
+performed by the \ac{GPU}, so we don't have to worry about it.
 When blending is complete we have our final framebuffer that we can display.
 
-\section{Drawing Process}
+\section{Drawing process}
 
 \subsection{Framebuffers}
 
@@ -1557,7 +1578,7 @@ while the depth attachment is used to store the depth of each fragment.
 The depth attachment is used to save the z coordinate of each fragment to prevent
 drawing over fragments if they are not visible. \cite{framebuffers}
 
-\subsection{Render Pass}
+\subsection{Render pass}
 
 A render pass holds the information about how many color and depth attachments
 we have and how they are used in the pipeline.
@@ -1568,25 +1589,25 @@ in one subpass and then apply post processing in another subpass. \cite{render-p
 \subsection{Swapchain}
 
 The swapchain is used to present the final framebuffer to the screen.
-It consists of usually 2 (Double Buffering) or more framebuffers. The best implementation
-is to use Triple Buffering, which uses 3 framebuffers.
+It consists of usually 2 (double buffering) or more framebuffers. The best implementation
+is to use triple buffering, which uses 3 framebuffers.
 On a swapchain we can present one framebuffer while we render to another framebuffer.
 The presented framebuffer is called the front buffer and the rendered framebuffer
 is called the back buffer. Every time a new frame is rendered the
 front and back buffers are swapped. This is done to prevent screen tearing.
 You know when the screen is cut into 2 different images? That's screen tearing.
-It happens when the GPU is rendering to the framebuffer while the screen is reading from it.
-But that only happens when we have V-Sync disabled.
+It happens when the \ac{GPU} is rendering to the framebuffer while the screen is reading from it.
+But that only happens when we have v-sync disabled.
 
-There are two problems with Double Buffering. It can cause input lag.
-This is because the GPU has to wait for the swapchain to swap the framebuffers
-before it can render the next frame. To fix this we can use Triple Buffering.
-The other problem occures when the GPU takes longer than one frame.
-This will cause the swapchain to wait for the GPU to finish rendering the frame
+There are two problems with double buffering. It can cause input lag.
+This is because the \ac{GPU} has to wait for the swapchain to swap the framebuffers
+before it can render the next frame. To fix this we can use triple buffering.
+The other problem occur when the \ac{GPU} takes longer than one frame.
+This will cause the swapchain to wait for the \ac{GPU} to finish rendering the frame
 before it can swap the framebuffers. This will cause the frame
 to drop and the game to stutter. To fix this we can use a third buffer
-to render to while the GPU is rendering the frame. This way the GPU can
-swap the framebuffers without waiting for the GPU to finish rendering the frame. \cite{swapchain}
+to render to while the \ac{GPU} is rendering the frame. This way the \ac{GPU} can
+swap the framebuffers without waiting for the \ac{GPU} to finish rendering the frame. \cite{swapchain}
 
 \section{Conclusion}
 
@@ -1597,60 +1618,60 @@ the Vulkan environment and create a window to render to.
 
 \chapter{Setting up Vulkan}
 
-Because the Setup of Vulkan is highly dependent on your operating system and IDE
+Because the setup of Vulkan is highly dependent on your operating system and IDE
 I will only give a brief overview of the setup process.
 
 Let's start by setting up our development environment.
 First of all we need to to install the Vulkan SDK. You can download it from the
-\href{https://vulkan.lunarg.com/sdk/home}{LunarG} website or use your preferred package manager.
+\href{https://Vulkan.lunarg.com/sdk/home}{lunarg} website or use your preferred package manager.
 
-Now verify if your GPU and drivers support Vulkan.
-To do so go into the Bin folder of the Vulkan SDK and run the
+Now verify if your \ac{GPU} and drivers support Vulkan.
+To do so go into the bin folder of the Vulkan SDK and run the
 \textit{vkcube.exe} program. If it runs without any errors and display a cube you are good to go.
 If not you have to update your drivers or include the Vulkan runtime in your system.
 
-Next we'll need to install GLFW, a library for creating windows and handling input.
+Next we'll need to install \ac{GLFW}, a library for creating windows and handling input.
 We will use it to create a window for our application.
 You can download the 64-bit binaries from the \href{https://www.glfw.org/download.html}{GLFW} website or
 use your package manager. After downloading the binaries,
 extract them to a location that is easy to access.
 
 Because Vulkan does not include a library for
-linear algebra operations we will use the \href{https://github.com/g-truc/glm}{OpenGL Mathematics}
-(GLM) library. Again, download the library and extract it to a location that is easy to access.
+linear algebra operations we will use the \href{https://github.com/g-truc/glm}{OpenGL mathematics}
+library. Again, download the library and extract it to a location that is easy to access.
 
-Don't forget to install a C++ and GLSL compiler when needed.
+Don't forget to install a C++ and \ac{GLSL} compiler when needed.
 
-Next you will need to either setup your IDE or write a Makefile to compile your program.
+Next you will need to either setup your IDE or write a makefile to compile your program.
 
 This is a very brief overview of the setup process,
 because explaining the setup for every operating system and IDE would be too much.
-Please read through this \href{https://vulkan-tutorial.com/Development_environment}{Vulkan Tutorial}
+Please read through this \href{https://Vulkan-tutorial.com/development_environment}{Vulkan tutorial}
 to get a more detailed explanation.
 
-\section{Creating a Window}
+\section{Creating a window}
 
 Before we can start rendering we need to create an application window,
-because vulkan is only a graphics API and doesn't provide a way to create a window.
+because Vulkan is only a graphics API and doesn't provide a way to create a window.
 Do not worry about implementing a window from scratch,
-because there are libraries for creating windows for vulkan. We will use the
-previously installed open source and multi-platform library GLFW (Graphics Library Framework)
-which provides us with a simple API that we can use to create a window and handle input. \cite{glfw}
+because there are libraries for creating windows for Vulkan. We will use the
+previously installed open source and multi-platform library \ac{GLFW},
+which provides us with a simple \ac{API} that we can use to create a window and handle input. \cite{glfw}
 
 Let's start by creating a core folder in our source folder. Here all of the core functionalities
 of our game engine will be stored. In this folder create a new header file called window.hpp.
 
-Inside we first need to include the GLFW header file and the define of \\
-GLFW\textunderscore INCLUDE\textunderscore VULKAN to include the vulkan header files.
+Inside we first need to include the \ac{GLFW} header file and the define of \\
+\textit{GLFW\textunderscore INCLUDE\textunderscore VULKAN} to include the Vulkan header files.
 
 \begin{lstlisting}[language=C++]
   #define GLFW_INCLUDE_VULKAN
-  #include <GLFW/glfw3.h>
+  #include <glfw/glfw3.h>
 \end{lstlisting}
 
 Next we add a namespace that we want to use for our engine. In my case I will use
 the namespace \textit{engine}, but feel free to use the actual name of your engine.
-Inside we create our class Window with an constructor that takes the width, height
+Inside we create our class window with an constructor that takes the width, height
 and name of the window as arguments. We also add a destructor to clean up the window.
 
 \begin{lstlisting}[language=C++]
@@ -1687,8 +1708,8 @@ After initializing the window we will need a pointer to the window object, so we
 
 
 That's the header file for now. Let's implement the defined functions in the source file.
-In the Window.cpp file we include the window.hpp file add the namespace and
-call the initWindow function in the constructor and set the width, height and name of the class.
+In the window.cpp file we include the window.hpp file add the namespace and
+call the \textit{initWindow} function in the constructor and set the width, height and name of the class.
 
 \begin{lstlisting}[language=C++]
 #include "window.hpp"
@@ -1701,47 +1722,47 @@ namespace engine {
 }
 \end{lstlisting}
 
-Let's implement the \textit{initWindow} function. First we need to initialize GLFW with the
+Let's implement the \textit{initWindow} function. First we need to initialize \ac{GLFW} with the
 \textit{glfwInit} function. Then we set two window hints with the \textit{glfwWindowHint} function.
 The first hint is the \textit{GLFW\textunderscore CLIENT\textunderscore API} and we set it to
 \textit{GLFW\textunderscore NO\textunderscore API}. This tells
-GLFW to not create context for the OpenGL API, because it was originaly designed for OpenGL. \cite{client-api-hint}
+\ac{GLFW} to not create context for the OpenGL \ac{API}, because it was originally designed for OpenGL. \cite{client-api-hint}
 The second hint is called \textit{GLFW\textunderscore RESIZABLE} and will be set to \textit{GLFW\textunderscore FALSE}
-for now, but will be changed later, when implementing a resizable windows.
+for now, but will be changed later, when implementing a resizable window.
 
 Once we're done with setting up the window we can create it with the \textit{glfwCreateWindow} function.
 It takes the width, height, title as a char pointer, a \textit{GLFWmonitor} pointer, to create a full screen
 window and a 5th parameter that is OpenGL specific. Pass in our variables, set the monitor pointer to a
 \textit{nullptr}, making our window use windowed mode and do the same for the last parameter.
 
-The output will be a pointer to our created \textit{GLFWwindow} that we can store in our \textit{*window}
-variable.
+The output will be a pointer to our created \textit{GLFWwindow} that we can store in our \textit{window}
+pointer.
 
 \begin{lstlisting}[language=C++] 
 void Window::initWindow() {
   glfwInit();
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  glfwwindowhint(GLFW_RESIZABLE, GLFW_FALSE);
 
   window = 
     glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
 }
 \end{lstlisting}
 
-Finally we implement our destructor. It will destroy the window with \textit{glfwDestroyWindow()}
-and terminate GLFW with \textit{glfwTerminate()}.
+Finally we implement our destructor. It will destroy the window with \textit{glfwDestroyWindow(Window)}
+and terminate \ac{GLFW} with \textit{glfwTerminate()}.
 
 \begin{lstlisting}[language=C++]
 Window::~Window() {
-  glfwDestroyWindow(window);
+  glfwDestroyWindow(Window);
   glfwTerminate();
 }
 \end{lstlisting}
 
 Let's test our window by creating a application that creates a window.
 Create a app header and source file in the src folder. In the header file we include the window header file,
-define a constant \textit{WIDTH} and \textit{HEIGHT} and create a private window object.
+define a constant \textit{width} and \textit{height} and create a private window object.
 We also need a public \textit{run} function that initializes the window and runs the main loop.
 
 \newpage
@@ -1752,12 +1773,12 @@ We also need a public \textit{run} function that initializes the window and runs
 namespace engine {
   class App {
     public:
-      static constexpr int WIDTH = 800;
-      static constexpr int HEIGHT = 600;
+      static constexpr int width = 800;
+      static constexpr int height = 600;
 
       void run();
     private:
-      Window window{WIDTH, HEIGHT, "Vulkan Application"};
+      Window Window{width, height, "Vulkan application"};
   };
 }
 \end{lstlisting}
@@ -1766,7 +1787,7 @@ In the source file we include the app header file and check in the \textit{run} 
 should be closed. While it is not closed we poll the events with \textit{glfwPollEvents()}.
 
 For checking if the window should be closed we create a boolean function \textit{shouldClose} in the
-window class and set it to the return value of \textit{glfwWindowShouldClose(window)}.
+window class and set it to the return value of \textit{glfwWindowShouldClose(Window)}.
 
 \begin{lstlisting}[language=C++]
 #include "app.hpp"
@@ -1784,11 +1805,12 @@ In the window class add the public \textit{shouldClose} function.
 Because it is very simple we can just implement it in the header file.
 
 \begin{lstlisting}[language=C++]
-bool shouldClose() { return glfwWindowShouldClose(window); }
+public:
+  bool shouldClose() { return glfwWindowShouldClose(Window); }
 \end{lstlisting}
 
 Now we can create a main.cpp that runs the application.
-If it fails we return \textit{EXIT\textunderscore FAILURE} and the error.
+If it fails we return \\ \textit{EXIT\textunderscore FAILURE} and the error.
 If it succeeds we return \textit{EXIT\textunderscore SUCCESS}.
 We don't need a header file for the main.cpp.
 
@@ -1810,7 +1832,7 @@ int main() {
 }
 \end{lstlisting}
 
-When running our program it should show us a non-resizable window with the title "Vulkan Application".
+When running our program it should show us a non-resizable window with the title "Vulkan application".
 
 Great! But we should also remove the windows copy constructor and operator. We don't want to copy the window object,
 because we're working with a pointer to the window object. This means that when we copy the window object
@@ -1819,6 +1841,7 @@ will leave our copy with a dangling pointer. To prevent this potential bug we de
 the copy constructor and copy operator in the window header file.
 
 \begin{lstlisting}
+public:
   Window(const Window &) = delete;
   Window &operator=(const Window &) = delete;
 \end{lstlisting}
@@ -1826,14 +1849,14 @@ the copy constructor and copy operator in the window header file.
 \subsection{Why non-resizable window}
 
 Our current window is not resizable. I've made this decision because when we will
-create our SwapChain later it is bound to the windows width an height. So when we
-resize or window the SwapChain will not be valid anymore. We will get at it once
+create our swapchain later it is bound to the windows width an height. So when we
+resize or window the swapchain will not be valid anymore. We will get at it once
 we have the base of our engine set up.
 
 \section{Device}
 
-Let's go ahead and setup Vulkan. To do so we have to create an Instance,
-a Surface, pick a physical device aka graphics card, create a logical device
+Let's go ahead and setup Vulkan. To do so we have to create an instance,
+a surface, pick a physical device aka graphics card, create a logical device
 and optionally setup validation layers and create a command pool.
 
 What each of these are will be explained further in a second. You might
@@ -1845,7 +1868,7 @@ comfortable with the whole system of Vulkan.
 \subsection{Vulkan instance}
 
 The first thing we need to do is to create a Vulkan instance.
-A vulkan instance is the connection between our application and the Vulkan library.
+A Vulkan instance is the connection between our application and the Vulkan library.
 
 Let's start by creating a new header file in the core folder called \textit{device.hpp}
 and include the Vulkan header file. In here we will create a constructor, a destructor
@@ -1853,27 +1876,27 @@ a private function to create the Vulkan instance and a private variable to store
 and a reference to the window object. We'll also delete the copy and move operators.
 
 \begin{lstlisting}[language=C++]
-#include <vulkan/vulkan.h>
+#include <Vulkan/Vulkan.h>
 #include "window.hpp"
 
 namespace engine {
-  class Device {
-      public:
-        Device(Window &window);
-        ~Device();
-        
-        Device(const Device &) = delete;
-        Device &operator=(const Device &) = delete;
-        Device(const Device &&) = delete;
-        Device &operator=(const Device &&) = delete;
+class Device {
+    public:
+      Device(Window &window);
+      ~Device();
+      
+      Device(const Device &) = delete;
+      Device &operator=(const Device &) = delete;
+      Device(const Device &&) = delete;
+      Device &operator=(const Device &&) = delete;
 
-      private:
-        void createInstance();
-        VkInstance instance;
-        Window &window;
+    private:
+      void createInstance();
+      VkInstance instance;
+      Window &window;
 
-        VkSurfaceKHR surface_;
-    };
+      VkSurfaceKHR surface_;
+  };
 }
 \end{lstlisting}
 
@@ -1894,16 +1917,16 @@ To create an instance we need to fill out a struct called \textit{VkInstanceCrea
 This struct holds information about the application and the Vulkan instance.
 The applications information is stored in a struct called \textit{VkApplicationInfo}.
 The application info is optional but it is good practice to fill it out. It contains
-the name and the version of the application, the engine and the version of the Vulkan API.
+the name and the version of the application, the engine and the version of the Vulkan \ac{API}.
 
 \begin{lstlisting}[language=C++]
 
 void Device::createInstance() {
   VkApplicationInfo appInfo = {};
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  appInfo.pApplicationName = "Vulkan Application";
+  appInfo.pApplicationName = "Vulkan application";
   appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.pEngineName = "No Engine";
+  appInfo.pEngineName = "no engine";
   appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.apiVersion = VK_API_VERSION_1_3;
 }
@@ -1912,36 +1935,39 @@ void Device::createInstance() {
 Please note the \textit{sType} member of the struct. This member is used to tell Vulkan
 what type of struct we are using. Why we need this? Vulkan has another member called
 \textit{pNext} that is used to extend the struct with additional information. It basically
-creates a linked list of structs by pointing to the next struct. The porblem is that there is
+creates a linked list of structs by pointing to the next struct. The problem is that there is
 no way to know what type of struct is next in the list. The implementation reads the first 4 bytes
 of the next struct, which is the \textit{sType} member, to determine the type of the struct and
 cast the pointer to the correct struct.
 
-Next we create the \textit{VkInstanceCreateInfo} struct and fill it with the application info.
-We also add the extension data from GLFW.
+Next we create the \textit{VKInstanceCreateInfo} struct and fill it with the application info.
+We also add the extension data from \ac{GLFW}.
 For that we will create a private function called \textit{getRequiredExtensions} that returns
 the required extensions as a vector of strings.
 
 \begin{lstlisting}[language=C++]
-VkInstanceCreateInfo createInfo = {};
-createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-createInfo.pApplicationInfo = &appInfo;
+void Device::createInstance(){
+  ...
+  VkInstanceCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  createInfo.pApplicationInfo = &appInfo;
 
-std::vector<const char *> extensions = getRequiredExtensions();
-createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-createInfo.ppEnabledExtensionNames = extensions.data();
+  std::vector<const char *> extensions = getRequiredExtensions();
+  createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+  createInfo.ppEnabledExtensionNames = extensions.data();
+}
 \end{lstlisting}
 
 The \textit{getRequiredExtensions} function is used to get the required Vulkan extensions
-that GLFW needs to create a window with Vulkan. We can get the required extensions with the
+that \ac{GLFW} needs to create a window with Vulkan. We can get the required extensions with the
 \textit{glfwGetRequiredInstanceExtensions} function. To return the extensions as a vector of strings
 we need the size of the extensions and a pointer to the extensions as an array. Then we call the function
-\textit{glfwGetRequiredInstanceExtensions} which returns the extensions as an array of strings and the size
+which returns the extensions as an array of strings and the size
 to the pointer we passed as a parameter to the function. We then copy the extensions to a vector of strings
 and return it.
 
 \begin{lstlisting}[language=C++]
-std::vector<const char *> getRequiredExtensions() {
+std::vector<const char *> Device::getRequiredExtensions() {
   uint32_t glfwExtensionCount = 0;
   const char **glfwExtensions;
   glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -1965,7 +1991,7 @@ We also have to check if the instance was created successfully. We can do this b
 functions return value is \textit{VK\textunderscore SUCCESS}. If not we throw an exception with an error message.
 
 \begin{lstlisting}[language=C++]
-if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) 
+if (vkCreateInstance(&createInfo. nullptr, &instance) != VK_SUCCESS) 
 		throw std::runtime_error("Failed to create Vulkan instance");
 \end{lstlisting}
 
@@ -1979,18 +2005,19 @@ Device::~Device() {
 \end{lstlisting}
 
 Great! Now our instance is created, but there is one more thing I would like to
-add to it. Because vulkan is designed to be fast, it doesn't
+add to it. Because Vulkan is designed to be fast, it doesn't
 provide much error checking. To enable error checking we can use validation layers.
 Validation layers hook into the function calls of Vulkan and perform additional checks
 operation.
 
-\subsection{Validation Layers}
+\subsection{Validation layers}
 
 Let's start off by creating a public constant bool enableValidationLayers in the device class header file.
-If we want to enable validation layers we set the \textit{NDBUG} macro to 0, otherwise to 1.
+If we want to enable validation layers we set the \textit{NDEBUG} macro to 0, otherwise to 1.
 
 \begin{lstlisting}[language=C++]
-#ifdef NDEBUG
+private:
+#ifdef NDEBUG 
   const bool enableValidationLayers = false;
 #else
   const bool enableValidationLayers = true;
@@ -1998,13 +2025,14 @@ If we want to enable validation layers we set the \textit{NDBUG} macro to 0, oth
 \end{lstlisting}
 
 Next we add a private vector of strings called \textit{validationLayers} that contains the names of the
-validation layers we want to enable.
+validation layers we want to enable. \\
 We will use the \textit{VK\textunderscore LAYER\textunderscore KHRONOS\textunderscore validation}
 layer to use the standard error checking provided by Vulkan.
 
 \begin{lstlisting}[language=C++]
-const std::vector<const char *> validationLayers = {
-  "VK_LAYER_KHRONOS_validation"
+private:
+  const std::vector<const char *> validationLayers = {
+    "VK_LAYER_KHRONOS_validation"
 };
 \end{lstlisting}
 
@@ -2015,7 +2043,7 @@ We will use the \textit{vkEnumerateInstanceLayerProperties} function to get the 
 First we will create and pass a pointer to a variable that will hold the number of available layers.
 Then we will create a vector of \textit{VkLayerProperties} that will hold the available layers.
 
-Then we will iterate thorugh the available layers and check if the the validation layer is in the available layers.
+Then we will iterate through the available layers and check if the validation layer is in the available layers.
 If it is we return true, otherwise we return false.
 
 \begin{lstlisting}[language=C++]
@@ -2037,7 +2065,7 @@ bool Device::checkValidationLayerSupport() {
         }
 
       if (!layerFound)
-      return false;
+        return false;
     }
   return true;
 }
@@ -2054,7 +2082,7 @@ if (enableValidationLayers && !checkValidationLayerSupport())
   throw std::runtime_error("Requested validation layers are not supported!");
 \end{lstlisting}
 
-GLFW needs another extension to make the validation layers works. This extension is called
+\ac{GLFW} needs another extension to make the validation layers works. This extension is called
 \textit{VK\textunderscore EXT\textunderscore DEBUG\textunderscore UTILS\textunderscore EXTENSION\textunderscore NAME}.
 So let's add this extension to the \textit{getRequiredExtensions} function.
 
@@ -2084,45 +2112,44 @@ the desired values. Then we add the debug messenger to the \textit{VkInstanceCre
 
 \begin{lstlisting}[language=C++]
 if (enableValidationLayers) {
-createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-createInfo.ppEnabledLayerNames = validationLayers.data();
+  createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+  createInfo.ppEnabledLayerNames = validationLayers.data();
 
-VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-populateDebugMessenger(debugCreateInfo);
+  VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+  populateDebugMessenger(debugCreateInfo);
 
-createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
-
+  createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
 } else {
-createInfo.enabledLayerCount = 0;
-createInfo.pNext = nullptr;
+  createInfo.enabledlayerCount = 0;
+  createInfo.pNext = nullptr;
 }
 \end{lstlisting}
 
 \begin{lstlisting}[language=C++]
-void Device::populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
-  createInfo = {};
-  createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-  createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-  createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
-                                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-  createInfo.pfnUserCallback = debugCallback;
-  createInfo.pUserData = nullptr;
+void Device::populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &createInfo. {
+ createInfo = {};
+ createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+ createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                              VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+ createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+ createInfo.PFNUserCallback = debugCallback;
+ createInfo.pUserData = nullptr;
 }
 \end{lstlisting}
 
-The \textit{messageSeverity} member of the \textit{VkDebugUtilsMessengerCreateInfoEXT} struct
+The \textit{messageSeverity} member of the  \textit{VkDebugUtilsMessengerCreateInfoEXT} struct
 is used to determine which message severity levels should be used. We basically have 4 levels of
-severity. Verbose, Info, Warning and Error. Each of them is assigned a bit. For example the
+severity. Verbose, info, warning and error. Each of them is assigned a bit. For example the \\
 \textit{VK\textunderscore DEBUG\textunderscore UTILS\textunderscore MESSAGE\textunderscore SEVERITY\textunderscore WARNING\textunderscore BIT\textunderscore EXT}
-is equal to 0x00000100 and the \\
+is equal to \\ 0x00000100 and the
 \textit{VK\textunderscore DEBUG\textunderscore UTILS\textunderscore MESSAGE\textunderscore SEVERITY\textunderscore ERROR\textunderscore BIT\textunderscore EXT}
-is equal to 0x00001000. We can combine these bits with the bitwise OR operator to get the desired severity level
-0x00001100. When we get a message it has a severity level assigned to it. This level is then AND combinded to the
+is equal to 0x00001000. We can combine these bits with the bitwise or operator to get the desired severity level
+0x00001100. When we get a message it has a severity level assigned to it. This level is then and combined to the
 \textit{messageSeverity} member. The same is done with the \textit{messageType} member.
 
-If the results are not 0 the \textit{pfnUserCallback} function is called that
+If the results are not 0 the \textit{PFNUserCallback} function is called that
 outputs the message.  If you want to pass user data to the callback function you can do so with the
 \textit{pUserData} member.
 
@@ -2132,11 +2159,11 @@ which has to be \textit{VK\textunderscore FALSE}.
 
 \begin{lstlisting}[language=C++]
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-VkDebugUtilsMessageTypeFlagsEXT messageType,
-const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-void *pUserData) {
-		std::cerr << "Debug callback" << pCallbackData->pMessage << std::endl;
+  VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+  VkDebugUtilsMessageTypeFlagsEXT messagetype,
+  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+  void *pUserData) {
+		std::cerr << "debug callback" << pCallbackData->pMessage << std::endl;
 		return VK_FALSE;
 	}
 \end{lstlisting}
@@ -2169,23 +2196,23 @@ Device::Device(Window &window) : window{window} {
 void Device::setupDebugMessenger() {
   if (!enableValidationLayers) return;
 
-  VkDebugUtilsMessengerCreateInfoEXT createInfo;
+  VkDebugUtilsMessengerCreateInfo createInfo;
   populateDebugMessenger(createInfo);
 
-  if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+  if (createDebugUtilsMessengerEXT(instance, &createInfo. nullptr, &debugMessenger) != VK_SUCCESS)
     throw std::runtime_error("Failed to set up debug messenger");
 }
 
-VkResult CreateDebugUtilsMessengerEXT(
-  VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+VkResult createDebugUtilsMessengerEXT(
+  VkInstance instance, const VkDebugUtilsMessengerCreateInfo *pCreateInfo.
   VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) 
-      return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+      return func(instance, pCreateInfo. pAllocator, pDebugMessenger);
     else return VK_ERROR_EXTENSION_NOT_PRESENT;
 \end{lstlisting}
 
-The \textit{CreateDebugUtilsMessengerEXT} function trys to load the \textit{vkCreateDebugUtilsMessengerEXT}
+The \textit{createDebugUtilsMessengerEXT} function trys to load the \textit{vkCreateDebugUtilsMessengerEXT}
 function with the \textit{vkGetInstanceProcAddr} function. If the function is loaded successfully
 we create the debug messenger with that function and return the result. If the function is not loaded
 we return \textit{VK\textunderscore ERROR\textunderscore EXTENSION\textunderscore NOT\textunderscore PRESENT}.
@@ -2216,7 +2243,7 @@ void destroyDebugUtilsMessengerEXT(VkInstance instance,
 \subsection{Surface}
 
 Now that we have some error checking and a window, we need a surface to render on.
-GLFW provides us with a function to create a surface. Let's add a private function,
+\ac{GLFW} provides us with a function to create a surface. Let's add a private function,
 in the window class, called
 \textit{createWindowSurface} that creates a surface with the \textit{glfwCreateWindowSurface} function.
 It takes the instance and a pointer to the surface as arguments. So add a private variable
@@ -2255,7 +2282,7 @@ Device::~Device() {
 }
 \end{lstlisting}
 
-\subsection{Physical Device}
+\subsection{Physical device}
 
 The physical device is the actual graphics card that we will use to render our scene. We
 can use either one or multiple physical devices to render our scene. But for now we will
@@ -2270,11 +2297,11 @@ and a private variable to store the physical device.
 \begin{lstlisting}[language=C++]
 //device.hpp
 private:
-...
-VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-VkPhysicalDeviceProperties properties;
-void pickPhysicalDevice();
-bool isDeviceSuitable(VkPhysicalDevice device);
+  ...
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+  VkPhysicalDeviceProperties properties;
+  void pickPhysicalDevice();
+  bool isDeviceSuitable(VkPhysicalDevice device);
 \end{lstlisting}
 
 Next we call the \textit{pickPhysicalDevice} function in our constructor. Inside the function we
@@ -2296,7 +2323,7 @@ void Device::pickPhysicalDevice(){
   vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
   if(deviceCount == 0)
-    throw std::runtime_error("Failed to find a GPU that supports Vulkan!");
+    throw std::runtime_error("Failed to find a gpu that supports Vulkan!");
 
   std::vector<VkPhysicalDevice> devices(deviceCount);
   vkEnumeratePhysicalDevices(instance, &deviceCount, &devices);
@@ -2309,11 +2336,11 @@ void Device::pickPhysicalDevice(){
   }
 
   if(physicalDevice == VK_NULL_HANDLE)
-    throw std::runtime_error("No Device was suitable!");
+    throw std::runtime_error("No device was suitable!");
 
   vkGetPhysicalDeviceProperties(physicalDevice, &properties);
   \\optional
-  std::cout << "Physical Device: " << properties.deviceName << std::endl;
+  std::cout << "physical device: " << properties.deviceName << std::endl;
 }
 \end{lstlisting}
 
@@ -2326,7 +2353,7 @@ the \textit{VkQueueFamilyProperties} struct and needs to be queried with the \te
 function from the physical device.
 
 Before I explain further I have to explain what a queue and a queue family is. Do you remember
-when I mentioned Command Buffers? These are used to send commands to the GPU. For example, to run a
+when I mentioned command buffers? These are used to send commands to the \ac{GPU}. For example, to run a
 graphics pipeline we would add the \textit{vkCmdDraw} command to the command buffer. This command
 buffer then has to be submitted to a queue. A queue determines the order in which the command buffers
 are executed.
@@ -2336,7 +2363,7 @@ execute graphics commands, while another queue might be able to execute compute 
 Therefore we have to check if the device supports the required queues, which are graphics for now.
 
 We can get the available queues with the \textit{vkGetPhysicalDeviceQueueFamilyProperties} function.
-It returns all queues with the same capabilities as a queue family. So when the GPU has 2 queues
+It returns all queues with the same capabilities as a queue family. So when the \ac{GPU} has 2 queues
 that can execute graphics commands we get a queue family with a queue count of 2 and a flag that
 indicates that it can execute graphics commands.
 
@@ -2347,7 +2374,7 @@ an optional uint32\_t for the present queue family and a function \textit{isComp
 true if the graphics and present queue family are set.
 
 Inside \textit{findQueueFamilies} we can check if the queue family can execute graphics commands by iterating through each queue family
-and checking if its \textit{queueFlags} member has the \textit{VK\textunderscore QUEUE\textunderscore GRAPHICS\textunderscore BIT} set.
+and checking if its \textit{queueFlags} member has the \textit{VK\textunderscore QUEUE\textunderscore GRAPHICS\textunderscore BIT} flag set.
 If it is we set the graphics queue family index to the current index. We also check for a queue family that can present images
 on a given surface with the \textit{vkGetPhysicalDeviceSurfaceSupportKHR} function. If it does we set the present queue family index
 to the current index.
@@ -2381,10 +2408,10 @@ QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) {
   QueueFamilyIndices indices;
 
   uint32_t queueFamilyCount = 0;
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+  vkGetPhysicalDeviceQueueFamilyProperties(device.device(), &queueFamilyCount, nullptr);
 
   std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+  vkGetPhysicalDeviceQueueFamilyProperties(device.device(), &queueFamilyCount, queueFamilies.data());
 
   int i = 0;
   for (const auto &queueFamily : queueFamilies) {
@@ -2392,7 +2419,7 @@ QueueFamilyIndices Device::findQueueFamilies(VkPhysicalDevice device) {
       indices.graphicsFamily = i;
 
     VkBool32 presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+    vkGetPhysicalDeviceSurfaceSupportKHR(device.device(), i, surface, &presentSupport);
 
     if (queueFamily.queueCount > 0 && presentSupport)
       indices.presentFamily = i;
@@ -2434,10 +2461,10 @@ bool Device::isDeviceSuitable(VkPhysicalDevice device) {
 
 bool Device::checkDeviceExtensionSupport(VkPhysicalDevice device) {
   uint32_t extensionCount;
-  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+  vkEnumerateDeviceExtensionProperties(device.device(), nullptr, &extensionCount, nullptr);
 
   std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-  vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+  vkEnumerateDeviceExtensionProperties(device.device(), nullptr, &extensionCount, availableExtensions.data());
 
   std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
@@ -2455,7 +2482,7 @@ Each device has a set of capabilities, like the minimum and maximum images for a
 and the minimum and maximum width and height of the image, that we can get with the
 \textit{vkGetPhysicalDeviceSurfaceCapabilitiesKHR} function.
 
-We also need the formats and the present modes that the device supports via the
+We also need the formats and the present modes that the device supports via the \\
 \textit{vkGetPhysicalDeviceSurfaceFormatsKHR} and the \textit{vkGetPhysicalDeviceSurfacePresentModesKHR}
 functions.
 
@@ -2492,22 +2519,22 @@ bool Device::isDeviceSuitable(VkPhysicalDevice device){
 
 SwapChainSupportDetails Device::querySwapChainSupport(VkPhysicalDevice device){
   SwapChainSupportDetails details;
-  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities);
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.device(), surface_, &details.capabilities);
 
   uint32_t formatCount;
-  vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, nullptr);
+  vkGetPhysicalDeviceSurfaceFormatKHR(device.device(), surface_, &formatCount, nullptr);
 
   if(formatCount != 0){
     details.formats.resize(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &formatCount, details.formats.data());
+    vkGetPhysicalDeviceSurfaceFormatKHR(device.device(), surface_, &formatCount, details.formats.data());
   }
 
   uint32_t presentModeCount;
-  vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, nullptr);
+  vkGetPhysicalDeviceSurfacePresentModesKHR(device.device(), surface_, &presentModeCount, nullptr);
 
   if(presentModeCount != 0){
     details.presentModes.resize(presentModeCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &presentModeCount, details.presentModes.data());
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device.device(), surface_, &presentModeCount, details.presentModes.data());
   }
 
   return details;
@@ -2519,14 +2546,14 @@ that enhances the image quality of textures on surfaces, by reducing blurriness 
 rendering texture on a sharp angle. We'll look deeper into this topic later.
 
 We can check if the device supports anisotropic filtering by checking the \textit{VkPhysicalDeviceFeatures}
-struct that contains the features of the device. \textit{vkGetPhysicalDeviceFeatures} returns the features
+struct that contains the features of the device. \textit{vkGetPhysicalDevicefeatures} returns the features
 of the device, which contains the boolean \textit{samplerAnisotropy} member.
 
 \begin{lstlisting}[language=C++]
 bool Device::isDeviceSuitable(VkPhysicalDevice device){
   ...
   VkPhysicalDeviceFeatures supportedFeatures;
-  vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+  vkGetPhysicalDevicefeatures(device.device(), &supportedFeatures);
 
   return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
@@ -2534,11 +2561,11 @@ bool Device::isDeviceSuitable(VkPhysicalDevice device){
 
 That's it we have now picked a physical device that is suitable for our application. But please note that
 we just take the first suitable device we find, which is not the best practice. You should rather
-rate the devices by certain factors. For example, you could favor a dedicated GPU over an integrated GPU.
+rate the devices by certain factors. For example, you could favor a dedicated \ac{GPU} over an integrated \ac{GPU}.
 
 For now we will just take the first suitable device we find.
 
-\subsection{Logical Device}
+\subsection{Logical device}
 
 We currently have a physical device but no interface to interact with it. This interface is provided
 by a logical device that we will create in the next step. Let's add a private function called
@@ -2561,7 +2588,7 @@ struct and add it to the \textit{VkDeviceCreateInfo} struct. We'll need to speci
 the amount of queues and the priority of the queues. We'll keep the same priority for all queues for now,
 but you can adjust the priority to your needs. We also have to specify the device features in an
 \textit{VkPhysicalDeviceFeatures} struct, that we want to enable, which will be sampler anisotropy for now.
-We also have to specify the extensions that we want to enable,
+we also have to specify the extensions that we want to enable,
 which is the swapchain extension in our \textit{deviceExtensions} vector.
 
 When we create the logical device we also have to check if the creation was successful. If not we throw
@@ -2587,7 +2614,7 @@ void Device::createLogicalDevice(){
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queueCreateInfo.queueFamilyIndex = queueFamily;
     queueCreateInfo.queueCount = 1;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
+    queueCreateInfo.pqueuepriorities = &queuePriority;
     queueCreateInfos.push_back(queueCreateInfo);
   }
 
@@ -2596,21 +2623,21 @@ void Device::createLogicalDevice(){
 
   VkDeviceCreateInfo createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-  createInfo.pQueueCreateInfos = queueCreateInfos.data();
-  createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-  createInfo.pEnabledFeatures = &deviceFeatures;
-  createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+  createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfo.size());
+  createInfo.pqueueCreateInfo = queueCreateInfo.data();
+  createInfo.enabledextensionCount = static_cast<uint32_t>(deviceExtensions.size());
+  createInfo.penabledfeatures = &deviceFeatures;
+  createInfo.ppenabledextensionNames = deviceExtensions.data();
 
   if(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device_) != VK_SUCCESS)
-    throw std::runtime_error("Failed to create logical device!");
+    throw std::runtime_error("failed to create logical device!");
 
   vkGetDeviceQueue(device_, indices.graphicsFamily.value(), 0, &graphicsQueue_);
   vkGetDeviceQueue(device_, indices.presentFamily.value(), 0, &presentQueue_);
 }
 \end{lstlisting}
 
-Now we have to make sure that the logical device is destroyed in the cunstructor.
+Now we have to make sure that the logical device is destroyed in the constructor.
 We can do this by calling the \textit{vkDestroyDevice} function.
 
 \begin{lstlisting}[language=C++]
@@ -2625,23 +2652,25 @@ Device::~Device() {
 }
 \end{lstlisting}
 
-\subsection{Command Pool}
+\subsection{Command pool}
 
 The last step that this chapter will cover is the creation of a command pool. A command pool is used
 to manage the memory for storing buffers. From the command pool we can allocate command buffers that
-store the commands that we want to send to the GPU.
+store the commands that we want to send to the \ac{GPU}.
 
 Let's add a private variable to store the command pool and a private function to create the command pool
 called \textit{createCommandPool}. Inside the function we have to again populate a struct, which will be
-the \textit{VkCommandPoolCreateInfo} struct. We have to specify the queue family index that the command pool
-will create the command buffers for. We will use the graphics queue family index, because thats the commands
-we want to send to the GPU.
+the \textit{vkCommandPoolCreateInfo} struct. We have to specify the queue family index that the command pool
+will create the command buffers for. We will use the graphics queue family index, because that's the commands
+we want to send to the \ac{GPU}.
 
-The \textit{VkCommandPoolCreateInfo} struct also has a \textit{flags} member. By setting the
-member to the
+The \textit{vkCommandPoolCreateInfo} struct also has a \textit{flags} member. By setting the member to the
 \textit{VK\textunderscore COMMAND\textunderscore POOL\textunderscore CREATE\textunderscore RESET\textunderscore COMMAND\textunderscore BUFFER\textunderscore BIT}
 we can reset command buffers individually with the \textit{vkResetCommandBuffer} function or via the implicit
-reset that occurs when calling \textit{vkBeginCommandBuffer}.
+reset that occurs when calling \textit{vkBeginCommandBuffer}. We will also add the
+\textit{VK\textunderscore COMMAND\textunderscore POOL\textunderscore CREATE\textunderscore TRANSIENT\textunderscore BIT}
+flag, which tells the driver that the command buffers will be rerecorded with new commands very often and adjust allocation
+behavior accordingly.
 
 We then create the command pool with the \textit{vkCreateCommandPool} function and check if the creation
 was successful. If not we throw an exception with an error message. We also have to destroy the command pool
@@ -2668,9 +2697,7 @@ void Device::createCommandPool(){
   VkCommandPoolCreateInfo poolInfo = {};
   poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
-  poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-  if(vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
+  poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     throw std::runtime_error("Failed to create command pool!");
 }
 
@@ -2681,7 +2708,7 @@ Device::~Device() {
 \end{lstlisting}
 
 And that's it for the device class. Let's recap what we have done so far. We have created a Vulkan instance
-that allows us to interact with the Vulkan API. We also added validation layers to get additional error checking
+that allows us to interact with the Vulkan \ac{API}. We also added validation layers to get additional error checking
 and a debug messenger to output the error messages. We have created a surface to render on and picked a physical
 device that is suitable to render our scene for the given surface. Then we created a logical device that is used
 to interact with the physical device. We also created a command pool to manage the memory for storing command buffers.
@@ -2701,7 +2728,6 @@ private:
   Device device{window};
 \end{lstlisting}
 
-
 In the next chapters we will come back to the device class and add functionalities like creating buffers. But for now
 we will move on to the swapchain.
 
@@ -2710,18 +2736,19 @@ we will move on to the swapchain.
 When we picked our physical device we also queried the swapchain support details. We will use this data to create
 the swapchain. Let's add a new file called \textit{swapchain.cpp} and \textit{swapchain.hpp} to the project.
 
-Let's start off by creating a new class called \textit{Swapchain} in the \textit{swapchain.hpp} file and adding a
+Let's start off by creating a new class called \textit{SwapChain} in the \textit{swapchain.hpp} file and adding a
 constructor that takes a reference to the device and a \textit{VkExtent2D} struct as arguments. The extent is the
-resolution of the swapchain images. We will also add a function called \textit{createSwapchain} that creates the swapchain.
+resolution of the swapchain images. We will also add a function called \textit{createSwapChain} that creates the swapchain.
 We'll also delete the copy constructor and the copy assignment operator.
 
-Because the \textit{querySwapChainSupport} function can return multiple formats present modes we will add private
-functions that chooses a format and present mode from the available formats and present modes.
+Because the \textit{querySwapChainSupport} function can return multiple formats present \\
+modes we will add private functions that chooses a format and present mode from
+the available formats and present modes.
 
 We also need a function that chooses the extent of the swapchain images. You might assume that the extent of the
-swapchain images matches the extent of the window. But this is not always the case. GLFW measures the resolution
+swapchain images matches the extent of the window. But this is not always the case. \ac{GLFW} measures the resolution
 in screen coordinates but Vulkan measures the resolution in pixels. This means that our swapchain extent needs
-to be in pixels as well. The problem is that when using high DPI displays, the extent in screen coordinates
+to be in pixels as well. The problem is that when using high dpi displays, the extent in screen coordinates
 will be smaller than the extent in pixels. We can get the extent in pixels with the \textit{glfwGetFramebufferSize}
 function, but we have the extent already defined in the windowExtent variable. We will use the window extent
 and then clamp it to the minimum and maximum extent that the device supports.
@@ -2737,8 +2764,8 @@ public:
   SwapChain (Device &device, VkExtent2D extent);
   ~SwapChain ();
 
-  SwapChain (const Swapchain &) = delete;
-  SwapChain &operator=(const Swapchain &) = delete;
+  SwapChain (const SwapChain &) = delete;
+  SwapChain &operator=(const SwapChain &) = delete;
 
 private:
   Device &device;
@@ -2767,14 +2794,13 @@ need a getter function to the device class that returns the surface. We will als
 data like the min image count from the swapchain support details. Therefore we will add
 a public function that calls the \textit{querySwapChainSupport} function. We will do the same
 for the \textit{findQueueFamilies} function. To create the swapchain we also need the
-logical device. We could add a getter function to the device class that returns the logical
-device, but I rather define a conversion operator that returns the device when we access the
-device instance.
+logical device. We will add a getter function to the device class that returns the logical
+device.
 
 \begin{lstlisting}[language=C++]
 //device.hpp
 VkSurfaceKHR surface() { return surface_; }
-operator VkDevice() const { return device_; }
+VkDevice device() { return device_; }
 
 SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(device_); }
 QueueFamilyIndices findQueueFamilies() { return findQueueFamilies(physicalDevice); }
@@ -2802,17 +2828,17 @@ void SwapChain::createSwapChain() {
 }
 \end{lstlisting}
 
-\subsection{Swapchain Surface Format}
+\subsection{Swapchain surface format}
 
 The \textit{VkSurfaceFormatKHR} struct contains a format and a color space member. The format
-defines in what order and size the R, G, B and A components are stored. We will use the
+defines in what order and size the r, g, b and a components are stored. We will use the
 \textit{VK\textunderscore FORMAT\textunderscore B8G8R8A8\textunderscore SRGB} format, that stores
-the components in the order B, G, R and A with 8 bits each. The reason
+the components in the order b, g, r and a with 8 bits each. The reason
 we use the \textit{SRGB} format is that it is the most common format and is supported and optimized
-on most devices. The color space is used to determine if the SRGB color space is supported. We will
+on most devices. The color space is used to determine if the srgb color space is supported. We will
 iterate through the available formats and check if the format and color space are supported. If they
 are we return the format. If not we return the first format. You could add additional checks to
-choose the best format but for now we will assume that sRGB is supported.
+choose the best format but for now we will assume that srgb is supported.
 
 \begin{lstlisting}[language=C++]
 VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
@@ -2825,7 +2851,7 @@ VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfac
 }
 \end{lstlisting}
 
-\subsection{Swapchain Present Mode}
+\subsection{Swapchain present mode}
 
 The present mode determines how the images are presented to the screen. To understand this we
 have to take a deeper look into the swapchain. The swapchain contains multiple framebuffers.
@@ -2846,7 +2872,7 @@ If the vertical blank happens while the image is being rendered we get a screen 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{screen_tearing.jpg}
-	\caption{Screen Tearing} \cite{fig:screen_tearing}
+	\caption{Screen tearing} \cite{fig:screen_tearing}
 \end{figure}
 
 Here you can see that 2 images are displayed at the same time. The top image is the new one that has
@@ -2859,13 +2885,13 @@ The next present mode is called
 \textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR}.
 FIFO stands for first in first out. This mode handles the images in a queue. Each fully rendered image
 is added to the queue and the image that is at its front is displayed. The
-\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR}
+\textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR} mode
 only swaps the framebuffers when the vertical blank happens and takes the framebuffer's image that is at the front
 of the queue, which avoids the screen tearing effect. The problem with this mode is that if the queue is full,
-aka each framebuffer's image is rendered but not displayed yet, the GPU has to wait until the vertical blank happens
-to continue rendering, which caps the frame rate to the refresh rate of the monitor. This is called V-Sync and
+aka each framebuffer's image is rendered but not displayed yet, the \ac{GPU} has to wait until the vertical blank happens
+to continue rendering, which caps the frame rate to the refresh rate of the monitor. This is called v-sync and
 causes a delay between the rendering and the displaying of the image, but is guaranteed
-to be available and has a lower energy consumption than the other modes that have the GPU rendering without a break.
+to be available and has a lower energy consumption than the other modes that have the \ac{GPU} rendering without a break.
 Therefore this mode is the most common mode for mobile devices, but is still widely used for desktop applications.
 
 There is a similar version of the
@@ -2879,7 +2905,7 @@ Finally we have the \\
 \textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore MAILBOX\textunderscore KHR} mode.
 This is also the mode that we will be using. This mode is similar to the
 \textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR} mode,
-with the difference that the swapchain will not let the GPU idle when the queue is full. Instead it will
+with the difference that the swapchain will not let the \ac{GPU} idle when the queue is full. Instead it will
 discard the image that is at the front of the queue and start rendering again. This constant rendering
 will provide us with the lowest latency but also the highest energy consumption. But that should not
 be a problem for our application.
@@ -2892,14 +2918,14 @@ if it is available. If not we will return the \textit{VK\textunderscore PRESENT\
 VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
   for (const auto &availablePresentMode : availablePresentModes) {
       if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-      return availablePresentMode;
+        return availablePresentMode;
     }
 
   return VK_PRESENT_MODE_FIFO_KHR;
 }
 \end{lstlisting}
 
-\subsection{Swapchain Extent}
+\subsection{Swapchain extent}
 
 Like mentioned before we have to choose the extent of the swapchain images. We get the extent
 from the devices capabilities. If the width and height of the extent are set to the maximum
@@ -2924,7 +2950,7 @@ VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilit
 }
 \end{lstlisting}
 
-\subsection{Image Count}
+\subsection{Image count}
 
 The final thing we have to do is to set the min image count of the swapchain. The image count is the amount
 of images that the swapchain will contain aka the amount of framebuffers. We will use one more than the
@@ -2940,10 +2966,10 @@ if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSup
   imageCount = swapChainSupport.capabilities.maxImageCount;
 \end{lstlisting}
 
-\subsection{Swapchain Creation}
+\subsection{Swapchain creation}
 
 Now that we have all the data we need we can create the swapchain. We will populate the
-\textit{VkSwapchainCreateInfoKHR} struct with the data we have and additionally set the
+\textit{VkSwapchainCreateInfo} struct with the data we have and additionally set the
 image array layers to 1, which is the amount of layers that the image has. This is always
 1 unless you are working with stereoscopic 3D applications. We also have to set the image
 usage to
@@ -2951,7 +2977,7 @@ usage to
 which means that we will render directly to the image.
 
 \begin{lstlisting}[language=C++]
-VkSwapchainCreateInfoKHR createInfo = {};
+VkSwapchainCreateInfo createInfo = {};
 createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 createInfo.surface = device.surface();
 createInfo.minImageCount = imageCount;
@@ -2959,7 +2985,7 @@ createInfo.imageFormat = surfaceFormat.format;
 createInfo.imageColorSpace = surfaceFormat.colorSpace;
 createInfo.imageExtent = extent;
 createInfo.imageArrayLayers = 1;
-createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+createInfo.imageUSage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 \end{lstlisting}
 
 But that's not all. We also have to specify the sharing mode of the swapchain. The sharing mode
@@ -2981,12 +3007,12 @@ and set the queue family indices and their count. If they are the same we set th
 \begin{lstlisting}[language=C++]
 QueueFamilyIndices indices = device.findQueueFamilies();
 if (indices.graphicsFamily.value() != indices.presentFamily.value()) {
-  createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-  createInfo.queueFamilyIndexCount = 2;
-  uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
-  createInfo.pQueueFamilyIndices = queueFamilyIndices;
+   createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+   createInfo.queueFamilyIndexCount = 2;
+   uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+   createInfo.pQueueFamilyIndices = queueFamilyIndices;
 } else {
-  createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+   createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 }
 \end{lstlisting}
 
@@ -3003,20 +3029,20 @@ The old swapchain is used to create a new swapchain from an old one. We will set
 \textit{VK\textunderscore NULL\textunderscore HANDLE}, but will come back to this later.
 
 \begin{lstlisting}[language=C++]
-createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+createInfo.preTransform = swapChainSupport.capabilities.currenttransform;
 createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 createInfo.presentMode = presentMode;
 createInfo.clipped = VK_TRUE;
 createInfo.oldSwapchain = VK_NULL_HANDLE;
 \end{lstlisting}
 
-Now that we have the create info struct we can create the swapchain with the \textit{vkCreateSwapchainKHR}
+Now that we have the create info struct we can create the swapchain with the \textit{vkCreateSwapChainKHR}
 function, that takes the device, the create info struct, a custom allocator and a pointer to the swapchain
 variable that we also have to add to our header. We again will check for an error and throw an runtime
 error if the creation was not successful.
 
 \begin{lstlisting}[language=C++]
-if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+if (vkCreateSwapChainKHR(device.device(), &createInfo. nullptr, &swapChain) != VK_SUCCESS)
   throw std::runtime_error("Failed to create swap chain!");
 \end{lstlisting}
 
@@ -3036,9 +3062,9 @@ private:
 \end{lstlisting}
 
 \begin{lstlisting}[language=C++]
-vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount, nullptr);
 swapChainImages.resize(imageCount);
-vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount, swapChainImages.data());
 
 swapChainImageFormat = surfaceFormat.format;
 swapChainExtent = extent;
@@ -3053,13 +3079,13 @@ the \textit{vkDestroySwapchainKHR} function.
 
 \begin{lstlisting}[language=C++]
 SwapChain::~SwapChain() {
-  vkDestroySwapchainKHR(device, swapChain, nullptr);
+  vkDestroySwapchainKHR(device.device(), swapChain, nullptr);
 }
 \end{lstlisting}
 
 \subsection{Image Views}
 
-The Swapchain in now created and we have the images stored in the \\
+The swapchain in now created and we have the images stored in the \\
 \textit{swapChainImages} vector. But like mentioned before,
 we cannot read the images directly. It only stores data about the pixels and the main memory of the texture and misses
 information like the format or the mipmapping level. To get the full image data we have to create an image view, that
@@ -3067,7 +3093,7 @@ stores the missing information. We will need a new function called \textit{creat
 the creation of the swapchain. We will also need a vector to store the image views, that we will size to the amount of
 swapchain images in the function.
 
-For Each image in the \textit{swapChainImages} vector we will create an image view and define the image that we view
+For each image in the \textit{swapChainImages} vector we will create an image view and define the image that we view
 into, the desired format, the view type, the subresource range with the aspect mask, the base mip level, the level count,
 the base array layer and the layer count. The view type defines how many dimensions the image has. We will use the 2D view
 type because our pipeline returns a orthogonal 2D image. The aspect mask defines what the image view will be used for.
@@ -3079,7 +3105,7 @@ We will also keep the same format as the swapchain image format, but for some us
 format that is compatible with the surface format.
 
 Before we go further I'd like to explain what mipmapping is and what a mip level is. Mipmapping is a technique that
-is similar to LOD (Level of Detail), but is used for textures. It reduces the textures resolution when the texture
+is similar to \ac{LOD}, but is used for textures. It reduces the textures resolution when the texture
 is far away from the camera. This fixes an interesting problem that occurs when rendering textures. Would we keep the same
 resolution for the texture when the texture is far away from the camera, the texture create a so called moiré pattern.
 It occures because we try to map a high resolution texture on a area that is to small.
@@ -3087,7 +3113,7 @@ It occures because we try to map a high resolution texture on a area that is to 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=\textwidth]{mipmapping.png}
-	\caption{Mipmapping(left: Moiré pattern, right: Mipmapping)} \cite{fig:mipmapping}
+	\caption{Mipmapping(left: moiré pattern, right: mipmapping)} \cite{fig:mipmapping}
 \end{figure}
 
 By reducing the resolution of the texture we can avoid this problem.
@@ -3110,7 +3136,7 @@ void SwapChain::createImageViews() {
   swapChainImageViews.resize(swapChainImages.size());
 
   for (size_t i = 0; i < swapChainImages.size(); i++) {
-    VkImageViewCreateInfo viewInfo = {};
+    VkImageViewcreateInfo.viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = swapChainImages[i];
     viewInfo.format = swapChainImageFormat;
@@ -3121,7 +3147,7 @@ void SwapChain::createImageViews() {
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(device, &viewInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+    if (vkCreateImageview(device.device(), &viewInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
       throw std::runtime_error("Failed to create image views!");
   }
 }
@@ -3129,15 +3155,14 @@ void SwapChain::createImageViews() {
 
 Great! Let's try to run the application. To do so we have to add the swapchain to the application class.
 Because the swapchain takes the device and the extent as arguments we have to add a getter function to the
-surface class that returns the extent. We will also add a conversion operator to the device class that
-returns the device.
+surface class that returns the extent. We will also add a getter to the device class that returns the
+logical device.
 
 \begin{lstlisting}[language=C++]
 //device.hpp
 public:
   ...
-  //returns device_ when we access the device instance 
-  operator VkDevice() const { return device_; }
+  VkDevice device() { return device_; }
 \end{lstlisting}
 
 \begin{lstlisting}[language=C++]
@@ -3165,9 +3190,9 @@ So let's destroy the image views in the destructor of the swapchain class. We ca
 \begin{lstlisting}[language=C++]
 SwapChain::~SwapChain() {
   for (const VkImageView &imageView : swapChainImageViews)
-    vkDestroyImageView(device, imageView, nullptr);
+    vkDestroyImageView(device.device(), imageView, nullptr);
 
-  vkDestroySwapchainKHR(device, swapChain, nullptr);
+  vkDestroySwapchainKHR(device.device(), swapChain, nullptr);
 }
 \end{lstlisting}
 
@@ -3195,11 +3220,11 @@ Inside we will need to create 2 attachments. One for the color buffer and one fo
 Let's start with the color attachment. We will have to populate the \textit{VkAttachmentDescription} struct
 with the format, the sample count, the load and store operation, the stencil load and store operation, the initial
 and the final layout. For the color attachment we will use the swapchain image format. The sample count defines how
-MSAA (Multisample Anti-Aliasing) is handled. Let's rewind shortly how MSAA works.
+\ac{MSAA} is handled. Let's rewind shortly how \ac{MSAA} works.
 
 When we render a polygon we rasterize it into fragments. Each fragment is a pixel that is covered by the polygon.
 The graphics pipeline determines which pixel to color by checking if the polygon covers the center of the pixel.
-But this returns a jagged edge. To fix this we can use MSAA. MSAA works by sampling multiple points in the pixel
+But this returns a jagged edge. To fix this we can use \acro{MSAA}. \acro{MSAA} works by sampling multiple points in the pixel
 and then averaging the color of the points. This creates a smoother edge. We can define how many samples we want to use
 in each fragment.
 
@@ -3219,8 +3244,8 @@ is another buffer that allows us to further manipulate pixels combined with the 
 create outlines around objects by creating another object with a slightly bigger size and add a stencil buffer to it with a
 reference value. When rendering the outline we can perform a stencil test that checks if the pixels reference value is
 equal to 1 and only render the pixels that don't pass the test. The stencil load and store operation work the same way
-as the load and store operation We don't really care about the stencil buffer for now so we will set the operations to
-\textit{VK\textunderscore ATTACHMENT\textunderscore STORE/LOAD \textunderscore OP\textunderscore DONT\textunderscore CARE}.
+as the load and store operation we don't really care about the stencil buffer for now so we will set the operations to
+\textit{VK\textunderscore ATTACHMENT\textunderscore LOAD/STORE\textunderscore OP\textunderscore DONT\textunderscore CARE}.
 Finally the initial and final layout define how the image is handled before and after the render pass. The initial layout
 is set to \textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore UNDEFINED} because we don't care about the
 image before the render pass. The final layout is set to
@@ -3242,8 +3267,8 @@ void SwapChain::createRenderPass() {
 \end{lstlisting}
 
 After that we need to create a \textit{VkAttachmentReference} that stores the index and layout type.
-The color attachment will be our first attachment and has the
-\textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore OPTIMAL}
+The color attachment will be our first attachment and has the \\
+\textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore OPTIMAL}.
 
 \begin{lstlisting}[language=C++]
 VkAttachmentReference colorAttachmentRef = {};
@@ -3261,7 +3286,7 @@ Inside the \textit{findSupportedFormat} function we will iterate through the for
 features that we passed to the function. If it is we will return the format. We will check for 2 tilings,
 the linear and the optimal tiling. The linear tiling mode stores the image in a linear order, which means that the
 image is stored in a row like a 2D array. The optimal tiling mode stores the image in an oder that is optimized for
-GPU access. We will use the optimal tiling mode for the depth format. We will check the following formats:
+\ac{GPU} access. We will use the optimal tiling mode for the depth format. We will check the following formats:
 \textit{VK\textunderscore FORMAT\textunderscore D32\textunderscore SFLOAT},
 \textit{VK\textunderscore FORMAT\textunderscore D32\textunderscore SFLOAT\textunderscore S8\textunderscore UINT} and
 \textit{VK\textunderscore FORMAT\textunderscore D24\textunderscore UNORM\textunderscore S8\textunderscore UINT}.
@@ -3270,7 +3295,7 @@ The first format is a 32 bit float format that is used for depth buffers. The se
 with a 32 bit float for the depth and a 8 bit unsigned integer for the stencil buffer. The third format is a 24 bit
 float format for the depth and a 8 bit unsigned integer for the stencil buffer. We will parse in all 3 of them but if you need
 a stencil buffer you should use the second or third format. For the features we will use the
-\textit{VK\textunderscore FORMAT\textunderscore FEATURE\textunderscore DEPTH\textunderscore STENCIL\textunderscore ATTACHMENT\textunderscore BIT}.
+\textit{VK\textunderscore FORMAT\textunderscore FEATURE\textunderscore DEPTH\textunderscore STENCIL\textunderscore ATTACHMENT\textunderscore BIT}
 
 \begin{lstlisting}[language=C++]
 //swapchain.cpp
@@ -3304,7 +3329,7 @@ VkFormat SwapChain::findDepthFormat() {
 //device.cpp
 VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
   for (VkFormat format : candidates) {
-    VkFormatProperties props;
+    VkFormatproperties props;
     vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &props);
 
     if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
@@ -3361,7 +3386,7 @@ void SwapChain::createRenderPass() {
   dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
   dependency.dstSubpass = 0;
   dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-  dependency.srcAccessMask = 0;
+  dependency.dstAccessMask = 0;
   dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
   dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 }
@@ -3386,17 +3411,17 @@ void SwapChain::createRenderPass() {
   ...
   std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
 
-  VkRenderPassCreateInfo renderPassInfo = {};
+  VkRenderPasscreateInfo.renderPassInfo = {};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
   renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-  renderPassInfo.pAttachments = attachments.data();
+  renderPassInfo.pattachments = attachments.data();
   renderPassInfo.subpassCount = 1;
   renderPassInfo.pSubpasses = &subpass;
   renderPassInfo.dependencyCount = 1;
   renderPassInfo.pDependencies = &dependency;
 
-  if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
-    throw std::runtime_error("Failed to create render pass!");
+  if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+    throw std::runtime_error("failed to create render pass!");
 }
 \end{lstlisting}
 
@@ -3405,17 +3430,17 @@ Finally we have to make sure to destroy the render pass.
 \begin{lstlisting}[language=C++]
 SwapChain::~SwapChain() {
   ...
-  vkDestroyRenderPass(device, renderPass, nullptr);
+  vkDestroyRenderPass(device.device(), renderPass, nullptr);
 }
 \end{lstlisting}
 
-\subsection{Depth resources}
+\subsection{Depth Resources}
 
 Just like the color image we have to create an depth image and an depth image view. We will create a new function
 called \textit{createDepthResources} that will be called after the creation of the render pass. We will also need
 a new variable in the header of the swapchain class that stores the depth images and the depth image views. We will need one
-depth image and one depth image view for each swapchain image. The problem is that when we create the depth image on the CPU we
-need to allocate memory on the GPU and then bind the image to that memory, because we need the data there.
+depth image and one depth image view for each swapchain image. The problem is that when we create the depth image on the \ac{CPU} we
+need to allocate memory on the \ac{GPU} and then bind the image to that memory, because we need the data there.
 For that we will need a new function in the device class called \textit{createImageWithInfo}.
 This function will take an image info struct, a memory property flag, a pointer to the image and a pointer to the image memory.
 
@@ -3447,14 +3472,14 @@ void SwapChain::createDepthResources() {
   swapChainDepthFormat = depthFormat;
 
   for (size_t i = 0; i < swapChainImages.size(); i++) {
-    VkImageCreateInfo imageInfo = {};
+    VkImageCreateInfo.imageInfo = {};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = swapChainExtent.width;
     imageInfo.extent.height = swapChainExtent.height;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
+    imageInfo.arraylayers = 1;
     imageInfo.format = depthFormat;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -3465,18 +3490,18 @@ void SwapChain::createDepthResources() {
 
     device.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImages[i], depthImageMemories[i]);
 
-    VkImageViewCreateInfo viewInfo = {};
+    VkImageViewcreateInfo.viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = depthImages[i];
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = depthFormat;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT; 
+    viewInfo.subresourceRange.aspectMask =  VK_IMAGE_ASPECT_DEPTH_BIT;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(device, &viewInfo, nullptr, &depthImageViews[i]) != VK_SUCCESS)
+    if (vkCreateImageView(device.device(), &viewInfo, nullptr, &depthImageViews[i]) != VK_SUCCESS)
       throw std::runtime_error("Failed to create image views!");
  }
 }
@@ -3491,8 +3516,8 @@ allocate the memory with the \textit{vkAllocateMemory} function and bind the mem
 
 \begin{lstlisting}[language=C++]
 //device.cpp
-void Device::createImageWithInfo(const VkImageCreateInfo &imageInfo, 
-                                 VkMemoryPropertyFlags properties, 
+void Device::createImageWithInfo(const VkImageCreateInfo.&imageInfo, 
+                                 vkMemeroryPropertyflags properties, 
                                  VkImage &image, 
                                  VkDeviceMemory &imageMemory) {
   if (vkCreateImage(device_, &imageInfo, nullptr, &image) != VK_SUCCESS)
@@ -3503,7 +3528,7 @@ void Device::createImageWithInfo(const VkImageCreateInfo &imageInfo,
 
   VkMemoryAllocateInfo allocInfo = {};
   allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.allocationsize = memRequirements.size;
   allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
   if (vkAllocateMemory(device_, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
@@ -3519,9 +3544,9 @@ properties are supported. If it is it will return the memory type index.
 
 \begin{lstlisting}[language=C++]
 //device.cpp
-uint32_t Device::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-  VkPhysicalDeviceMemoryProperties memProperties;
-  vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+uint32_t Device::findMemoryType(uint32_t typeFilter, vkMemeroryPropertyflags properties) {
+  VkPhysicalDeviceMemeroryProperties memProperties;
+  vkGetPhysicalDeviceMemeroryProperties(physicalDevice, &memProperties);
 
   for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
     if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
@@ -3535,15 +3560,15 @@ uint32_t Device::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags prope
 In the if statement we first filter the types by going through the bits of the type filter. Then we check if the
 properties are supported by the memory type. If it is we return the memory type index.
 
-Now that we have the depth resources we have to destroy them and clear the GPU memory in the destructor of the swapchain class.
+Now that we have the depth resources we have to destroy them and clear the \ac{GPU} memory in the destructor of the swapchain class.
 
 \begin{lstlisting}[language=C++]
 SwapChain::~SwapChain() {
   ...
   for (size_t i = 0; i < depthImages.size(); i++) {
-      vkDestroyImageView(device, depthImageViews[i], nullptr);
-      vkDestroyImage(device, depthImages[i], nullptr);
-      vkFreeMemory(device, depthImageMemories[i], nullptr);
+      vkDestroyImageView(device.device(), depthImageViews[i], nullptr);
+      vkDestroyImage(device.device(), depthImages[i], nullptr);
+      vkFreeMemory(device.device(), depthImageMemories[i], nullptr);
     }
 }
 \end{lstlisting}
@@ -3589,14 +3614,14 @@ void SwapChain::createFramebuffers() {
 
     VkFramebufferCreateInfo framebufferInfo = {};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.renderpass = renderpass;
     framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
     framebufferInfo.pAttachments = attachments.data();
     framebufferInfo.width = swapChainExtent.width;
     framebufferInfo.height = swapChainExtent.height;
     framebufferInfo.layers = 1;
 
-    if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS)
+    if (vkCreateFramebuffer(device.device(), &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS)
       throw std::runtime_error("Failed to create framebuffer!");
   }
 }
@@ -3607,9 +3632,8 @@ After that we have to destroy the framebuffers in the destructor of the swapchai
 \begin{lstlisting}[language=C++]
 SwapChain::~SwapChain() {
   ...
-
   for (auto framebuffer : framebuffers) {
-    vkDestroyFramebuffer(device, framebuffer, nullptr);
+    vkDestroyFramebuffer(device.device(), framebuffer, nullptr);
   }
 }
 \end{lstlisting}
@@ -3625,9 +3649,9 @@ resources that are used in the render pass.
 
 \section{Pipeline}
 
-We can now start with the pipeline creation. Let's go ahead and create a new class called \textit{Pipeline} that will
+We can now start with the pipeline creation. Let's go ahead and create a new class called \textit{pipeline} that will
 contain the pipeline creation. We will need a new function called \textit{createGraphicsPipeline} that will be called
-in the constructor. This function takes the path to the vertex and fragment shader and a PipelineConfigInfo struct that
+in the constructor. This function takes the Path to the vertex and fragment shader and a PipelineConfigInfo struct that
 we will define in the header of the pipeline class. We will also need a variable that stores the graphics pipeline, the
 device and the shader modules.
 
@@ -3638,31 +3662,31 @@ struct PipelineConfigInfo {
   PipelineConfigInfo(const PipelineConfigInfo &) = delete;
   PipelineConfigInfo &operator=(const PipelineConfigInfo &) = delete;
 
-  VkPipelineViewportStateCreateInfo viewportInfo;
+  VkPipelineViewportStateCreateInfo viewportinfo;
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
   VkPipelineRasterizationStateCreateInfo rasterizationInfo;
-  VkPipelineMultisampleStateCreateInfo multisampleInfo;
+  VkPipelineMultisampleStateCreateInfo mutlisampleInfo;
   VkPipelineColorBlendAttachmentState colorBlendAttachment;
   VkPipelineColorBlendStateCreateInfo colorBlendInfo;
   VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
   std::vector<VkDynamicState> dynamicStates;
-  VkPipelineDynamicStateCreateInfo dynamicStateInfo;
+  VkPipelineDynamicStateCreateInfo dynamicStateinfo;
   VkPipelineLayout pipelineLayout = nullptr;
   VkRenderPass renderPass = nullptr;
   uint32_t subpass = 0;
 };
 
-class Pipeline {
+class pipeline {
 public:
-  Pipeline(Device &device, const std::string &vertPath, const std::string &fragPath, const PipelineConfig &configInfo);
+  Pipeline(Device &device, const std::string &vertPath, const std::string &fragPath, const pipelineconfig &configInfo);
   ~Pipeline();
 
-  Pipeline(const Pipeline &) = delete;
-  Pipeline operator=(const Pipeline &) = delete;
+  Pipeline(const pipeline &) = delete;
+  pipeline operator=(const pipeline &) = delete;
 
 private:
   Device &device;
-  VkPipeline graphicsPipeline;
+  VkPipeline graphicspipeline;
   VkShaderModule vertShaderModule;
   VkShaderModule fragShaderModule;
 };
@@ -3680,16 +3704,16 @@ Then we will have to read the shader files and create the shader modules. Let's 
 \begin{lstlisting}[language=C++]
 //pipeline.cpp
 std::vector<char> Pipeline::readFile(const std::string &path) {
-  std::ifstream file{path, std::ios::ate | std::ios::binary};
+  std::ifstream file{Path, std::ios::ate | std::ios::binary};
 
   if (!file.is_open())
     throw std::runtime_error("Failed to open file: " + path);
 
-  size_t fileSize = static_cast<size_t>(file.tellg());
-  std::vector<char> buffer(fileSize);
+  size_t filesize = static_cast<size_t>(file.tellg());
+  std::vector<char> buffer(filesize);
 
   file.seekg(0);
-  file.read(buffer.data(), fileSize);
+  file.read(buffer.data(), filesize);
 
   file.close();
   return buffer;
@@ -3697,7 +3721,7 @@ std::vector<char> Pipeline::readFile(const std::string &path) {
 \end{lstlisting}
 
 This function opens a file. The \textit{std::ios::ate} flag sets the position of the file pointer to the end of the file and the
-\textit{std::ios::binary} flag reads the file as binary. We have binary files because we have to compile our shaders to SPIR-V.
+\textit{std::ios::binary} flag reads the file as binary. We have binary files because we have to compile our shaders to spir-v.
 We go to the end of the file at the beginning because we want to create a buffer with the size of the file. Then we read the
 file into the buffer and return the buffer.
 
@@ -3728,7 +3752,7 @@ void Pipeline::createShaderModule(const std::vector<char> &code, VkShaderModule 
   createInfo.codeSize = code.size();
   createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
-  if (vkCreateShaderModule(device, &createInfo, nullptr, shaderModule) != VK_SUCCESS)
+  if (vkCreateShaderModule(device.device(), &createInfo. nullptr, shaderModule) != VK_SUCCESS)
     throw std::runtime_error("Failed to create shader module!");
 }
 \end{lstlisting}
@@ -3741,11 +3765,11 @@ This binary data is what the \textit{vkCreateShaderModule} function expects.
 \subsection{Shader Stages}
 
 Okay before we go further into the pipeline creation we have to actually write and compile the shaders. We will use the
-GLSL language for the shaders. Let's create a new folder in our src folder called shaders. In this folder we will create
+\ac{GLSL} for the shaders. Let's create a new folder in our src folder called shaders. In this folder we will create
 a \textit{shader.vert} and a \textit{shader.frag} file.
 
 We will start off with a simple vertex shaders that basically just pass the vertex position and the color to the fragment shader.
-GLSL looks very similar to C++ but has some differences. For example we have to define the version of the GLSL language
+\ac{GLSL} looks very similar to C++ but has some differences. For example we have to define the version of the glsl language
 at the beginning of the shader. We will use version 460. Next we create some vertex positions, from which we will create a simple triangle.
 We will then have a void main function that sets the \textit{gl\textunderscore Position} variable to the vertex position.
 
@@ -3768,9 +3792,10 @@ void main() {
 \end{lstlisting}
 
 You can see that we have this mysterious \textit{gl\textunderscore Position} variable. This is a built-in variable that
-takes the vertex position as a 4D vector. The 4th component is the w component that is used for perspective division.
+takes the vertex position as a 4d vector. The 4th component is the w component that is used for perspective division.
 This \textit{gl\textunderscore Position} variable is a predefined out variable that is used to pass the vertex position
-to the next stage.
+to the next stage. The \textit{gl\textunderscore VertexIndex} is also a built-in variable that is used to get the index
+of the vertex that is currently processed.
 
 \begin{lstlisting}[language=C++]
 //shader.frag
@@ -3782,11 +3807,11 @@ void main() {
 }
 \end{lstlisting}
 
-Here we set the \textit{outColor} to the color that we passed from the vertex shader. The \textit{outColor} is a 4D vector
+Here we set the \textit{outColor} to the color that we passed from the vertex shader. The \textit{outColor} is a 4d vector
 that represents the color of the pixel. The 4th component is the alpha value of the color.
 
-Now that we have them we have to compile them to SPIR-V. We will simply add a compile.sh script that compiles the shaders. We will
-use the \textit{glslc} compiler that comes with the Vulkan SDK. The \textit{glslc} compiler takes the shader file and then compiles
+Now that we have them we have to compile them to spir-v. We will simply add a compile.sh script that compiles the shaders. We will
+use the \ac{GLSL} compiler that comes with the Vulkan SDK. The \ac{GLSL} compiler takes the shader file and then compiles
 them to a specified output file. We will compile the vertex shader to \textit{shader.vert.spv} and the fragment shader to
 \textit{shader.frag.spv}.
 
@@ -3795,7 +3820,7 @@ them to a specified output file. We will compile the vertex shader to \textit{sh
 /usr/local/bin/glslc src/shaders/shader.frag -o src/shaders/shader.frag.spv
 \end{lstlisting}
 
-We will execute this script in our makefile before we compile the vulkan application.
+We will execute this script in our makefile before we compile the Vulkan application.
 Simply add the following line to the makefile, before the compile line.
 
 \textit{sh src/shaders/compile.sh}
@@ -3804,7 +3829,7 @@ Perfect! Now we have the shaders that the pipeline will read and use. Later you 
 rendering, but the vertex and fragment shader are mandatory.
 
 We now have to create the actual stages and will begin with the shader stages. If you're wondering what the difference
-between a shader module and a shader stage is, the shader module is the binary data that is loaded into the GPU and the
+between a shader module and a shader stage is, the shader module is the binary data that is loaded into the \ac{GPU} and the
 shader stage is the stage in the pipeline that the shader module is used in. Let's go ahead and create the shader stages.
 
 We will use the \textit{VkPipelineShaderStageCreateInfo} struct to create the shader stages. This struct contains the
@@ -3843,8 +3868,8 @@ because we have to get the vertex data from models that we will load later.
 Because we have the vertex input state info in the config info struct we will use that to create the vertex input state info.
 
 \begin{lstlisting}[language=C++]
-void Pipeline::createGraphicsPipeline(const std::string &vertFilepath,
-                                      const std::string &fragFilepath,
+void Pipeline::createGraphicsPipeline(const std::string &vertFilePath,
+                                      const std::string &fragFilePath,
                                       const PipelineConfigInfo &configInfo) {
   ...
   VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
@@ -3871,7 +3896,7 @@ The viewport defines the top-left corner with it's x and y coordinate,
 the width and height and it's min and max depth.
 
 The scissor on the other hand cuts the image off. It defines a rectangle, again with an offset and an extent, that
-defines the part of the visible Image.
+defines the part of the visible image.
 
 We will not need any fancy transformations now, but you might want to change the viewport extent when creating cutscenes
 that have the well known black bars called letterboxes. Or you might use scissors to create game effects where the visible
@@ -3888,10 +3913,10 @@ void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
     VK_DYNAMIC_STATE_SCISSOR
   };
 
-  configInfo.dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-  configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStates.size());
-  configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStates.data();
-  configInfo.dynamicStateInfo.flags = 0;
+  configInfo.dynamicStateinfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+  configInfo.dynamicStateinfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStates.size());
+  configInfo.dynamicStateinfo.pDynamicStates = configInfo.dynamicStates.data();
+  configInfo.dynamicStateinfo.flags = 0;
 }
 \end{lstlisting}
 
@@ -3913,17 +3938,17 @@ If you don't want to use dynamic states you have to create it first and then ref
 \subsection{Input Assembly}
 
 Now we will define the input assembly state. The input assembly state defines how the vertices are assembled into primitives.
-We will use the \textit{VK\textunderscore PRIMITIVE\textunderscore TOPOLOGY\textunderscore TRIANGLE\textunderscore LIST} topology
+We will use the \\ \textit{VK\textunderscore PRIMITIVE\textunderscore TOPOLOGY\textunderscore TRIANGLE\textunderscore LIST} topology
 for now. This means that every 3 vertices that we pass to the pipeline will be assembled into one triangle. There is another
 member in the input assembly state struct called the primitive restart enable. This is used to break up lines that are
-created with any strip topology. We don't need this for now, so we will set it to VK\textunderscore FALSE.
+created with any strip topology. We don't need this for now, so we will set it to \textit{VK\textunderscore FALSE}.
 
 \begin{lstlisting}[language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
     ...
     configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+    configInfo.inputAssemblyInfo.primitiveRestartenable = VK_FALSE;
   }
 \end{lstlisting}
 
@@ -3942,12 +3967,12 @@ useful when you don't need to output any fragments, but we don't need it for now
 
 The polygon mode defines how the rasterizer fills the polygons. We will use the fill mode for now, but you can also use
 the line or point mode. The line mode will draw the edges of the polygons and the point mode will draw the vertices of the
-polygons. Any mode other than the fill mode will need you to activate a GPU feature like the
-\textit{VK\textunderscore EXT\textunderscore line\textunderscore rasterization} feature.
+polygons. Any mode other than the fill mode will need you to activate a \ac{GPU} feature like the
+\textit{VK\textunderscore EXT\textunderscore line\textunderscore rasterization} extension.
 
 The line width is self explanatory. It defines the width of the lines in fragments that are drawn. Setting this
 value to 1.0 will draw the lines with the width of one pixel and anything greater than 1.0 will need us to activate
-the wideLines feature.
+the widelines feature.
 
 The cull mode defines which faces of the polygons are culled. Each surface has two sides, the front and the back side.
 By cutting away aka not rendering the back side of the polygons we can save some performance. We will cull the back side
@@ -3962,21 +3987,17 @@ and clamp the depth bias. This is not something that we will use for now so we w
 
 \begin{lstlisting}[language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
-		...
-		configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
-		configInfo.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
-		configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
-		configInfo.rasterizationInfo.lineWidth = 1.0f;
-		configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-		configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
-	}
+  ...
+  configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
+  configInfo.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
+  configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
+  configInfo.rasterizationInfo.lineWidth = 1.0f;
+  configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+  configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+  configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
+}
 \end{lstlisting}
-
-\printbibliography[
-	heading=bibintoc, title={Bibliography}
-]
 
 \subsection{Multisampling}
 
@@ -4002,7 +4023,7 @@ write enable is used to enable writing to the depth buffer. The depth compare op
 fragments. We will check if the depth of the fragment is less than the depth of the fragment that is already in the
 depth buffer. If it is we will write the fragment to the depth buffer. We can also set the depth bounds test enable
 to enable the depth bounds test. This is used to discard fragments that are outside of the depth bounds. We will not
-need this so we can set it to VK\textunderscore FALSE and ignore the depth bound members. Finally we can also enable the stencil
+need this so we can set it to \textit{VK\textunderscore FALSE} and ignore the depth bound members. Finally we can also enable the stencil
 test, which we will keep disabled.
 
 \begin{lstlisting}[language=C++]
@@ -4058,6 +4079,7 @@ The thing is that we have to create the pipeline layout before we create the gra
 add a new class called \textit{RenderSystem}. This class will do the following:
 
 \begin{itemize}
+	\item Instantiate swapchain
 	\item Create the pipeline layout
 	\item Populate the pipeline config info struct
 	\item Create the graphics pipeline
@@ -4065,16 +4087,16 @@ add a new class called \textit{RenderSystem}. This class will do the following:
 
 We will need two functions in the render system class. The first function will be the \textit{createPipelineLayout} function
 and the second function will be the \textit{createPipeline} function. The \textit{createPipelineLayout} function will take
-a descriptor set layout and create the pipeline layout. The \textit{createPipeline} function will take the render pass and
+a descriptor set layout and create the pipeline layout. The \textit{createPipeline} function will take swapchains render pass and
 create the graphics pipeline. We will also need a variable that stores the pipeline
-layout, the pipeline and the device. The render system's constructor takes the device reference, render pass and
-the descriptor set layout and first creates the pipeline layout and then the graphics pipeline.
+layout, the pipeline, the device and the swapchain. The render system's constructor takes the device reference, window reference and
+the descriptor set layout and first instantiates the swapchain. Then it creates the pipeline layout and then the graphics pipeline.
 
 \begin{lstlisting}[language=C++]
 //render_system.hpp
 class RenderSystem {
 public:
-  RenderSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout);
+  RenderSystem(Device &device, Window &window, VkDescriptorSetLayout descriptorSetLayout);
   ~RenderSystem();
 
   RenderSystem(const RenderSystem &) = delete;
@@ -4084,6 +4106,7 @@ private:
   Device &device;
   VkPipelineLayout pipelineLayout;
   std::unique_ptr<Pipeline> pipeline;
+  std::unique_ptr<SwapChain> swapChain;
 
   void createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
   void createPipeline(VkRenderPass renderPass);
@@ -4097,9 +4120,10 @@ not at the point that we can use descriptor sets, so we will set the descriptor 
 
 \begin{lstlisting}[language=C++]
 //render_system.cpp
-RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout) : device{device} {
+RenderSystem::RenderSystem(Device &device, Window &window, VkDescriptorSetLayout descriptorSetLayout) : device{device} {
+  swapChain = std::make_unique<SwapChain>(device, window.getExtent());
   createPipelineLayout(descriptorSetLayout);
-  createPipeline(renderPass);
+  createPipeline(swapChain->getRenderPass());
 }
 
 void RenderSystem::createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout) {
@@ -4111,13 +4135,13 @@ void RenderSystem::createPipelineLayout(VkDescriptorSetLayout descriptorSetLayou
       0; // static_cast<uint32_t>(layouts.size());
   pipelineLayoutInfo.pSetLayouts = nullptr; // layouts.data();
 
-  if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+  if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
     throw std::runtime_error("Failed to create pipeline layout!");
 }
 \end{lstlisting}
 
 The \textit{createPipeline} function will populate the pipeline config info struct with the default pipeline config and
-then instantiate our pipeline class with the vertex and fragment shader paths and the pipeline config info struct.
+then instantiate our pipeline class with the vertex and fragment shader Paths and the pipeline config info struct.
 Before we do that, we have to make sure that we have a valid pipeline layout.
 
 \begin{lstlisting}[language=C++]
@@ -4137,7 +4161,7 @@ Finally we need to destory the pipeline layout in the destructor of the render s
 
 \begin{lstlisting}[language=C++]
 RenderSystem::~RenderSystem() {
-  vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+  vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
 }
 \end{lstlisting}
 
@@ -4172,7 +4196,7 @@ void Pipeline::createGraphicsPipeline(const std::string &vertPath, const std::st
 
   pipelineInfo.pNext = nullptr;
 
-  if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
+  if (vkCreateGraphicsPipelines(device.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
     throw std::runtime_error("Failed to create graphics pipeline!");
 }
 \end{lstlisting}
@@ -4184,9 +4208,9 @@ And again we have to clean up our mess. Including the shader modules and the gra
 
 \begin{lstlisting}[language=C++]
 Pipeline::~Pipeline() {
-  vkDestroyShaderModule(device, vertShaderModule, nullptr);
-  vkDestroyShaderModule(device, fragShaderModule, nullptr);
-  vkDestroyPipeline(device, graphicsPipeline, nullptr);
+  vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
+  vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
+  vkDestroyPipeline(device.device(), graphicsPipeline, nullptr);
 }
 \end{lstlisting}
 
@@ -4206,7 +4230,612 @@ App::App() {
 }
 \end{lstlisting}
 
+\section{Command Buffers}
+
+We now have everything set up to start rendering. The first thing that we have to do is to create the command buffers.
+Command buffers are used to record commands that are sent to the GPU, where they are executed. Because memory allocation
+is expensive we already created the command pool in the device class. We will use the command pool to allocate the command
+buffers. We will create a new function in the render system class called \textit{createCommandBuffers} that will be called
+after the pipeline creation.
+
+\begin{lstlisting}[language=C++]
+//render_system.cpp
+RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout) : device{device} {
+  createPipelineLayout(descriptorSetLayout);
+  createPipeline(renderPass);
+  createCommandBuffers();
+}
+
+void RenderSystem::createCommandBuffers() {}
+\end{lstlisting}
+
+First of we will need a new vector that stores the command buffers. But how many command buffers do we need? We will begin with
+just one command buffer that will be used for rendering. Later we will create more command buffers and synchronize them with
+semaphores.
+
+Let's go ahead and create the command buffers. We will use the \textit{vkAllocateCommandBuffers} function to allocate the
+command buffers. The function takes the device, the \textit{VkCommandBufferAllocateInfo} struct with the command pool,
+the level aka "priority" of the command buffer and the count of command buffers that we want to allocate. We get
+the command pool from the device, so we need to add a getter function for it. The level will be set to primary. You can
+set it to secondary if you need to record commands that are less important than the primary commands.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::createCommandBuffers() {
+  commandBuffers.resize(1);
+
+  VkCommandBufferAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandPool = device.getCommandPool();
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+
+  if (vkAllocateCommandBuffers(device.device(), &allocInfo, commandBuffers.data()) != VK_SUCCESS)
+    throw std::runtime_error("Failed to allocate command buffers!");
+}
+\end{lstlisting}
+
+Now that we have the command buffer, we can start recording commands. We will create a new function called \textit{recordCommandBuffer}
+in the render pass class where all the commands will be recorded.It takes in the command buffer to record to.
+First off all we will have to begin the command buffer recording
+with the \textit{vkBeginCommandBuffer} function and the \textit{VkCommandBufferBeginInfo} struct. This struct contains the sType,
+some flags and a pointer to a \textit{VkCommandBufferInheritanceInfo} struct, which is used for secondary command buffers. We will
+not use secondary command buffers and flags for now, so we will only set the sType.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
+  VkCommandBufferBeginInfo beginInfo = {};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+  if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+    throw std::runtime_error("Failed to begin recording command buffer!");
+}
+\end{lstlisting}
+
+Next we will have to set up our structure for the pipeline. The structure is defined in our render pass. So let's go ahead and
+begin our render pass with the \textit{vkCmdBeginRenderPass} function. This function takes the command buffer, the render pass
+info struct and a parameter that defines how the render pass will be executed.
+
+For the render pass info struct we will need the render pass, the framebuffer, the render area and the clear values. The render area
+is the area where the shaders load and store operations are executed. The clear values are the values that are used for the clear
+operation, that takes place before the rendering. We will simply clear the color to black and for the depth stencil we will clear it
+to 1.0 and 0. For that we will need two \textit{VkClearValue} structs that contain the color value and the depth stencil value.
+To get the frambuffer and extent we will need to add 2 getter functions to the swapchain class.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
+  ...
+  VkRenderPassBeginInfo renderPassInfo = {};
+  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+  renderPassInfo.renderPass = swapChain->getRenderPass();
+  renderPassInfo.framebuffer = swapChain->getFrameBuffer(currentImageIndex);
+  renderPassInfo.renderArea.offset = {0, 0};
+  renderPassInfo.renderArea.extent = swapChain->extent();
+
+  std::array<VkClearValue, 2> clearValues{};
+  clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+  clearValues[1].depthStencil = {1.0f, 0};
+  rendPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+  renderPassInfo.pClearValues = clearValues.data();
+
+  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+\end{lstlisting}
+
+The \textit{VK\textunderscore SUBPASS\textunderscore CONTENTS\textunderscore INLINE} parameter specifies that the commands will be
+used in the primary command buffer and are not executed on a additional secondary command buffer. If you want to execute the render pass
+commands from secondary command buffers you have tot set the parameter to \\
+\textit{VK\textunderscore SUBPASS\textunderscore CONTENTS\textunderscore SECONDARY\textunderscore COMMAND\textunderscore BUFFERS}.
+
+The command buffer now knows what to expect from the pipeline, so we can now bind the graphics pipeline to the command buffer.
+We will simply use the \textit{vkCmdBindPipeline} function that takes the command buffer, what kind of
+operations are needed and the graphics pipeline. Because we only know have the graphics pipeline in our pipeline class, we
+will add a public bind function that executes the function. You can instead just create a getter function and call the
+\textit{vkCmdBindPipeline} function in the renderer.
+
+\begin{lstlisting}[language=C++]
+void Pipeline::bind(VkCommandBuffer commandBuffer){
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
+  ...
+  pipeline->bind(commandBuffer);
+}
+\end{lstlisting}
+
+Now it's time to create our dynamic viewport and scissor. To do so we will use the \textit{VkViewport} and the \textit{VkRect2D}
+struct and set them with the according cmd command to the command buffer. The cmd commands take the command buffer, the index
+of the first viewport or scissor, the count of viewports or scissors and a pointer to the viewports or scissors.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
+  ...
+  VkViewport viewport = {};
+  viewport.x = 0;
+  viewport.y = 0;
+  viewport.width = static_cast<float>(swapChain->extent().width);
+  viewport.height = static_cast<float>(swapChain->extent().height);
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+  vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+  VkRect2D scissor = {};
+  scissor.offset = {0, 0};
+  scissor.extent = swapChain->extent();
+  vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+}
+\end{lstlisting}
+
+With that we have finally set everything up and can issue the draw command, that instructs the GPU to draw the vertices.
+We will use the \textit{vkCmdDraw} function that takes the command buffer, the vertex count, the instance count, the first vertex offset
+and the first instance offset. We will draw 3 vertices with 1 instance and no offset.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
+  ...
+  vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+}
+\end{lstlisting}
+
+After drawing we have to end the render pass and the command buffer recording. We will use the \textit{vkCmdEndRenderPass} and
+\textit{vkEndCommandBuffer} functions.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
+  ...
+  vkCmdEndRenderPass(commandBuffer);
+
+  if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+    throw std::runtime_error("Failed to record command buffer!");
+}
+\end{lstlisting}
+
+Okay if you run the application, you will not see anything. This is because we have to get the image from the swapchain and
+present it on our surface.
+
+\section{Rendering and Presentation}
+
+We have everything set up to render one single frame, but in games we have to render multiple frames. To do so we have to
+add a loop that renders frames until the window is closed. We actually already have a loop that polls for events in our
+application class, so we will just add a \textit{drawFrame} function that will be called in the loop and takes the
+render system that will be used to render the frame.
+
+\begin{lstlisting}[language=C++]
+//app.hpp
+private:
+  ...
+  void drawFrame(RenderSystem &renderSystem);
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+void App::run() {
+  RenderSystem renderSystem{device, window, nullptr};
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+    drawFrame(renderSystem);
+  }
+}
+\end{lstlisting}
+
+This sounds easy, because we already have the command buffers that we can use to render the frame. But the problem is that
+when we submit the command buffers to the queue, the CPU will not wait for the GPU to finish the rendering process. This means that
+the CPU will submit the next frame before the GPU has finished the rendering of the current frame, which means that we have
+to synchronize the CPU and the GPU manually. We also have to synchronize the queue families. For example we want to submit the
+graphics queue before the presentation queue. To achieve queue family synchronization we have to use binary semaphores. There are
+also timeline semaphores, but we will use binary semaphores for now.
+
+\subsection{Semaphores}
+
+Semaphores can be used to make the GPU wait until the previous queue has finished. To do so semaphores can force the
+queue B to wait until the previous semaphore, that started queue A, emits a signal. Once queue B started the previous semaphore
+is set back to unsignaled.
+
+\subsection{Fences}
+
+On the other hand, if we need the CPU to wait for the GPU to finish, we can use fences. Fences block the CPU until the GPU
+signals that the fence can be opened.
+
+\subsection{Synchronization Objects}
+
+Let's start with creating the semaphores and fences. We will add a new function to the swapchain class that creates the sync objects.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+private:
+void createSyncObjects();
+VkSemaphore imageAvailableSemaphore;
+VkSemaphore renderFinishedSemaphore;
+VkFence inFlightFence;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+//swapchain.cpp
+SwapChain::SwapChain(Device &device, VkExtent2D windowExtent) : device{device} {
+  ...
+  createSyncObjects();
+}
+
+void SwapChain::createSyncObjects() {
+  VkSemaphoreCreateInfo semaphoreInfo = {};
+  semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+  VkFenceCreateInfo fenceInfo = {};
+  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+  if (vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+      vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
+      vkCreateFence(device.device(), &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create synchronization objects!");
+}
+\end{lstlisting}
+
+The \textit{VK\textunderscore FENCE\textunderscore CREATE\textunderscore SIGNALED\textunderscore BIT} flag is used to create the fence
+in the signaled state. The first semaphore is used to signal that the image has been acquired from the \ac{GPU} and the second semaphore
+is used to signal that the rendering has finished. The fence is used to signal that the rendering has finished and the CPU can
+start the next frame.
+
+Just like almost everything, we have to manually clean up the synchronization objects.
+
+\begin{lstlisting}[language=C++]
+SwapChain::~SwapChain() {
+...
+vkDestroySemaphore(device.device(), imageAvailableSemaphore, nullptr);
+vkDestroySemaphore(device.device(), renderFinishedSemaphore, nullptr);
+vkDestroyFence(device.device(), inFlightFence, nullptr);
+}
+\end{lstlisting}
+
+\subsection{Acquiring an image}
+
+Now that we have the synchronization objects we can start with the \textit{drawFrame} function. The first thing that we have to do
+is acquire the next image's index that we will render to. Before we can do that we need to wait for our fence to be opened.
+That means we have to wait for the GPU to finish the rendering of the previous frame.
+We will first call the \textit{vkWaitForFences} function that takes the device, the count of fences,
+the fences, a boolean that defines if the function should wait indefinitely and a timeout value.
+
+Once the fence is opened we have to reset it with the \textit{vkResetFences} function.
+
+After the fence is reset we can acquire the next available image's index. We will use the \textit{vkAcquireNextImageKHR} function that
+takes the device, the swapchain, a timeout value, the semaphore that signals that the image is available and optionally a fence that
+signals that the image is available. We will not use the fence for now. Finally it takes a pointer to an unsigned int that will store
+the index of the next available image.
+
+For this function we will add a \textit{acquireNextImage} function to the swapchain class that takes a pointer to the index of the image
+and returns the result of the \textit{vkAcquireNextImageKHR} function.
+
+\begin{lstlisting}[language=C++]
+VkResult SwapChain::acquireNextImage(uint32_t *imageIndex) {
+  vkWaitForFences(device.device(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+
+  vkResetFences(device.device(), 1, &inFlightFence);
+
+  return vkAcquireNextImageKHR(device.device(), swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, imageIndex);
+}
+\end{lstlisting}
+
+The \textit{vkAcquireNextImageKHR} function does not wait for the image to be available, but instead sets the semaphore to the signaled state
+once the image is available. Therefore the function only works when the semaphore is in the unsignaled state.
+
+Now that we know which image we will render to, we can go ahead and add a \textit{beginFrame} function to the render system class that
+returns the command buffer that we will record to. We will also extract the command buffer begin command to the \textit{beginFrame}
+function. Because we need a index that stores the current image index, we will add a member variable
+and a getter function that returns the command buffer from the current frame index which will be 0 for now.
+
+\begin{lstlisting}[language=C++]
+//render_system.hpp
+public:
+  ...
+  VkCommandBuffer beginFrame();
+  VkCommandBuffer getCurrentCommandBuffer() const { 
+    return commandBuffers[currentFrameIndex]; 
+  }
+private:
+  ...
+  uint32_t currentImageIndex;
+  int currentFrameIndex = 0;
+\end{lstlisting
+
+\begin{lstlisting}[language=C++]
+//render_system.cpp
+VkCommandBuffer RenderSystem::beginFrame() {
+  auto result = swapChain->acquireNextImage(&currentImageIndex);
+
+  if (result != VK_SUCCESS)
+    throw std::runtime_error("Failed to acquire swap chain image!");
+
+  VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
+  VkCommandBufferBeginInfo beginInfo = {};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+  if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+    throw std::runtime_error("Failed to begin recording command buffer!");
+
+  return commandBuffer;
+}
+\end{lstlisting}
+
+Let's go ahead and call the \textit{beginFrame} function in the \textit{drawFrame} function and then record the command buffer.
+
+\begin{lstlisting}[language=C++]
+void App::drawFrame(RenderSystem &renderSystem) {
+  if(auto commandBuffer = renderSystem.beginFrame()){
+    renderSystem.recordCommandBuffer(commandBuffer); 
+  }
+}
+\end{lstlisting}
+
+\subsection{Submitting the command buffer}
+
+Now that we know which image we will render to, we can submit the command buffer to the queue. We will use the \textit{vkQueueSubmit}
+function that takes the queue, the count of command buffers, the submit info and the fence that signals that the command buffer is done executing.
+
+The submit info struct contains the count of wait semaphores, the wait semaphores, the wait stages, the stages that we want to wait in,
+the count of command buffers, the command buffers, the count of signal semaphores and the signal semaphores. Wait semaphores are used to wait for
+a semaphore to be signaled before a certain stage of the pipeline is proceeded. For example we will have to wait until the image is available
+before we should start overwriting the image. That's why we will use the
+\textit{VK\textunderscore PIPELINE\textunderscore STAGE\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore OUTPUT\textunderscore BIT}
+stage and the image available semaphore. The signal semaphores are used to signal that the rendering has finished and the image is ready to be
+acquired.
+
+For submitting the command buffer we will add a \textit{submitCommandBuffer} function to the swapchain class that takes the command buffer and returns
+if the image is ready to be acquired.
+
+\begin{lstlisting}[language=C++]
+VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+  VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+  VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = waitSemaphores;
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = commandBuffer;
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = signalSemaphores;
+
+  if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+    throw std::runtime_error("Failed to submit draw command buffer!");
+}
+\end{lstlisting}
+
+You can see that we access the graphics queue from the device class. That means we have to add a getter function for the graphics queue
+and will also add a getter function for the present queue.
+
+\begin{lstlisting}[language=C++]
+//device.hpp
+public:
+  VkQueue graphicsQueue() { return graphicsQueue_; }
+  VkQueue presentQueue() { return presentQueue_; }
+\end{lstlisting}
+
+The queue is submitted to the graphics queue, but we will have to submit the rendered image to the present queue. The present queue
+is used to render the image to the surface. After the graphics queue is done the data is passed to the present queue. The present queue
+will then giving the image to the swapchain.
+
+To present the image we will use the \textit{vkQueuePresentKHR} function that takes the present queue and a \textit{VkPresentInfoKHR} struct.
+This struct contains the count of wait semaphores, the wait semaphores, that specify when the image is done rendering, the count of swapchains,
+the swapchains and the image index that we will present.
+
+\begin{lstlisting}[language=C++]
+VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
+  ...
+  VkPresentInfoKHR presentInfo = {};
+  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+  VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores = signalSemaphores;
+
+  VkSwapchainKHR swapChains[] = {swapChain};
+  presentInfo.swapchainCount = 1;
+  presentInfo.pSwapchains = swapChains;
+
+  presentInfo.pImageIndices = imageIndex;
+
+  return vkQueuePresentKHR(device.presentQueue(), &presentInfo);
+}
+\end{lstlisting}
+
+Now that we have the \textit{submitCommandBuffer} function we can create a new function in the render system class that will end the command buffer
+recording and submit the command buffer to the queue. We will call this function \textit{endFrame}.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::endFrame() {
+	VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
+  if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+    throw std::runtime_error("Failed to record command buffer!");
+
+auto result = swapChain->submitCommandBuffer(&commandBuffer, &currentImageIndex);
+
+if (result != VK_SUCCESS)
+  throw std::runtime_error("Failed to present swap chain image!");
+}
+\end{lstlisting}
+
+Finally we add the \textit{endFrame} function to the \textit{drawFrame} function.
+
+\begin{lstlisting}[language=C++]
+void App::drawFrame(RenderSystem &renderSystem) {
+if(auto commandBuffer = renderSystem.beginFrame()){
+  renderSystem.recordCommandBuffer(commandBuffer); 
+  renderSystem.endFrame();
+}
+}
+\end{lstlisting}
+
+Now that we have everything set up we can run the application and see the triangle that we have rendered.
+But there is one flaw in our application. When we terminate the application the render pass, pipeline, images, semaphores, fences and command buffers
+are still in use. We can't destroy these objects while they have not completed their execution. To avoid this we will have to wait for the
+GPU to finish the rendering of the current frame. Luckily Vulkan provides a function that will force the \ac{CPU} to wait until the \ac{GPU}
+is idleing called \textit{vkDeviceWaitIdle}. We will add this function after our loop in the application class, that terminates when the window
+is closed. That will make sure that once we close our application the \ac{CPU} will wait until no more rendering is performed. After that we can
+safely destroy our objects in the destructors of our classes.
+
+\begin{lstlisting}[language=C++]
+void App::run() {
+  RenderSystem renderSystem{device, window, nullptr};
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+    drawFrame(renderSystem);
+  }
+
+  vkDeviceWaitIdle(device.device());
+}
+\end{lstlisting}
+
+\subsection{Frames in Flight}
+
+Currently we are only rendering one frame at a time. This is not optimal because the CPU has to wait for the GPU to finish the rendering
+of the current frame. To avoid this we can allow our application to render multiple frames at a time, without waiting for the GPU to finish
+the rendering of the current frame. Each frame that can be rendered to is called a frame in flight. We will use 2 frames in flight for now
+and declare the maximum frames in flight in the swapchain class as a static constant.
+
+This is also why we previously used the current frame index to get the current command buffer and not the current image index. The current
+frame index is used to get the current command buffer that we will submit. The current image index is used to get the current image that
+we will render to.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+public:
+static const int MAX_FRAMES_IN_FLIGHT = 2;
+\end{lstlisting}
+
+Having multiple rendering proccesses at once will need us to have multiple command buffers, semaphores and fences.
+One for each frame in flight. Let's start of by redefining our fences and semaphores as a vector of fences and semaphores.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+private:
+...
+std::vector<VkSemaphore> imageAvailableSemaphores;
+std::vector<VkSemaphore> renderFinishedSemaphores;
+std::vector<VkFence> inFlightFences;
+\end{lstlisting}
+
+Next we will need to actually create the amount of command buffers, semaphores and fences that we need. For the
+command buffers we will need to change the \textit{createCommandBuffers} functions implementation, by resizing the command buffers
+vector to the amount of frames in flight.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::createCommandBuffers() {
+commandBuffers.resize(SwapChain::MAX_FRAMES_IN_FLIGHT);
+...
+}
+\end{lstlisting}
+
+Now we do the same for the semaphores and fences in the swapchains \textit{createSyncObjects} function.
+
+\begin{lstlisting}[language=C++]
+void SwapChain::createSyncObjects() {
+imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+...
+}
+\end{lstlisting}
+
+We will additionally need to add a for loop to create the semaphores and fences.
+
+\begin{lstlisting}[language=C++]
+void SwapChain::createSyncObjects() {
+...
+for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+  VkSemaphoreCreateInfo semaphoreInfo = {};
+  semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+  VkFenceCreateInfo fenceInfo = {};
+  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+  if (vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+      vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+      vkCreateFence(device.device(), &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create synchronization objects!");
+}
+}
+\end{lstlisting}
+
+Just like we've created them we should also destroy them.
+
+\begin{lstlisting}[language=C++]
+SwapChain::~SwapChain() {
+...
+for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+  vkDestroySemaphore(device.device(), imageAvailableSemaphores[i], nullptr);
+  vkDestroySemaphore(device.device(), renderFinishedSemaphores[i], nullptr);
+  vkDestroyFence(device.device(), inFlightFences[i], nullptr);
+}
+}
+\end{lstlisting}
+
+Now that we have the semaphores and fences for each frame in flight we need to make sure that when we acquire the next image we also
+wait for the right fence to be opened. For that we will add another \textit{size\textunderscore t} member variable that stores the
+current frame index and is incremented after the frame has been submitted.
+
+\begin{lstlisting}[language=C++]
+//swapchain.hpp
+private:
+size_t currentFrame = 0;
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+VkResult SwapChain::acquireNextImage(uint32_t *imageIndex) {
+vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
+
+auto result = vkAcquireNextImageKHR(device.device(), swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, imageIndex);
+
+return result;
+}
+\end{lstlisting}
+
+We also have to make sure that we use the right objects when submitting the command buffer.
+
+\begin{lstlisting}[language=C++]
+VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+  VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = waitSemaphores;
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = commandBuffer;
+
+  VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = signalSemaphores;
+
+  if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
+    throw std::runtime_error("Failed to submit draw command buffer!");
+
+  ...
+}
+\end{lstlisting}
+
+Because we are already keeping track of the current frame index and already use the right objects for the right frame, we only need to
+move to the next frame after we have submitted the command buffer.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::endFrame() {
+  currentFrameIndex = (currentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
+}
+\end{lstlisting}
 
 \listoffigures
+
+\printbibliography[
+	heading=bibintoc, title={Bibliography}
+]
 
 \end{document}

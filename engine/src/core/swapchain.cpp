@@ -3,8 +3,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
-#include <ostream>
 #include <stdexcept>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -18,6 +16,7 @@ SwapChain::SwapChain(Device &device, VkExtent2D extent)
   createRenderPass();
   createDepthResources();
   createFramebuffers();
+  createSyncObjects();
 }
 
 SwapChain::~SwapChain() {
@@ -26,7 +25,6 @@ SwapChain::~SwapChain() {
   }
 
   vkDestroySwapchainKHR(device.device(), swapChain, nullptr);
-  vkDestroyRenderPass(device.device(), renderPass, nullptr);
 
   for (size_t i = 0; i < depthImages.size(); i++) {
     vkDestroyImageView(device.device(), depthImageViews[i], nullptr);
@@ -36,6 +34,14 @@ SwapChain::~SwapChain() {
 
   for (auto framebuffer : framebuffers) {
     vkDestroyFramebuffer(device.device(), framebuffer, nullptr);
+  }
+
+  vkDestroyRenderPass(device.device(), renderPass, nullptr);
+
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    vkDestroySemaphore(device.device(), imageAvailableSemaphores[i], nullptr);
+    vkDestroySemaphore(device.device(), renderFinishedSemaphores[i], nullptr);
+    vkDestroyFence(device.device(), inFlightFences[i], nullptr);
   }
 }
 
@@ -173,13 +179,9 @@ void SwapChain::createRenderPass() {
   renderPassInfo.dependencyCount = 1;
   renderPassInfo.pDependencies = &dependency;
 
-  std::cout << "render pass before creation: " << renderPass << std::endl;
-
   if (vkCreateRenderPass(device.device(), &renderPassInfo, nullptr,
                          &renderPass) != VK_SUCCESS)
     throw std::runtime_error("Failed to create render pass!");
-
-  std::cout << "Render pass created! " << renderPass << std::endl;
 }
 
 void SwapChain::createDepthResources() {
@@ -240,7 +242,30 @@ void SwapChain::createFramebuffers() {
 
     if (vkCreateFramebuffer(device.device(), &framebufferInfo, nullptr,
                             &framebuffers[i]) != VK_SUCCESS)
-      throw std::runtime_error("Failed to create Framebuffers!");
+      throw std::runtime_error("Failed to create framebuffers!");
+  }
+}
+
+void SwapChain::createSyncObjects() {
+  imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+  inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+  VkSemaphoreCreateInfo semaphoreInfo = {};
+  semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+  VkFenceCreateInfo fenceInfo = {};
+  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+  for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    if (vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
+                          &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+        vkCreateSemaphore(device.device(), &semaphoreInfo, nullptr,
+                          &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+        vkCreateFence(device.device(), &fenceInfo, nullptr,
+                      &inFlightFences[i]) != VK_SUCCESS)
+      throw std::runtime_error("Failed to create synchronization objects!");
   }
 }
 
@@ -287,6 +312,52 @@ VkFormat SwapChain::findDepthFormat() {
       {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
        VK_FORMAT_D24_UNORM_S8_UINT},
       VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
+VkResult SwapChain::acquireNextImage(uint32_t *imageIndex) {
+  vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE,
+                  UINT64_MAX);
+
+  vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
+
+  return vkAcquireNextImageKHR(device.device(), swapChain, UINT64_MAX,
+                               imageAvailableSemaphores[currentFrame],
+                               VK_NULL_HANDLE, imageIndex);
+}
+
+VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer,
+                                        uint32_t *imageIndex) {
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+  VkPipelineStageFlags waitStages[] = {
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = waitSemaphores;
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = commandBuffer;
+
+  VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = signalSemaphores;
+
+  if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo,
+                    inFlightFences[currentFrame]) != VK_SUCCESS)
+    throw std::runtime_error("Failed to submit draw command buffer!");
+
+  VkPresentInfoKHR presentInfo = {};
+  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores = signalSemaphores;
+
+  VkSwapchainKHR swapChains[] = {swapChain};
+  presentInfo.swapchainCount = 1;
+  presentInfo.pSwapchains = swapChains;
+
+  presentInfo.pImageIndices = imageIndex;
+
+  return vkQueuePresentKHR(device.presentQueue(), &presentInfo);
 }
 
 } // namespace engine

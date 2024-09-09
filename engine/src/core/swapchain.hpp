@@ -7,6 +7,8 @@
 namespace engine {
 class SwapChain {
 public:
+  static const int MAX_FRAMES_IN_FLIGHT = 2;
+
   SwapChain(Device &device, VkExtent2D extent);
   ~SwapChain();
 
@@ -14,6 +16,12 @@ public:
   SwapChain &operator=(const SwapChain &) = delete;
 
   VkRenderPass getRenderPass() { return renderPass; }
+  VkFramebuffer getFrameBuffer(int index) { return framebuffers[index]; }
+  VkExtent2D extent() { return swapChainExtent; }
+
+  VkResult acquireNextImage(uint32_t *imageIndex);
+  VkResult submitCommandBuffer(const VkCommandBuffer *commandBuffer,
+                               uint32_t *imageIndex);
 
 private:
   Device &device;
@@ -34,11 +42,18 @@ private:
 
   std::vector<VkFramebuffer> framebuffers;
 
+  std::vector<VkSemaphore> imageAvailableSemaphores;
+  std::vector<VkSemaphore> renderFinishedSemaphores;
+  std::vector<VkFence> inFlightFences;
+
+  size_t currentFrame = 0;
+
   void createSwapChain();
   void createImageViews();
   void createRenderPass();
   void createDepthResources();
   void createFramebuffers();
+  void createSyncObjects();
 
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(
       const std::vector<VkSurfaceFormatKHR> &availableFormats);
