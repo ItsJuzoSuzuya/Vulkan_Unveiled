@@ -4832,6 +4832,185 @@ void RenderSystem::endFrame() {
 }
 \end{lstlisting}
 
+\section{Resizable Window}
+
+Currently our application does not support resizing the window on runtime and will crash if we try to resize the window. This
+happens, because we are rendering to a swapchain image that has a fixed size. By resizing the window the swapchain images and all
+dependent objects have to be recreated. If you ask yourself, why the size of the swapchain images are fixed, it is because
+Vulkan optimizes memory usage on the GPU for and because allocation of memory on the GPU is expensive. To support resizing the window
+we will have to recreate the swapchain and all dependent objects.
+
+We will start by adding a \textit{recreateSwapChain} function to the render system class. This function will be called when the window is resized.
+Before the recreation of the swapchain we will have to wait for the GPU to finish the rendering of the current frame, by calling the
+\textit{vkDeviceWaitIdle} function. After that we will move the current swapchain to a temporary \textit{oldSwapChain} variable and create a new swapchain.
+The old swapchain will have to be a shared pointer. This is because our swapchain is a unique pointer and copying something that is unique is not possible.
+That's why we will have to change ownership of the old swapchain to a shared pointer and simoultaneously set the swapchain to a nullptr.
+We achive this by calling the \textit{std::move} function. We need the old swapchain because it allows Vulkan to reuse the old swapchains resources.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recreateSwapChain() {
+  auto extent = window.extent();
+  vkDeviceWaitIdle(device.device());
+
+  std::shared_ptr<SwapChain> oldSwapChain = std::move(swapChain);
+  swapChain = std::make_shared<SwapChain>(device, extent, oldSwapChain);
+}
+\end{lstlisting}
+
+The swapchain takes the windows extent. We will need to add a member variable to the render system class that stores the window.
+
+\begin{lstlisting}[language=C++]
+RenderSystem::RenderSystem(Device &device, Window &window, VkDescriptorSetLayout descriptorSetLayout) : device{device}, window{window} {
+  ...
+}
+\end{lstlisting}
+
+You can see that we are passing the old swapchain to the new swapchain. We will have to add a constructor to the swapchain class that additionally takes the old swapchain
+and a new member variable that stores the old swapchain and is set in the constructor. This constructor will create all resources and finally set the old swapchain to a nullptr,
+cleaning up the resources.
+
+\begin{lstlisting}[language=C++]
+SwapChain::SwapChain(Device &device, VkExtent2D windowExtent, std::shared_ptr<SwapChain> oldSwapChain) : device{device}, windowExtent{windowExtent}, oldSwapChain{oldSwapChain} {
+  createSwapChain();
+  createImageViews();
+  createRenderPass();
+  createDepthResources();
+  createFramebuffers();
+  createSyncObjects();
+
+  oldSwapChain = nullptr;
+}
+\end{lstlisting}
+
+Now we have to reference the old swapchain in the \textit{VkSwapchainCreateInfoKHR} struct. Because we share the object of the swapchain we can access it's
+private swapchain member variable. Let's set the old swapchain to the \textit{oldSwapChain->swapChain} member variable if the old swapchain is not null.
+
+\begin{lstlisting}[language=C++]
+void SwapChain::createSwapChain() {
+  ...
+  createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
+  ...
+}
+\end{lstlisting}
+
+Next we will have to call the \textit{recreateSwapChain} function when the window is resized. When the window is resized the \textit{vkAcquireNextImageKHR}
+will return the \textit{VK\textunderscore ERROR\textunderscore OUT\textunderscore OF\textunderscore DATE\textunderscore KHR} error code. This error code
+indicates that the swapchain is out of date and has to be recreated. Let's call the \textit{recreateSwapChain} function when this error code is returned
+in the \textit{beginFrame} function and then return a nullptr.
+
+\begin{lstlisting}[language=C++]
+VkCommandBuffer RenderSystem::beginFrame() {
+  auto result = swapChain->acquireNextImage(&currentImageIndex);
+
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    recreateSwapChain();
+    return nullptr;
+  } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+    throw std::runtime_error("Failed to acquire next swap chain image!");
+
+  ...
+}
+\end{lstlisting}
+
+Great! Now we have to change the window size when the window is resized. After creating the window we will add a user pointer to the window that
+allows us to retrieve the window and change its member variables. To do so, we will use the \textit{glfwSetWindowUserPointer} function that takes the window
+and the user pointer. We will set the window to the current window.
+
+We will also add a callback function that will be called when the window is resized.
+The function will be the \textit{framebufferResizeCallback} function that first gets the window via the \textit{glfwGetWindowUserPointer} function and then
+sets the windows height and width to the new height and width.
+It will also set a boolean that indicates that the window is resized to true called \textit{framebufferResized}.
+To set the callback we will use the \textit{glfwSetFramebufferSizeCallback}
+that takes the window and the callback function. It calls the callback function with the window and the new width and height. Therefore the callback function
+needs to take the window and the new width and height as parameters.
+
+Let's also create the window with the \textit{GLFW\textunderscore RESIZABLE} flag set to \textit{GLFW\textunderscore TRUE}.
+
+\begin{lstlisting}[language=C++]
+Window::Window(int width, int height, std::string &name) : width{width}, height{height}, name{name} {
+  ...
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+  ...
+  glfwSetWindowUserPointer(window, this);
+  glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+}
+
+void Window::framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+  auto app = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
+  app->framebufferResized = true;
+  app->width = width;
+  app->height = height;
+}
+\end{lstlisting}
+
+The \textit{framebufferResizeCallback} function has to be static, because glfw can't handle references to member functions. That's why we have to use the
+\textit{reinterpret\textunderscore cast} function to cast the user pointer to the Window class. Don't forget to set the \textit{framebufferResized} boolean to
+false at the instantiation of the window and make the width and height member variables non constant.
+
+We also have to check if the window was resized after the \textit{submitCommandBuffer} function. If it is we reset the \textit{framebufferResized} boolean
+and call the \textit{recreateSwapChain} function. Let's add a \textit{wasWindowResized} function to the window class that returns the \textit{framebuffer
+	Resized} boolean and a \textit{resetWindowResizedFlag} function that sets the \textit{framebufferResized} boolean to false.
+
+\begin{lstlisting}[language=C++]
+//window.hpp
+public:
+  bool Window::wasWindowResized() {
+    return framebufferResized;
+  }
+
+  void Window::resetWindowResizedFlag() {
+    framebufferResized = false;
+  }
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::endFrame() {
+  ...
+  auto result = swapChain->submitCommandBuffer(&commandBuffer, &currentImageIndex);
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.wasWindowResized()) {
+    window.resetWindowResizedFlag();
+    recreateSwapChain();
+  }else if (result != VK_SUCCESS)
+    throw std::runtime_error("Failed to present swap chain image!");
+
+  currentFrameIndex = (currentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
+}
+\end{lstlisting}
+
+The reason we additionally rely on glfw is because not every graphics driver will return the \textit{VK\textunderscore ERROR\textunderscore OUT\textunderscore OF\textunderscore DATE\textunderscore KHR}
+error code when the window is resized.
+
+One last thing we have to ensure, is that our fence will only be reset when the window is not begin resized. Currently we reset the fence before we acquire the next image and before we check for the window resize.
+This might cause the fence to halt forever. Therfore we have to move it after the window resize check. I'll set it before we submit the graphics queue.
+
+\begin{lstlisting}[language=C++]
+VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
+  ...
+  vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
+  if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
+    throw std::runtime_error("Failed to submit draw command buffer!");
+  ...
+}
+\end{lstlisting}
+
+Finally there is one special case that we have to handle. When the window is minimized the width and height will be set to 0. This will cause the swapchain to be recreated with a width and height of 0.
+To avoid this we will check if the width and height are greater than 0 before we recreate the swapchain.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recreateSwapChain() {
+  auto extent = window.getExtent();
+  while (extent.width == 0 || extent.height == 0){
+    extent = window.getExtent();
+    glfwWaitEvents();
+  }
+
+  vkDeviceWaitIdle(device.device());
+
+  std::shared_ptr<SwapChain> oldSwapChain = std::move(swapChain);
+  swapChain = std::make_shared<SwapChain>(device, extent, oldSwapChain);
+}
+\end{lstlisting}
+
 \listoffigures
 
 \printbibliography[

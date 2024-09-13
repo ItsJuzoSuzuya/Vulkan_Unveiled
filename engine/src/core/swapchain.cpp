@@ -3,6 +3,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -17,6 +19,19 @@ SwapChain::SwapChain(Device &device, VkExtent2D extent)
   createDepthResources();
   createFramebuffers();
   createSyncObjects();
+}
+
+SwapChain::SwapChain(Device &device, VkExtent2D extent,
+                     std::shared_ptr<SwapChain> oldSwapChain)
+    : device{device}, windowExtent{extent}, oldSwapChain{oldSwapChain} {
+  createSwapChain();
+  createImageViews();
+  createRenderPass();
+  createDepthResources();
+  createFramebuffers();
+  createSyncObjects();
+
+  oldSwapChain = nullptr;
 }
 
 SwapChain::~SwapChain() {
@@ -83,7 +98,8 @@ void SwapChain::createSwapChain() {
   createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   createInfo.presentMode = presentMode;
   createInfo.clipped = VK_TRUE;
-  createInfo.oldSwapchain = VK_NULL_HANDLE;
+  createInfo.oldSwapchain =
+      oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
   createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
 
   if (vkCreateSwapchainKHR(device.device(), &createInfo, nullptr, &swapChain) !=
@@ -318,8 +334,6 @@ VkResult SwapChain::acquireNextImage(uint32_t *imageIndex) {
   vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE,
                   UINT64_MAX);
 
-  vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
-
   return vkAcquireNextImageKHR(device.device(), swapChain, UINT64_MAX,
                                imageAvailableSemaphores[currentFrame],
                                VK_NULL_HANDLE, imageIndex);
@@ -342,6 +356,7 @@ VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer,
   submitInfo.signalSemaphoreCount = 1;
   submitInfo.pSignalSemaphores = signalSemaphores;
 
+  vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
   if (vkQueueSubmit(device.graphicsQueue(), 1, &submitInfo,
                     inFlightFences[currentFrame]) != VK_SUCCESS)
     throw std::runtime_error("Failed to submit draw command buffer!");

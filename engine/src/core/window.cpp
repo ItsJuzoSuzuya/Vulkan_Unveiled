@@ -20,6 +20,15 @@ void Window::initWindow() {
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
   window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+  glfwSetWindowUserPointer(window, this);
+  glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
+void Window::framebufferResizeCallback(GLFWwindow *window, int width,
+                                       int height) {
+  auto app = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
+  app->framebufferResized = true;
+  app->width = width;
+  app->height = height;
+}
 } // namespace engine

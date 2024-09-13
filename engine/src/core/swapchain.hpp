@@ -1,6 +1,7 @@
 #ifndef SWAPCHAIN_HPP
 #define SWAPCHAIN_HPP
 #include "device.hpp"
+#include <memory>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -10,6 +11,8 @@ public:
   static const int MAX_FRAMES_IN_FLIGHT = 2;
 
   SwapChain(Device &device, VkExtent2D extent);
+  SwapChain(Device &device, VkExtent2D extent,
+            std::shared_ptr<SwapChain> oldSwapChain);
   ~SwapChain();
 
   SwapChain(const SwapChain &) = delete;
@@ -33,6 +36,7 @@ private:
   VkExtent2D swapChainExtent;
   std::vector<VkImage> swapChainImages;
   std::vector<VkImageView> swapChainImageViews;
+  std::shared_ptr<SwapChain> oldSwapChain;
 
   VkRenderPass renderPass;
 

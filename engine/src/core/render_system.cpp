@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -11,7 +12,7 @@ namespace engine {
 
 RenderSystem::RenderSystem(Device &device, Window &window,
                            VkDescriptorSetLayout descriptorSetLayout)
-    : device{device} {
+    : device{device}, window{window} {
   swapChain = std::make_unique<SwapChain>(device, window.getExtent());
   createPipelineLayout(descriptorSetLayout);
   createPipeline(swapChain->getRenderPass());
@@ -20,6 +21,19 @@ RenderSystem::RenderSystem(Device &device, Window &window,
 
 RenderSystem::~RenderSystem() {
   vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
+}
+
+void RenderSystem::recreateSwapChain() {
+  auto extent = window.getExtent();
+  while (extent.width == 0 || extent.height == 0) {
+    extent = window.getExtent();
+    glfwWaitEvents();
+  }
+
+  vkDeviceWaitIdle(device.device());
+
+  std::shared_ptr<SwapChain> oldSwapChain = std::move(swapChain);
+  swapChain = std::make_unique<SwapChain>(device, extent, oldSwapChain);
 }
 
 void RenderSystem::createPipelineLayout(
@@ -68,7 +82,10 @@ void RenderSystem::createCommandBuffers() {
 VkCommandBuffer RenderSystem::beginFrame() {
   auto result = swapChain->acquireNextImage(&currentImageIndex);
 
-  if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    recreateSwapChain();
+    return nullptr;
+  } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     throw std::runtime_error("Failed to acquire next swap chain image!");
 
   VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
@@ -127,7 +144,11 @@ void RenderSystem::endFrame() {
   auto result =
       swapChain->submitCommandBuffer(&commandBuffer, &currentImageIndex);
 
-  if (result != VK_SUCCESS)
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
+      window.wasWindowResized()) {
+    window.resetWindowResizedFlag();
+    recreateSwapChain();
+  } else if (result != VK_SUCCESS)
     throw std::runtime_error("Failed to present swap chain image!");
 
   currentFrameIndex = (currentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;

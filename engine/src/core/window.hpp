@@ -29,14 +29,21 @@ public:
       throw std::runtime_error("Surface Creation was unsuccessful");
   }
 
+  bool wasWindowResized() { return framebufferResized; }
+  void resetWindowResizedFlag() { framebufferResized = false; }
+
 private:
   void initWindow();
 
-  const int width;
-  const int height;
+  int width;
+  int height;
+  bool framebufferResized = false;
 
   std::string name;
   GLFWwindow *window;
+
+  static void framebufferResizeCallback(GLFWwindow *window, int width,
+                                        int height);
 };
 } // namespace engine
 #endif

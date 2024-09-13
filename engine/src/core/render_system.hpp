@@ -23,6 +23,7 @@ public:
 
 private:
   Device &device;
+  Window &window;
   VkPipelineLayout pipelineLayout;
   std::unique_ptr<Pipeline> pipeline;
   std::unique_ptr<SwapChain> swapChain;
@@ -31,6 +32,8 @@ private:
   void createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
   void createPipeline(VkRenderPass renderPass);
   void createCommandBuffers();
+
+  void recreateSwapChain();
 
   uint32_t currentImageIndex;
   int currentFrameIndex = 0;
