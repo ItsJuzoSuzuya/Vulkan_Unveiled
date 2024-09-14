@@ -4980,7 +4980,7 @@ void RenderSystem::endFrame() {
 The reason we additionally rely on glfw is because not every graphics driver will return the \textit{VK\textunderscore ERROR\textunderscore OUT\textunderscore OF\textunderscore DATE\textunderscore KHR}
 error code when the window is resized.
 
-One last thing we have to ensure, is that our fence will only be reset when the window is not begin resized. Currently we reset the fence before we acquire the next image and before we check for the window resize.
+Next we have to ensure, is that our fence will only be reset when the window is not begin resized. Currently we reset the fence before we acquire the next image and before we check for the window resize.
 This might cause the fence to halt forever. Therfore we have to move it after the window resize check. I'll set it before we submit the graphics queue.
 
 \begin{lstlisting}[language=C++]
@@ -4993,7 +4993,7 @@ VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, ui
 }
 \end{lstlisting}
 
-Finally there is one special case that we have to handle. When the window is minimized the width and height will be set to 0. This will cause the swapchain to be recreated with a width and height of 0.
+Finally there are two case that we have to handle. When the window is minimized the width and height will be set to 0. This will cause the swapchain to be recreated with a width and height of 0.
 To avoid this we will check if the width and height are greater than 0 before we recreate the swapchain.
 
 \begin{lstlisting}[language=C++]
@@ -5008,6 +5008,25 @@ void RenderSystem::recreateSwapChain() {
 
   std::shared_ptr<SwapChain> oldSwapChain = std::move(swapChain);
   swapChain = std::make_shared<SwapChain>(device, extent, oldSwapChain);
+}
+\end{lstlisting}
+
+The second case is that when the swapchains formats have changed we will have to throw an error. This can happen when the window is resized and the swapchain is recreated.
+So let's check if the old swapchains format is equal to the new swapchains format and throw an error if they are not equal. For that we will need a helper function that returns the
+compare result of the formats.
+
+\begin{lstlisting}[language=C++]
+void RenderSystem::recreateSwapChain() {
+  ...
+  if (!oldSwapChain->compareSwapFormats(*oldSwapChain.get()))
+    throw std::runtime_error("Swap chain image(or depth) format has changed!");
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=C++]
+bool SwapChain::compareSwapFormats(const SwapChain &oldSwapChain) {
+  return oldSwapChain.swapChainImageFormat == swapChainImageFormat && 
+         oldSwapChain.swapChainDepthFormat == swapChainDepthFormat;
 }
 \end{lstlisting}
 

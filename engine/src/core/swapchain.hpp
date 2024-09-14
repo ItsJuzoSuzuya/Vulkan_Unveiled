@@ -26,6 +26,11 @@ public:
   VkResult submitCommandBuffer(const VkCommandBuffer *commandBuffer,
                                uint32_t *imageIndex);
 
+  bool compareSwapFormats(const SwapChain &swapChain) {
+    return swapChain.swapChainImageFormat == swapChainImageFormat &&
+           swapChain.swapChainDepthFormat == swapChainDepthFormat;
+  }
+
 private:
   Device &device;
   VkExtent2D windowExtent;

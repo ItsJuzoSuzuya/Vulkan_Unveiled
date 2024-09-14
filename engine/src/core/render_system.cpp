@@ -34,6 +34,9 @@ void RenderSystem::recreateSwapChain() {
 
   std::shared_ptr<SwapChain> oldSwapChain = std::move(swapChain);
   swapChain = std::make_unique<SwapChain>(device, extent, oldSwapChain);
+
+  if (!oldSwapChain->compareSwapFormats(*swapChain.get()))
+    throw std::runtime_error("Swap chain image(or depth) format has changed!");
 }
 
 void RenderSystem::createPipelineLayout(
@@ -148,6 +151,8 @@ void RenderSystem::endFrame() {
       window.wasWindowResized()) {
     window.resetWindowResizedFlag();
     recreateSwapChain();
+    currentFrameIndex = 0;
+    return;
   } else if (result != VK_SUCCESS)
     throw std::runtime_error("Failed to present swap chain image!");
 
