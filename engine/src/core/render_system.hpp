@@ -1,4 +1,5 @@
 #pragma once
+#include "model.hpp"
 #include "pipeline.hpp"
 #include "swapchain.hpp"
 #include "window.hpp"
@@ -18,7 +19,8 @@ public:
   VkCommandBuffer getCurrentCommandBuffer() const {
     return commandBuffers[currentFrameIndex];
   }
-  void recordCommandBuffer(VkCommandBuffer commandBuffer);
+  void recordCommandBuffer(VkCommandBuffer commandBuffer,
+                           std::shared_ptr<Model> model);
   void endFrame();
 
 private:

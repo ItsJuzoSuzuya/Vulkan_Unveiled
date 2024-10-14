@@ -191,6 +191,24 @@ void Device::createCommandPool() {
     throw std::runtime_error("Failed to create command pool!");
 }
 
+VkCommandBuffer Device::beginSingleTimeCommands() {
+  VkCommandBufferAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandPool = commandPool;
+  allocInfo.commandBufferCount = 1;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+  VkCommandBuffer commandBuffer;
+  vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer);
+
+  VkCommandBufferBeginInfo beginInfo = {};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+  vkBeginCommandBuffer(commandBuffer, &beginInfo);
+  return commandBuffer;
+}
+
 bool Device::checkValidationLayerSupport() {
   uint32_t layerCount;
   vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -393,6 +411,52 @@ uint32_t Device::findMemoryType(uint32_t typeFilter,
   }
 
   throw std::runtime_error("Failed to find suitable memory type!");
+}
+
+void Device::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                          VkMemoryPropertyFlags properties, VkBuffer &buffer,
+                          VkDeviceMemory &bufferMemory) {
+  VkBufferCreateInfo bufferInfo = {};
+  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferInfo.size = size;
+  bufferInfo.usage = usage;
+  bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+  if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create buffer!");
+
+  VkMemoryRequirements memRequirements;
+  vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.memoryTypeIndex =
+      findMemoryType(memRequirements.memoryTypeBits, properties);
+
+  if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) !=
+      VK_SUCCESS)
+    throw std::runtime_error("Failed to allocate buffer memory!");
+
+  vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+}
+
+void Device::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
+                        VkDeviceSize size) {
+  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+  VkBufferCopy copyRegion = {};
+  copyRegion.size = size;
+  vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+  vkEndCommandBuffer(commandBuffer);
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &commandBuffer;
+
+  vkQueueSubmit(graphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+  vkQueueWaitIdle(graphicsQueue());
 }
 
 } // namespace engine

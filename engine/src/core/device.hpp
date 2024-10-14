@@ -56,6 +56,11 @@ public:
                            VkMemoryPropertyFlags properties, VkImage &image,
                            VkDeviceMemory &imageMemory);
 
+  void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+                    VkMemoryPropertyFlags properties, VkBuffer &buffer,
+                    VkDeviceMemory &bufferMemory);
+  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
 private:
 #ifdef NDEBUG
   const bool enableValidationLayers = false;
@@ -69,6 +74,8 @@ private:
   void pickPhysicalDevice();
   void createLogicalDevice();
   void createCommandPool();
+
+  VkCommandBuffer beginSingleTimeCommands();
 
   std::vector<const char *> getRequiredExtensions();
 

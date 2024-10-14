@@ -101,7 +101,8 @@ VkCommandBuffer RenderSystem::beginFrame() {
   return commandBuffer;
 }
 
-void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer,
+                                       std::shared_ptr<Model> model) {
   VkRenderPassBeginInfo renderPassInfo = {};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   renderPassInfo.renderPass = swapChain->getRenderPass();
@@ -134,7 +135,8 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
 
   pipeline->bind(commandBuffer);
 
-  vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+  model->bind(commandBuffer);
+  model->draw(commandBuffer);
 
   vkCmdEndRenderPass(commandBuffer);
 }

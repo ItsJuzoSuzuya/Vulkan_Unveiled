@@ -1,5 +1,4 @@
 %Package Date: 2018-01-01 % !TeX program = XeLaTeX
-
 \documentclass[12pt]{report} \usepackage{preamble}
 
 \title{\textbf{\huge Vulkan Unveiled: A Beginner's Guide to Professional
@@ -23,6 +22,9 @@ Graphics Programming}} \author {Nick Schefner}
   \acro{GLFW}{Graphics Library Framework}
   \acro{MSAA}{Multisample Anti-Aliasing}
   \acro{HLSL}{High Level Shading Language}
+  \acro{FBX}{Filmbox}
+  \acro{glTF}{Graphics Library Transmission Format}
+  \acro{OBJ}{Wavefront Object}
 \end{acronym}
 
 \begin{document} \maketitle
@@ -245,7 +247,7 @@ color \{r, g, b, a\} or texture coordinates \{u, v\}. \cite{vulkan-vertex-input}
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.60\textwidth]{vektor_triangle.svg}
 	\caption{Triangle with vertices}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 When we want to reuse certain vertices, for example when
 drawing a square, we can add indices.  These indices tell the
@@ -263,7 +265,7 @@ Vertices: \{0, 1, 2, 3\} Indices: \{\textcolor{red}{0, 1, 2} ,
 	\centering \includesvg[width=0.50\textwidth]{vi_quad.svg}
 	\caption{Square
 		with vertices created using indices}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 Here you can see that the first triangle is created by using the
 vertices\{\textcolor{red}{0, 1, 2}\} and the second triangle is created by using
@@ -286,7 +288,7 @@ of the vertex. \cite{vulkan-tutorial-vertex-buffer}
 \begin{figure}[hbtp]
 	\centering \includesvg[width=1\textwidth]{vertexbuffer.svg}
 	\caption{Interleaved vertex buffer}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 You can see that each attribute has a specific location in the buffer.
 These locations tell the pipeline what bytes belong together. So when
@@ -304,7 +306,7 @@ a non-interleaved pattern.
 \begin{figure}[hbtp]
 	\includesvg[width=1\textwidth]{non-int-vertexbuffer.svg}
 	\caption{Non-interleaved vertex buffer}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 Each attribute has has its own binding, to tell the pipeline what location
 is assigned to the data. So the first binding will always be the position
@@ -325,7 +327,7 @@ The index buffer on the other hand is just an simple array of integers.
 	\centering \includegraphics[width=\textwidth]{coordinate-systems.png}
 	\caption{Coordinate systems \cite{fig:view-frustum}}
 \end{figure}
-\floatbarrier
+\Floatbarrier
 
 We start with the local space, which is the space that we use to define
 our objects. Often the objects are centered around the origin of the
@@ -344,7 +346,7 @@ with a near and far plane, that is used to define what we can see.
 	\centering \includegraphics[width=0.60\textwidth]{view-frustum.png}
 	\caption{View frustum \cite{fig:view-frustum}}
 \end{figure}
-\floatbarrier
+\Floatbarrier
 
 To transform the world space into the view space, we use a view matrix.
 Let's briefly talk about matrix transformations and how multiplication
@@ -391,7 +393,7 @@ For example, when we have two matrices a and b, we multiply them like this:
 	\centering \includesvg[width=0.60\textwidth]{images/matrix-multiplication.svg}
 	\caption{Matrix multiplication \cite{fig:matrix-multiplication}}
 \end{figure}
-\floatbarrier
+\Floatbarrier
 
 As long as the number of columns in the first matrix is equal to the number
 of rows in the second matrix, we can multiply them. The result will have
@@ -465,28 +467,28 @@ the following rotation matrices to the points:
 
 X-axis: \[
 	\begin{bmatrix}
-		1 & 0            & 0           & 0 \\
-		0 & cos(\delta)  & sin(\delta) & 0 \\
-		0 & -sin(\delta) & cos(\delta) & 0 \\
-		0 & 0            & 0           & 1 \\
+		1 & 0           & 0            & 0 \\
+		0 & cos(\delta) & -sin(\delta) & 0 \\
+		0 & sin(\delta) & cos(\delta)  & 0 \\
+		0 & 0           & 0            & 1 \\
 	\end{bmatrix}
 \]
 
 Y-axis: \[
 	\begin{bmatrix}
-		cos(\delta) & 0 & -sin(\delta) & 0 \\
-		0           & 1 & 0            & 0 \\
-		sin(\delta) & 0 & cos(\delta)  & 0 \\
-		0           & 0 & 0            & 1 \\
+		cos(\delta)  & 0 & sin(\delta) & 0 \\
+		0            & 1 & 0           & 0 \\
+		-sin(\delta) & 0 & cos(\delta) & 0 \\
+		0            & 0 & 0           & 1 \\
 	\end{bmatrix}
 \]
 
 Z-axis: \[
 	\begin{bmatrix}
-		cos(\delta)  & sin(\delta) & 0 & 0 \\
-		-sin(\delta) & cos(\delta) & 0 & 0 \\
-		0            & 0           & 1 & 0 \\
-		0            & 0           & 0 & 1 \\
+		cos(\delta) & -sin(\delta) & 0 & 0 \\
+		sin(\delta) & cos(\delta)  & 0 & 0 \\
+		0           & 0            & 1 & 0 \\
+		0           & 0            & 0 & 1 \\
 	\end{bmatrix}
 \]
 
@@ -495,10 +497,10 @@ Let's rotate the line around the y axis:
 \[
 	P1 =
 	\begin{bmatrix}
-		cos(\delta) & 0 & -sin(\delta) & 0 \\
-		0           & 1 & 0            & 0 \\
-		sin(\delta) & 0 & cos(\delta)  & 0 \\
-		0           & 0 & 0            & 1 \\
+		cos(\delta)  & 0 & sin(\delta) & 0 \\
+		0            & 1 & 0           & 0 \\
+		-sin(\delta) & 0 & cos(\delta) & 0 \\
+		0            & 0 & 0           & 1 \\
 	\end{bmatrix}
 	\cdot
 	\begin{bmatrix}
@@ -519,10 +521,10 @@ Let's rotate the line around the y axis:
 \[
 	P2 =
 	\begin{bmatrix}
-		cos(\delta) & 0 & -sin(\delta) & 0 \\
-		0           & 1 & 0            & 0 \\
-		sin(\delta) & 0 & cos(\delta)  & 0 \\
-		0           & 0 & 0            & 1 \\
+		cos(\delta)  & 0 & sin(\delta) & 0 \\
+		0            & 1 & 0           & 0 \\
+		-sin(\delta) & 0 & cos(\delta) & 0 \\
+		0            & 0 & 0           & 1 \\
 	\end{bmatrix}
 	\cdot
 	\begin{bmatrix}
@@ -533,10 +535,10 @@ Let's rotate the line around the y axis:
 	\end{bmatrix}
 	=
 	\begin{bmatrix}
-		cos(\delta) \\
-		0           \\
-		sin(\delta) \\
-		1           \\
+		cos(\delta)  \\
+		0            \\
+		-sin(\delta) \\
+		1            \\
 	\end{bmatrix}
 \]
 
@@ -694,7 +696,7 @@ z axis.
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.80\textwidth]{images/perspective.svg}
 	\caption{view frustum}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 What we need to calculate is yn, which is the new height of the object.
 To do so we use the green triangle and the near planes distance on the z axis
@@ -821,7 +823,7 @@ scale it to the size of the \ac{CVV}. The \ac{CVV} looks like this from the fron
 \begin{figure}[hbtp]
 	\centering \includesvg[width=0.60\textwidth]{images/clip-space.svg}
 	\caption{\ac{CVV} front}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 It is a coordinate system where the y axis is pointing downwards and the positive of the z axis
 is pointing away from us. Each axis ranges from -1 to 1 except the z axis,
@@ -948,7 +950,7 @@ Lets take a look at the Vulkan pipeline and its stages:
 	\fontsize{6}{10}\selectfont
 	\centering \includesvg[width=1\textwidth]{images/pipeline.svg}
 	\caption{Pipeline structure \cite{fig:pipeline}}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 Okay okay, I know that's a lot and there is stuff I haven't talked about
 yet, like these buffers, images and the push constants. Don't worry i
@@ -988,7 +990,7 @@ points, lines or triangles. \cite{microsoft-ia}
 
 \newpage
 
-\begin{lstlisting}[language=C++] 
+\begin{lstlisting}[Language=C++] 
 
   // Provided by VK_VERSION_1_0
   enum VkPrimitiveTopology {
@@ -1107,7 +1109,7 @@ do this for all three corners it creates the corners of the inner triangle. \cit
 	\centering \includegraphics[width=0.4\textwidth]{innertri.png}
 	\caption{Inner tessellation with 4 segments}
 	\cite{fig:inner-tessellation}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 You can see that the inner tessellation level of four cuts each edge of the outer triangle into four segments.
 This is done by calculating the barycentric coordinates of the temporary vertices on the edges. Let's
@@ -1139,7 +1141,7 @@ perpendicular lines for each triangle. \cite{equilateral-triangle}
 	\centering \includegraphics[width=0.7\textwidth]{equiletral-triangle.png}
 	\caption{Equilateral triangle}
 	\cite{equilateral-triangle}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 Considering that we can calculate the direction of the perpendicular line:
 
@@ -1223,7 +1225,7 @@ are created and in how many segments they are divided.
 	\centering \includegraphics[width=0.4\textwidth]{tessellation_isoline_6_2.png}
 	\caption{Isoline tessellation (6, 2)}
 	\cite{fig:isoline}
-\end{figure} \floatbarrier
+\end{figure} \Floatbarrier
 
 These were the possible tessellation types that the tessellator
 can work with but there are a few more things to consider for each of them.
@@ -1377,7 +1379,7 @@ To calculate the cross product we can look at this visual representation:
 \begin{figure}[hbtp]
 	\centering
 	\includegraphics[width=0.5\textwidth]{cross-product.png}
-	\caption{Cross product} \floatbarrier
+	\caption{Cross product} \Floatbarrier
 \end{figure}
 
 We simply write each vector 2 times under each other, cut out the top and bottom row
@@ -1664,7 +1666,7 @@ of our game engine will be stored. In this folder create a new header file calle
 Inside we first need to include the \ac{GLFW} header file and the define of \\
 \textit{GLFW\textunderscore INCLUDE\textunderscore VULKAN} to include the Vulkan header files.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
   #define GLFW_INCLUDE_VULKAN
   #include <glfw/glfw3.h>
 \end{lstlisting}
@@ -1674,7 +1676,7 @@ the namespace \textit{engine}, but feel free to use the actual name of your engi
 Inside we create our class window with an constructor that takes the width, height
 and name of the window as arguments. We also add a destructor to clean up the window.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
   #include <string>
   namespace engine {
     class Window {
@@ -1690,7 +1692,7 @@ So let's create a private helper function that initializes the window. We will c
 \textit{initWindow}. Let's also store the width, height and name of the window in private variables.
 After initializing the window we will need a pointer to the window object, so we can access it later.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
   class Window {
       public:
         Window(int width, int height, std::string name);
@@ -1711,7 +1713,7 @@ That's the header file for now. Let's implement the defined functions in the sou
 In the window.cpp file we include the window.hpp file add the namespace and
 call the \textit{initWindow} function in the constructor and set the width, height and name of the class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 #include "window.hpp"
 
 namespace engine {
@@ -1738,7 +1740,7 @@ window and a 5th parameter that is OpenGL specific. Pass in our variables, set t
 The output will be a pointer to our created \textit{GLFWwindow} that we can store in our \textit{window}
 pointer.
 
-\begin{lstlisting}[language=C++] 
+\begin{lstlisting}[Language=C++] 
 void Window::initWindow() {
   glfwInit();
 
@@ -1753,7 +1755,7 @@ void Window::initWindow() {
 Finally we implement our destructor. It will destroy the window with \textit{glfwDestroyWindow(Window)}
 and terminate \ac{GLFW} with \textit{glfwTerminate()}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 Window::~Window() {
   glfwDestroyWindow(Window);
   glfwTerminate();
@@ -1767,7 +1769,7 @@ We also need a public \textit{run} function that initializes the window and runs
 
 \newpage
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 #include "core/window.hpp"
 
 namespace engine {
@@ -1789,7 +1791,7 @@ should be closed. While it is not closed we poll the events with \textit{glfwPol
 For checking if the window should be closed we create a boolean function \textit{shouldClose} in the
 window class and set it to the return value of \textit{glfwWindowShouldClose(Window)}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 #include "app.hpp"
 
 namespace engine {
@@ -1804,7 +1806,7 @@ namespace engine {
 In the window class add the public \textit{shouldClose} function.
 Because it is very simple we can just implement it in the header file.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 public:
   bool shouldClose() { return glfwWindowShouldClose(Window); }
 \end{lstlisting}
@@ -1814,7 +1816,7 @@ If it fails we return \\ \textit{EXIT\textunderscore FAILURE} and the error.
 If it succeeds we return \textit{EXIT\textunderscore SUCCESS}.
 We don't need a header file for the main.cpp.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 #include "app.hpp"
 #include <iostream>
 
@@ -1875,7 +1877,7 @@ and include the Vulkan header file. In here we will create a constructor, a dest
 a private function to create the Vulkan instance and a private variable to store the instance
 and a reference to the window object. We'll also delete the copy and move operators.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 #include <Vulkan/Vulkan.h>
 #include "window.hpp"
 
@@ -1903,7 +1905,7 @@ class Device {
 Create the source file and include the header file. In the constructor we call the
 \textit{createInstance} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 #include "device.hpp"
 
 namespace engine {
@@ -1919,7 +1921,7 @@ The applications information is stored in a struct called \textit{VkApplicationI
 The application info is optional but it is good practice to fill it out. It contains
 the name and the version of the application, the engine and the version of the Vulkan \ac{API}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 
 void Device::createInstance() {
   VkApplicationInfo appInfo = {};
@@ -1945,7 +1947,7 @@ We also add the extension data from \ac{GLFW}.
 For that we will create a private function called \textit{getRequiredExtensions} that returns
 the required extensions as a vector of strings.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Device::createInstance(){
   ...
   VkInstanceCreateInfo createInfo = {};
@@ -1966,7 +1968,7 @@ which returns the extensions as an array of strings and the size
 to the pointer we passed as a parameter to the function. We then copy the extensions to a vector of strings
 and return it.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 std::vector<const char *> Device::getRequiredExtensions() {
   uint32_t glfwExtensionCount = 0;
   const char **glfwExtensions;
@@ -1990,7 +1992,7 @@ sub-allocating the memory for the objects from this range. But we don't need to 
 We also have to check if the instance was created successfully. We can do this by checking if the
 functions return value is \textit{VK\textunderscore SUCCESS}. If not we throw an exception with an error message.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 if (vkCreateInstance(&createInfo. nullptr, &instance) != VK_SUCCESS) 
 		throw std::runtime_error("Failed to create Vulkan instance");
 \end{lstlisting}
@@ -1998,7 +2000,7 @@ if (vkCreateInstance(&createInfo. nullptr, &instance) != VK_SUCCESS)
 Finally we have to clean up the instance in the destructor. We can do this by calling the
 \textit{vkDestroyInstance} function with the instance as a parameter.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 Device::~Device() {
   vkDestroyInstance(instance, nullptr);
 }
@@ -2015,7 +2017,7 @@ operation.
 Let's start off by creating a public constant bool enableValidationLayers in the device class header file.
 If we want to enable validation layers we set the \textit{NDEBUG} macro to 0, otherwise to 1.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 private:
 #ifdef NDEBUG 
   const bool enableValidationLayers = false;
@@ -2029,7 +2031,7 @@ validation layers we want to enable. \\
 We will use the \textit{VK\textunderscore LAYER\textunderscore KHRONOS\textunderscore validation}
 layer to use the standard error checking provided by Vulkan.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 private:
   const std::vector<const char *> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -2046,7 +2048,7 @@ Then we will create a vector of \textit{VkLayerProperties} that will hold the av
 Then we will iterate through the available layers and check if the validation layer is in the available layers.
 If it is we return true, otherwise we return false.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 bool Device::checkValidationLayerSupport() {
   uint32_t layerCount;
   vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -2077,7 +2079,7 @@ supported we throw an exception with an error message.
 
 \newpage
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 if (enableValidationLayers && !checkValidationLayerSupport())
   throw std::runtime_error("Requested validation layers are not supported!");
 \end{lstlisting}
@@ -2086,7 +2088,7 @@ if (enableValidationLayers && !checkValidationLayerSupport())
 \textit{VK\textunderscore EXT\textunderscore DEBUG\textunderscore UTILS\textunderscore EXTENSION\textunderscore NAME}.
 So let's add this extension to the \textit{getRequiredExtensions} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 std::vector<const char *> getRequiredExtensions() {
   uint32_t glfwExtensionCount = 0;
   const char **glfwExtensions;
@@ -2110,7 +2112,7 @@ the desired values. Then we add the debug messenger to the \textit{VkInstanceCre
 
 \newpage
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 if (enableValidationLayers) {
   createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
   createInfo.ppEnabledLayerNames = validationLayers.data();
@@ -2125,7 +2127,7 @@ if (enableValidationLayers) {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Device::populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &createInfo. {
  createInfo = {};
  createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -2157,7 +2159,7 @@ Let's implement the \textit{debugCallback} function.
 It takes the severity, type, pCallbackData and pUserData as arguments and returns a \textit{VkBool32}
 which has to be \textit{VK\textunderscore FALSE}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
   VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
   VkDebugUtilsMessageTypeFlagsEXT messagetype,
@@ -2180,13 +2182,13 @@ variable that stores the debug messenger.
 
 \newpage
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 void setupDebugMessenger();
 VkDebugUtilsMessengerEXT debugMessenger;
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 Device::Device(Window &window) : window{window} {
   createInstance();
@@ -2222,7 +2224,7 @@ To do so we'll have to load the \textit{vkDestroyDebugUtilsMessengerEXT} functio
 function we used to load the \textit{vkCreateDebugUtilsMessengerEXT} function. Let's add a lokal helper function
 to the device class that destroys the debug messenger called \textit{destroyDebugUtilsMessengerEXT}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 Device::~Device() {
   if (enableValidationLayers)
@@ -2249,7 +2251,7 @@ in the window class, called
 It takes the instance and a pointer to the surface as arguments. So add a private variable
 to store the surface and a \textit{createSurface} function in the device class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 Device::Device(Window &window) : window{window} {
 		createInstance();
@@ -2262,7 +2264,7 @@ void Device::createSurface() {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //window.cpp
 void Window::createWindowSurface(VkInstance instance, VkSurfaceKHR *surface) {
 	if (glfwCreateWindowSurface(instance, window, nullptr, surface) != VK_SUCCESS)
@@ -2272,7 +2274,7 @@ void Window::createWindowSurface(VkInstance instance, VkSurfaceKHR *surface) {
 
 We also have to destroy the surface in the destructor of the device class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 Device::~Device() {
   if (enableValidationLayers)
     destroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -2294,7 +2296,7 @@ until we find a suitable device.
 Let's begin with defining our helper functions \textit{pickPhysicalDevice} and \textit{isDeviceSuitable}
 and a private variable to store the physical device.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 private:
   ...
@@ -2311,7 +2313,7 @@ function. In case the loop ends without finding a suitable device we check if th
 \textit{VK\textunderscore NULL\textunderscore HANDLE}. If it is we throw an exception with an error message.
 Finally we get the properties of our device with \textit{vkGetPhysicalDeviceProperties} and store it in a private variable.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 Device::Device(Window &window) : window{window} {
   ...
@@ -2382,7 +2384,7 @@ to the current index.
 We will then return the \textit{QueueFamilyIndices} struct from the \textit{findQueueFamilies} function. We will need the indices
 to create the device.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 \\device.hpp
 
 struct QueueFamilyIndices {
@@ -2395,7 +2397,7 @@ struct QueueFamilyIndices {
 };
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 \\device.cpp
 
 bool Device::isDeviceSuitable(VkPhysicalDevice device) {
@@ -2440,7 +2442,7 @@ to get the available extensions. Then we will create a set of strings that conta
 \textit{VK\textunderscore KHR\textunderscore SWAPCHAIN\textunderscore EXTENSION\textunderscore NAME} for now. We will then iterate through
 the available extensions and remove the required extensions from the set. If the set is empty we return true, otherwise false.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 
 private:
@@ -2450,7 +2452,7 @@ private:
   };
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 bool Device::isDeviceSuitable(VkPhysicalDevice device) {
   QueueFamilyIndices indices = findQueueFamilies(device);
@@ -2489,7 +2491,7 @@ functions.
 Let's go ahead and create another struct called \textit{SwapChainSupportDetails} that stores the capabilities,
 formats and present modes.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 
 struct SwapChainSupportDetails{
@@ -2502,7 +2504,7 @@ struct SwapChainSupportDetails{
 Next we create a function called \textit{querySwapChainSupport} that returns our
 \textit{SwapChainSupportDetails} struct with the data.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 
 bool Device::isDeviceSuitable(VkPhysicalDevice device){
@@ -2549,7 +2551,7 @@ We can check if the device supports anisotropic filtering by checking the \texti
 struct that contains the features of the device. \textit{vkGetPhysicalDevicefeatures} returns the features
 of the device, which contains the boolean \textit{samplerAnisotropy} member.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 bool Device::isDeviceSuitable(VkPhysicalDevice device){
   ...
   VkPhysicalDeviceFeatures supportedFeatures;
@@ -2572,7 +2574,7 @@ by a logical device that we will create in the next step. Let's add a private fu
 \textit{createLogicalDevice} that creates the logical device and a private variable to store the device.
 We'll also create our queues here and will need a \textit{VkQueue} variable for each queue;
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 private:
   ...
@@ -2595,7 +2597,7 @@ When we create the logical device we also have to check if the creation was succ
 an exception with an error message. After that we retrieve the queues from the device with the
 \textit{vkGetDeviceQueue} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 Device::Device(Window &window) : window{window} {
   ...
@@ -2640,7 +2642,7 @@ void Device::createLogicalDevice(){
 Now we have to make sure that the logical device is destroyed in the constructor.
 We can do this by calling the \textit{vkDestroyDevice} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 Device::~Device() {
   vkDestroyDevice(device_, nullptr);
 
@@ -2676,7 +2678,7 @@ We then create the command pool with the \textit{vkCreateCommandPool} function a
 was successful. If not we throw an exception with an error message. We also have to destroy the command pool
 in the destructor.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 private:
   ...
@@ -2684,7 +2686,7 @@ private:
   void createCommandPool();
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 Device::Device(Window &window) : window{window} {
 		...
@@ -2721,7 +2723,7 @@ also saves us from writing classes that will only be used once. But you can spli
 But we are not done yet. We have to instantiate the device class in the application class. We can do that directly in the
 header file. Let's add a private variable to the application class that stores the device.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //app.hpp
 private:
   ...
@@ -2756,7 +2758,7 @@ After the creation of the swapchain we will also get the swapchain images from i
 \textit{VkImages}, which contains the pixels and the main memory of the texture, but misses the information about
 how the image can be read.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 namespace engine {
 class SwapChain {
@@ -2797,7 +2799,7 @@ for the \textit{findQueueFamilies} function. To create the swapchain we also nee
 logical device. We will add a getter function to the device class that returns the logical
 device.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 VkSurfaceKHR surface() { return surface_; }
 VkDevice device() { return device_; }
@@ -2813,7 +2815,7 @@ and \textit{chooseSwapExtent} functions.
 Because they rely on the swapchain support details we will start off by calling the
 \textit{getSwapChainSupport} function. We will then call the \textit{chooseSwapSurfaceFormat}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.cpp
 SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
   createSwapChain();
@@ -2840,7 +2842,7 @@ iterate through the available formats and check if the format and color space ar
 are we return the format. If not we return the first format. You could add additional checks to
 choose the best format but for now we will assume that srgb is supported.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
   for (const auto &availableFormat : availableFormats) {
     if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
@@ -2914,7 +2916,7 @@ We will simply iterate through the available present modes and return the \\
 \textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore MAILBOX\textunderscore KHR} mode
 if it is available. If not we will return the \textit{VK\textunderscore PRESENT\textunderscore MODE\textunderscore FIFO\textunderscore KHR} mode.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
   for (const auto &availablePresentMode : availablePresentModes) {
       if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -2935,7 +2937,7 @@ the extent to the minimum and maximum extent that the device supports tho. If th
 are not set to the maximum value we can use the extent directly because that tells us that the extent
 is already in pixels.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
   if (capabilities.currentExtent.width != UINT32_MAX)
     return capabilities.currentExtent;
@@ -2960,7 +2962,7 @@ next image. Because we increase the min image count
 by one we have to check if it is bigger than the max image count. If it is we set the min image count to the
 max image count. Except if the max image count of the device is 0, which means that there is no maximum image count.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
   imageCount = swapChainSupport.capabilities.maxImageCount;
@@ -2976,7 +2978,7 @@ usage to
 \textit{VK\textunderscore IMAGE\textunderscore USAGE\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore BIT},
 which means that we will render directly to the image.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkSwapchainCreateInfo createInfo = {};
 createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 createInfo.surface = device.surface();
@@ -3004,7 +3006,7 @@ We'll start off by getting the queue family indices from the device. We will the
 queue family and the present queue family are different. If they are we set the sharing mode to concurrent
 and set the queue family indices and their count. If they are the same we set the sharing mode to exclusive.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 QueueFamilyIndices indices = device.findQueueFamilies();
 if (indices.graphicsFamily.value() != indices.presentFamily.value()) {
    createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -3028,7 +3030,7 @@ pixels to predict future frames you can set the clipped flag to false but we wil
 The old swapchain is used to create a new swapchain from an old one. We will set it to
 \textit{VK\textunderscore NULL\textunderscore HANDLE}, but will come back to this later.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 createInfo.preTransform = swapChainSupport.capabilities.currenttransform;
 createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 createInfo.presentMode = presentMode;
@@ -3041,7 +3043,7 @@ function, that takes the device, the create info struct, a custom allocator and 
 variable that we also have to add to our header. We again will check for an error and throw an runtime
 error if the creation was not successful.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 if (vkCreateSwapChainKHR(device.device(), &createInfo. nullptr, &swapChain) != VK_SUCCESS)
   throw std::runtime_error("Failed to create swap chain!");
 \end{lstlisting}
@@ -3052,7 +3054,7 @@ to the image count and a pointer to the images. We will store the images in the 
 vector. Then we should also create a variable for the image format and the extent of the swapchain images
 and store them in the class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 private:
   ...
@@ -3061,7 +3063,7 @@ private:
   VkExtent2D swapChainExtent;
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount, nullptr);
 swapChainImages.resize(imageCount);
 vkGetSwapchainImagesKHR(device.device(), swapChain, &imageCount, swapChainImages.data());
@@ -3077,7 +3079,7 @@ image count could be different.
 Now we have to make sure that the swapchain is destroyed in the destructor. We can do this by calling
 the \textit{vkDestroySwapchainKHR} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::~SwapChain() {
   vkDestroySwapchainKHR(device.device(), swapChain, nullptr);
 }
@@ -3126,7 +3128,7 @@ we get the original resolution of the texture. The level count defines how many 
 for now. The base array layer defines the first layer that is used. We will set it to 0 because we will only use one layer.
 The layer count defines how many layers we want to use. We will keep it at 1 for now.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
   createSwapChain();
   createImageViews();
@@ -3158,21 +3160,21 @@ Because the swapchain takes the device and the extent as arguments we have to ad
 surface class that returns the extent. We will also add a getter to the device class that returns the
 logical device.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 public:
   ...
   VkDevice device() { return device_; }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //surface.hpp
 public:
   ...
   VkExtent2D getExtent() { return{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}; }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //app.hpp
 private:
   ...
@@ -3187,7 +3189,7 @@ This is important because we have to destroy all child objects before we destroy
 So let's destroy the image views in the destructor of the swapchain class. We can do this by calling the
 \textit{vkDestroyImageView} function for each image view in the \textit{swapChainImageViews} vector.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::~SwapChain() {
   for (const VkImageView &imageView : swapChainImageViews)
     vkDestroyImageView(device.device(), imageView, nullptr);
@@ -3206,7 +3208,7 @@ during rendering.
 
 Let's add a new function called \textit{createRenderPass} to the swapchain class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
   createSwapChain();
   createImageViews();
@@ -3252,7 +3254,7 @@ image before the render pass. The final layout is set to
 \textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore PRESENT\textunderscore SRC\textunderscore KHR},
 which means that the image will be presented to the swapchain.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void SwapChain::createRenderPass() {
   VkAttachmentDescription colorAttachment = {};
   colorAttachment.format = swapChainImageFormat;
@@ -3270,7 +3272,7 @@ After that we need to create a \textit{VkAttachmentReference} that stores the in
 The color attachment will be our first attachment and has the \\
 \textit{VK\textunderscore IMAGE\textunderscore LAYOUT\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore OPTIMAL}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkAttachmentReference colorAttachmentRef = {};
 colorAttachmentRef.attachment = 0;
 colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -3297,7 +3299,7 @@ float format for the depth and a 8 bit unsigned integer for the stencil buffer. 
 a stencil buffer you should use the second or third format. For the features we will use the
 \textit{VK\textunderscore FORMAT\textunderscore FEATURE\textunderscore DEPTH\textunderscore STENCIL\textunderscore ATTACHMENT\textunderscore BIT}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.cpp
 void SwapChain::createRenderPass(){
   ...
@@ -3325,7 +3327,7 @@ VkFormat SwapChain::findDepthFormat() {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 VkFormat Device::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
   for (VkFormat format : candidates) {
@@ -3352,7 +3354,7 @@ attachments, a pointer to the color attachments and a pointer to the depth stenc
 we can add to the subpass description, but don't need for now. The pipeline bind point defines if the subpass is used
 for graphics or compute operations. We will use the graphics pipeline bind point.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void SwapChain::createRenderPass() {
   ...
   VkSubpassDescription subpass = {};
@@ -3379,7 +3381,7 @@ will wait until the color attachment is written to and the depth and stencil buf
 \textit{VK\textunderscore ACCESS\textunderscore COLOR\textunderscore ATTACHMENT\textunderscore WRITE\textunderscore BIT}
 and \textit{VK\textunderscore ACCESS\textunderscore DEPTH\textunderscore STENCIL\textunderscore ATTACHMENT\textunderscore WRITE\textunderscore BIT}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void SwapChain::createRenderPass() {
   ...
   VkSubpassDependency dependency = {};
@@ -3399,14 +3401,14 @@ and the attachment count. Let's first go ahead and create an array of attachment
 attachment. Then we add the sType and the other data to the render pass create info, create the render pass and
 throw an error if the creation was not successful.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 private:
   ...
   VkRenderPass renderPass;
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void SwapChain::createRenderPass() {
   ...
   std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
@@ -3427,7 +3429,7 @@ void SwapChain::createRenderPass() {
 
 Finally we have to make sure to destroy the render pass.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::~SwapChain() {
   ...
   vkDestroyRenderPass(device.device(), renderPass, nullptr);
@@ -3444,7 +3446,7 @@ need to allocate memory on the \ac{GPU} and then bind the image to that memory, 
 For that we will need a new function in the device class called \textit{createImageWithInfo}.
 This function will take an image info struct, a memory property flag, a pointer to the image and a pointer to the image memory.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 private:
   ...
@@ -3455,7 +3457,7 @@ private:
   std::vector<VkImageView> depthImageViews;
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
   createSwapChain();
   createImageViews();
@@ -3514,7 +3516,7 @@ get the memory type index with the \textit{findMemoryType} function that we will
 allocate the memory with the \textit{vkAllocateMemory} function and bind the memory to the image with the
 \textit{vkBindImageMemory} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 void Device::createImageWithInfo(const VkImageCreateInfo.&imageInfo, 
                                  vkMemeroryPropertyflags properties, 
@@ -3542,7 +3544,7 @@ void Device::createImageWithInfo(const VkImageCreateInfo.&imageInfo,
 The \textit{findMemoryType} function will iterate through the memory types of the physical device and check if the
 properties are supported. If it is it will return the memory type index.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.cpp
 uint32_t Device::findMemoryType(uint32_t typeFilter, vkMemeroryPropertyflags properties) {
   VkPhysicalDeviceMemeroryProperties memProperties;
@@ -3562,7 +3564,7 @@ properties are supported by the memory type. If it is we return the memory type 
 
 Now that we have the depth resources we have to destroy them and clear the \ac{GPU} memory in the destructor of the swapchain class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::~SwapChain() {
   ...
   for (size_t i = 0; i < depthImages.size(); i++) {
@@ -3580,7 +3582,7 @@ resources that are used in the render pass. We will create a new function called
 that will be called after the creation of the depth resources. We will also need a
 new variable in the header of the swapchain class that stores the framebuffers.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 private:
   ...
@@ -3594,7 +3596,7 @@ The create information for the framebuffer takes the render pass, the amount of 
 and the height of the framebuffer and the layers count the framebuffer is used for. We will set the layers count to 1
 and the width and height to the width and height of the swapchain extent.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::SwapChain(Device &device, VkExtent2D extent) : device{device}, windowExtent{extent} {
   createSwapChain();
   createImageViews();
@@ -3629,7 +3631,7 @@ void SwapChain::createFramebuffers() {
 
 After that we have to destroy the framebuffers in the destructor of the swapchain class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::~SwapChain() {
   ...
   for (auto framebuffer : framebuffers) {
@@ -3655,7 +3657,7 @@ in the constructor. This function takes the Path to the vertex and fragment shad
 we will define in the header of the pipeline class. We will also need a variable that stores the graphics pipeline, the
 device and the shader modules.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //pipeline.hpp
 struct PipelineConfigInfo {
   PipelineConfigInfo() = default;
@@ -3701,7 +3703,7 @@ In the \textit{createGraphicsPipeline} function we will first check if the confi
 Then we will have to read the shader files and create the shader modules. Let's start off by adding a helper function called
 \textit{readFile} that reads the shader files and returns the content as a vector of chars.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //pipeline.cpp
 std::vector<char> Pipeline::readFile(const std::string &path) {
   std::ifstream file{Path, std::ios::ate | std::ios::binary};
@@ -3728,7 +3730,7 @@ file into the buffer and return the buffer.
 We will do this for both the vertex and the fragment shader. We will then create the shader modules with another helper function.
 The \textit{createShaderModule} function takes a vector of chars and a pointer to the shader module variable.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //pipeline.cpp
 Pipeline::Pipeline(Device &device, const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo)
 : device{device} {
@@ -3776,7 +3778,7 @@ We will then have a void main function that sets the \textit{gl\textunderscore P
 For the fragment shader we will also define the version at the beginning. We will then have a layout out qualifier that outputs the
 color to the next stage. We will then have a void main function that will set the out color to red.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //shader.vert
 #version 460
 
@@ -3797,7 +3799,7 @@ This \textit{gl\textunderscore Position} variable is a predefined out variable t
 to the next stage. The \textit{gl\textunderscore VertexIndex} is also a built-in variable that is used to get the index
 of the vertex that is currently processed.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //shader.frag
 #version 460
 layout(location = 0) out vec4 outColor;
@@ -3815,7 +3817,7 @@ use the \ac{GLSL} compiler that comes with the Vulkan SDK. The \ac{GLSL} compile
 them to a specified output file. We will compile the vertex shader to \textit{shader.vert.spv} and the fragment shader to
 \textit{shader.frag.spv}.
 
-\begin{lstlisting}[language=bash]
+\begin{lstlisting}[Language=bash]
 /usr/local/bin/glslc src/shaders/shader.vert -o src/shaders/shader.vert.spv
 /usr/local/bin/glslc src/shaders/shader.frag -o src/shaders/shader.frag.spv
 \end{lstlisting}
@@ -3835,7 +3837,7 @@ shader stage is the stage in the pipeline that the shader module is used in. Let
 We will use the \textit{VkPipelineShaderStageCreateInfo} struct to create the shader stages. This struct contains the
 sType, the type of stage, the name and the shader module.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //pipeline.cpp
 void Pipeline::createGraphicsPipeline(const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo) {
   ...
@@ -3867,7 +3869,7 @@ because we have to get the vertex data from models that we will load later.
 
 Because we have the vertex input state info in the config info struct we will use that to create the vertex input state info.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::createGraphicsPipeline(const std::string &vertFilePath,
                                       const std::string &fragFilePath,
                                       const PipelineConfigInfo &configInfo) {
@@ -3906,7 +3908,7 @@ The pipeline config info struct contains a vector of dynamic states that we will
 Let's go ahead and add a public static function to the pipeline class called \textit{defaultPipelineConfig} that will populate a
 PipelineConfigInfo struct with default values.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
   configInfo.dynamicStates = {
     VK_DYNAMIC_STATE_VIEWPORT,
@@ -3923,7 +3925,7 @@ void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
 Because we have the viewport and scissor set to dynamic we only need to specify the viewport and scissor count in the
 \textit{VkPipelineViewportStateCreateInfo} struct. We will set the viewport and scissor count to 1.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
 		...
 		configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -3943,7 +3945,7 @@ for now. This means that every 3 vertices that we pass to the pipeline will be a
 member in the input assembly state struct called the primitive restart enable. This is used to break up lines that are
 created with any strip topology. We don't need this for now, so we will set it to \textit{VK\textunderscore FALSE}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
     ...
     configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -3985,7 +3987,7 @@ ordered clockwise.
 The last member is the depth bias. We can choose to enable it and set a constant factor to our depth value, a slope factor
 and clamp the depth bias. This is not something that we will use for now so we will disable it.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
   ...
   configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -4006,7 +4008,7 @@ To avoid this we can take multiple samples inside each fragment and then average
 of the objects look smoother. We will use 1 sample for now and turn of sample shading. Later when rendering more complex scenes
 we will revisit this.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
     ...
     configInfo.multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -4026,7 +4028,7 @@ to enable the depth bounds test. This is used to discard fragments that are outs
 need this so we can set it to \textit{VK\textunderscore FALSE} and ignore the depth bound members. Finally we can also enable the stencil
 test, which we will keep disabled.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
     ...
     configInfo.depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -4054,7 +4056,7 @@ destination color, or the and operation that takes the bitwise and of the source
 logical operation we will just copy the source color to the destination color, so we don't have to set the logical operation.
 Optionally we can set the blend constants that are used in blending operations. We will not need this so we will not set it.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
 		...
 		configInfo.colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -4092,7 +4094,7 @@ create the graphics pipeline. We will also need a variable that stores the pipel
 layout, the pipeline, the device and the swapchain. The render system's constructor takes the device reference, window reference and
 the descriptor set layout and first instantiates the swapchain. Then it creates the pipeline layout and then the graphics pipeline.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //render_system.hpp
 class RenderSystem {
 public:
@@ -4118,7 +4120,7 @@ push constant range members for now. For the case that we won't have a descripto
 parameter to a new vector. Doing it like this we can simply determine the size and the data of the vector. The thing is we are
 not at the point that we can use descriptor sets, so we will set the descriptor set layout to \textit{nullptr} and the count to 0;
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //render_system.cpp
 RenderSystem::RenderSystem(Device &device, Window &window, VkDescriptorSetLayout descriptorSetLayout) : device{device} {
   swapChain = std::make_unique<SwapChain>(device, window.getExtent());
@@ -4144,7 +4146,7 @@ The \textit{createPipeline} function will populate the pipeline config info stru
 then instantiate our pipeline class with the vertex and fragment shader Paths and the pipeline config info struct.
 Before we do that, we have to make sure that we have a valid pipeline layout.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::createPipeline(VkRenderPass renderPass) {
   assert(pipelineLayout != VK_NULL_HANDLE && "Cannot create pipeline before pipeline layout!");
   
@@ -4159,7 +4161,7 @@ void RenderSystem::createPipeline(VkRenderPass renderPass) {
 
 Finally we need to destory the pipeline layout in the destructor of the render system class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 RenderSystem::~RenderSystem() {
   vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
 }
@@ -4171,7 +4173,7 @@ Now that we get the render pass and pipeline layout from the render system we ca
 We will simply populate the \textit{VkGraphicsPipelineCreateInfo} struct with the data that we have and create the
 graphics pipeline with the \textit{vkCreateGraphicsPipelines} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::createGraphicsPipeline(const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo) {
   ...
   VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -4206,7 +4208,7 @@ and -1. This is used for creating a new pipeline that is based on an existing pi
 
 And again we have to clean up our mess. Including the shader modules and the graphics pipeline in the pipeline destructor.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 Pipeline::~Pipeline() {
   vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
   vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
@@ -4217,7 +4219,7 @@ Pipeline::~Pipeline() {
 That's it for now, let's go ahead and instantiate the render system in our application class.
 We will also need to add a getter function to the swapchain class that returns the render pass.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 VkRenderPass getRenderPass() { return renderPass; }
 
@@ -4238,7 +4240,7 @@ is expensive we already created the command pool in the device class. We will us
 buffers. We will create a new function in the render system class called \textit{createCommandBuffers} that will be called
 after the pipeline creation.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //render_system.cpp
 RenderSystem::RenderSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout) : device{device} {
   createPipelineLayout(descriptorSetLayout);
@@ -4259,7 +4261,7 @@ the level aka "priority" of the command buffer and the count of command buffers 
 the command pool from the device, so we need to add a getter function for it. The level will be set to primary. You can
 set it to secondary if you need to record commands that are less important than the primary commands.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::createCommandBuffers() {
   commandBuffers.resize(1);
 
@@ -4281,7 +4283,7 @@ with the \textit{vkBeginCommandBuffer} function and the \textit{VkCommandBufferB
 some flags and a pointer to a \textit{VkCommandBufferInheritanceInfo} struct, which is used for secondary command buffers. We will
 not use secondary command buffers and flags for now, so we will only set the sType.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -4301,7 +4303,7 @@ operation, that takes place before the rendering. We will simply clear the color
 to 1.0 and 0. For that we will need two \textit{VkClearValue} structs that contain the color value and the depth stencil value.
 To get the frambuffer and extent we will need to add 2 getter functions to the swapchain class.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   ...
   VkRenderPassBeginInfo renderPassInfo = {};
@@ -4332,13 +4334,13 @@ operations are needed and the graphics pipeline. Because we only know have the g
 will add a public bind function that executes the function. You can instead just create a getter function and call the
 \textit{vkCmdBindPipeline} function in the renderer.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void Pipeline::bind(VkCommandBuffer commandBuffer){
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   ...
   pipeline->bind(commandBuffer);
@@ -4349,7 +4351,7 @@ Now it's time to create our dynamic viewport and scissor. To do so we will use t
 struct and set them with the according cmd command to the command buffer. The cmd commands take the command buffer, the index
 of the first viewport or scissor, the count of viewports or scissors and a pointer to the viewports or scissors.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   ...
   VkViewport viewport = {};
@@ -4372,7 +4374,7 @@ With that we have finally set everything up and can issue the draw command, that
 We will use the \textit{vkCmdDraw} function that takes the command buffer, the vertex count, the instance count, the first vertex offset
 and the first instance offset. We will draw 3 vertices with 1 instance and no offset.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   ...
   vkCmdDraw(commandBuffer, 3, 1, 0, 0);
@@ -4382,7 +4384,7 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
 After drawing we have to end the render pass and the command buffer recording. We will use the \textit{vkCmdEndRenderPass} and
 \textit{vkEndCommandBuffer} functions.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   ...
   vkCmdEndRenderPass(commandBuffer);
@@ -4402,14 +4404,14 @@ add a loop that renders frames until the window is closed. We actually already h
 application class, so we will just add a \textit{drawFrame} function that will be called in the loop and takes the
 render system that will be used to render the frame.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //app.hpp
 private:
   ...
   void drawFrame(RenderSystem &renderSystem);
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void App::run() {
   RenderSystem renderSystem{device, window, nullptr};
   while (!window.shouldClose()) {
@@ -4441,7 +4443,7 @@ signals that the fence can be opened.
 
 Let's start with creating the semaphores and fences. We will add a new function to the swapchain class that creates the sync objects.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 private:
 void createSyncObjects();
@@ -4450,7 +4452,7 @@ VkSemaphore renderFinishedSemaphore;
 VkFence inFlightFence;
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.cpp
 SwapChain::SwapChain(Device &device, VkExtent2D windowExtent) : device{device} {
   ...
@@ -4479,7 +4481,7 @@ start the next frame.
 
 Just like almost everything, we have to manually clean up the synchronization objects.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::~SwapChain() {
 ...
 vkDestroySemaphore(device.device(), imageAvailableSemaphore, nullptr);
@@ -4506,7 +4508,7 @@ the index of the next available image.
 For this function we will add a \textit{acquireNextImage} function to the swapchain class that takes a pointer to the index of the image
 and returns the result of the \textit{vkAcquireNextImageKHR} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkResult SwapChain::acquireNextImage(uint32_t *imageIndex) {
   vkWaitForFences(device.device(), 1, &inFlightFence, VK_TRUE, UINT64_MAX);
 
@@ -4524,7 +4526,7 @@ returns the command buffer that we will record to. We will also extract the comm
 function. Because we need a index that stores the current image index, we will add a member variable
 and a getter function that returns the command buffer from the current frame index which will be 0 for now.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //render_system.hpp
 public:
   ...
@@ -4538,7 +4540,7 @@ private:
   int currentFrameIndex = 0;
 \end{lstlisting
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //render_system.cpp
 VkCommandBuffer RenderSystem::beginFrame() {
   auto result = swapChain->acquireNextImage(&currentImageIndex);
@@ -4559,7 +4561,7 @@ VkCommandBuffer RenderSystem::beginFrame() {
 
 Let's go ahead and call the \textit{beginFrame} function in the \textit{drawFrame} function and then record the command buffer.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void App::drawFrame(RenderSystem &renderSystem) {
   if(auto commandBuffer = renderSystem.beginFrame()){
     renderSystem.recordCommandBuffer(commandBuffer); 
@@ -4583,7 +4585,7 @@ acquired.
 For submitting the command buffer we will add a \textit{submitCommandBuffer} function to the swapchain class that takes the command buffer and returns
 if the image is ready to be acquired.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
   VkSubmitInfo submitInfo = {};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -4608,7 +4610,7 @@ VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, ui
 You can see that we access the graphics queue from the device class. That means we have to add a getter function for the graphics queue
 and will also add a getter function for the present queue.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //device.hpp
 public:
   VkQueue graphicsQueue() { return graphicsQueue_; }
@@ -4623,7 +4625,7 @@ To present the image we will use the \textit{vkQueuePresentKHR} function that ta
 This struct contains the count of wait semaphores, the wait semaphores, that specify when the image is done rendering, the count of swapchains,
 the swapchains and the image index that we will present.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
   ...
   VkPresentInfoKHR presentInfo = {};
@@ -4646,7 +4648,7 @@ VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, ui
 Now that we have the \textit{submitCommandBuffer} function we can create a new function in the render system class that will end the command buffer
 recording and submit the command buffer to the queue. We will call this function \textit{endFrame}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::endFrame() {
 	VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
   if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
@@ -4661,7 +4663,7 @@ if (result != VK_SUCCESS)
 
 Finally we add the \textit{endFrame} function to the \textit{drawFrame} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void App::drawFrame(RenderSystem &renderSystem) {
 if(auto commandBuffer = renderSystem.beginFrame()){
   renderSystem.recordCommandBuffer(commandBuffer); 
@@ -4678,7 +4680,7 @@ is idleing called \textit{vkDeviceWaitIdle}. We will add this function after our
 is closed. That will make sure that once we close our application the \ac{CPU} will wait until no more rendering is performed. After that we can
 safely destroy our objects in the destructors of our classes.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void App::run() {
   RenderSystem renderSystem{device, window, nullptr};
   while (!window.shouldClose()) {
@@ -4701,7 +4703,7 @@ This is also why we previously used the current frame index to get the current c
 frame index is used to get the current command buffer that we will submit. The current image index is used to get the current image that
 we will render to.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 public:
 static const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -4710,7 +4712,7 @@ static const int MAX_FRAMES_IN_FLIGHT = 2;
 Having multiple rendering proccesses at once will need us to have multiple command buffers, semaphores and fences.
 One for each frame in flight. Let's start of by redefining our fences and semaphores as a vector of fences and semaphores.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 private:
 ...
@@ -4723,7 +4725,7 @@ Next we will need to actually create the amount of command buffers, semaphores a
 command buffers we will need to change the \textit{createCommandBuffers} functions implementation, by resizing the command buffers
 vector to the amount of frames in flight.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::createCommandBuffers() {
 commandBuffers.resize(SwapChain::MAX_FRAMES_IN_FLIGHT);
 ...
@@ -4732,7 +4734,7 @@ commandBuffers.resize(SwapChain::MAX_FRAMES_IN_FLIGHT);
 
 Now we do the same for the semaphores and fences in the swapchains \textit{createSyncObjects} function.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void SwapChain::createSyncObjects() {
 imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -4743,7 +4745,7 @@ inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 We will additionally need to add a for loop to create the semaphores and fences.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void SwapChain::createSyncObjects() {
 ...
 for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -4764,7 +4766,7 @@ for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
 Just like we've created them we should also destroy them.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::~SwapChain() {
 ...
 for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -4779,13 +4781,13 @@ Now that we have the semaphores and fences for each frame in flight we need to m
 wait for the right fence to be opened. For that we will add another \textit{size\textunderscore t} member variable that stores the
 current frame index and is incremented after the frame has been submitted.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //swapchain.hpp
 private:
 size_t currentFrame = 0;
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkResult SwapChain::acquireNextImage(uint32_t *imageIndex) {
 vkWaitForFences(device.device(), 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -4799,7 +4801,7 @@ return result;
 
 We also have to make sure that we use the right objects when submitting the command buffer.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
   VkSubmitInfo submitInfo = {};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -4826,7 +4828,7 @@ VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, ui
 Because we are already keeping track of the current frame index and already use the right objects for the right frame, we only need to
 move to the next frame after we have submitted the command buffer.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::endFrame() {
   currentFrameIndex = (currentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
 }
@@ -4847,7 +4849,7 @@ The old swapchain will have to be a shared pointer. This is because our swapchai
 That's why we will have to change ownership of the old swapchain to a shared pointer and simoultaneously set the swapchain to a nullptr.
 We achive this by calling the \textit{std::move} function. We need the old swapchain because it allows Vulkan to reuse the old swapchains resources.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recreateSwapChain() {
   auto extent = window.extent();
   vkDeviceWaitIdle(device.device());
@@ -4859,7 +4861,7 @@ void RenderSystem::recreateSwapChain() {
 
 The swapchain takes the windows extent. We will need to add a member variable to the render system class that stores the window.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 RenderSystem::RenderSystem(Device &device, Window &window, VkDescriptorSetLayout descriptorSetLayout) : device{device}, window{window} {
   ...
 }
@@ -4869,7 +4871,7 @@ You can see that we are passing the old swapchain to the new swapchain. We will 
 and a new member variable that stores the old swapchain and is set in the constructor. This constructor will create all resources and finally set the old swapchain to a nullptr,
 cleaning up the resources.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 SwapChain::SwapChain(Device &device, VkExtent2D windowExtent, std::shared_ptr<SwapChain> oldSwapChain) : device{device}, windowExtent{windowExtent}, oldSwapChain{oldSwapChain} {
   createSwapChain();
   createImageViews();
@@ -4885,7 +4887,7 @@ SwapChain::SwapChain(Device &device, VkExtent2D windowExtent, std::shared_ptr<Sw
 Now we have to reference the old swapchain in the \textit{VkSwapchainCreateInfoKHR} struct. Because we share the object of the swapchain we can access it's
 private swapchain member variable. Let's set the old swapchain to the \textit{oldSwapChain->swapChain} member variable if the old swapchain is not null.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void SwapChain::createSwapChain() {
   ...
   createInfo.oldSwapchain = oldSwapChain == nullptr ? VK_NULL_HANDLE : oldSwapChain->swapChain;
@@ -4894,11 +4896,11 @@ void SwapChain::createSwapChain() {
 \end{lstlisting}
 
 Next we will have to call the \textit{recreateSwapChain} function when the window is resized. When the window is resized the \textit{vkAcquireNextImageKHR}
-will return the \textit{VK\textunderscore ERROR\textunderscore OUT\textunderscore OF\textunderscore DATE\textunderscore KHR} error code. This error code
+will return the \\ \textit{VK\textunderscore ERROR\textunderscore OUT\textunderscore OF\textunderscore DATE\textunderscore KHR} error code. This error code
 indicates that the swapchain is out of date and has to be recreated. Let's call the \textit{recreateSwapChain} function when this error code is returned
 in the \textit{beginFrame} function and then return a nullptr.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkCommandBuffer RenderSystem::beginFrame() {
   auto result = swapChain->acquireNextImage(&currentImageIndex);
 
@@ -4926,7 +4928,7 @@ needs to take the window and the new width and height as parameters.
 
 Let's also create the window with the \textit{GLFW\textunderscore RESIZABLE} flag set to \textit{GLFW\textunderscore TRUE}.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 Window::Window(int width, int height, std::string &name) : width{width}, height{height}, name{name} {
   ...
   glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
@@ -4951,7 +4953,7 @@ We also have to check if the window was resized after the \textit{submitCommandB
 and call the \textit{recreateSwapChain} function. Let's add a \textit{wasWindowResized} function to the window class that returns the \textit{framebuffer
 	Resized} boolean and a \textit{resetWindowResizedFlag} function that sets the \textit{framebufferResized} boolean to false.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 //window.hpp
 public:
   bool Window::wasWindowResized() {
@@ -4963,7 +4965,7 @@ public:
   }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::endFrame() {
   ...
   auto result = swapChain->submitCommandBuffer(&commandBuffer, &currentImageIndex);
@@ -4983,7 +4985,7 @@ error code when the window is resized.
 Next we have to ensure, is that our fence will only be reset when the window is not begin resized. Currently we reset the fence before we acquire the next image and before we check for the window resize.
 This might cause the fence to halt forever. Therfore we have to move it after the window resize check. I'll set it before we submit the graphics queue.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, uint32_t *imageIndex) {
   ...
   vkResetFences(device.device(), 1, &inFlightFences[currentFrame]);
@@ -4996,7 +4998,7 @@ VkResult SwapChain::submitCommandBuffer(const VkCommandBuffer *commandBuffer, ui
 Finally there are two case that we have to handle. When the window is minimized the width and height will be set to 0. This will cause the swapchain to be recreated with a width and height of 0.
 To avoid this we will check if the width and height are greater than 0 before we recreate the swapchain.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recreateSwapChain() {
   auto extent = window.getExtent();
   while (extent.width == 0 || extent.height == 0){
@@ -5015,7 +5017,7 @@ The second case is that when the swapchains formats have changed we will have to
 So let's check if the old swapchains format is equal to the new swapchains format and throw an error if they are not equal. For that we will need a helper function that returns the
 compare result of the formats.
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 void RenderSystem::recreateSwapChain() {
   ...
   if (!oldSwapChain->compareSwapFormats(*oldSwapChain.get()))
@@ -5023,7 +5025,7 @@ void RenderSystem::recreateSwapChain() {
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=C++]
+\begin{lstlisting}[Language=C++]
 bool SwapChain::compareSwapFormats(const SwapChain &oldSwapChain) {
   return oldSwapChain.swapChainImageFormat == swapChainImageFormat && 
          oldSwapChain.swapChainDepthFormat == swapChainDepthFormat;
@@ -5032,8 +5034,1064 @@ bool SwapChain::compareSwapFormats(const SwapChain &oldSwapChain) {
 
 \listoffigures
 
+\chapter{Game Engine}
+
+\section{Introduction}
+
+We've successfully created a Vulkan application that renders a triangle to the screen. Currently we still miss a lot of features that are
+required to make a game. Neither vertex nor index buffers are supported, nor are textures or shaders. For better understanding, we will implement
+further features in context of a minecraft clone. Using a minecraft clone as an example is a good choice, because it does not require complex
+models or textures. We will implement a world generator, with a player, some mobs and a more complex lighting system. We will also implement
+a simple physics engine and a user interface.
+
+\section{Vertex and Index Buffers}
+
+Before we can start, we have to implement vertex and index buffers. Currently we have the vertices of our triangle hardcoded in the vertex shader.
+We will add a \textit{Buffer} class that will be used to create vertex and index buffers. To create a buffer we will have to know the size of the buffer,
+the usage of the buffer and the sharing mode of the buffer. After that we have to allocate the buffer memory and bind the buffer to the memory.
+
+\subsection{Buffer Class}
+
+Let's add the \textit{Buffer} class to the project. The buffer class will have a constructor that takes the device, the size of one vertex or index, the count of vertices or indices,
+the usage flags of the buffer, the memory property flags and a minimum offset alignment which will be 0 by default. The constructor will then call a new device funtion that will create the buffer and the buffer memory.
+This function will take the total size of the buffer, the usage flags, the memory property flags and the buffer and buffer memory as reference. Therefor we will also need some member variables
+that store all of these objects, except the minimum offset alignment. Additionally we wil need a destructor and we will have to remove the copy and move constructors and assignment operators.
+
+\begin{lstlisting}[Language=C++]
+//buffer.hpp
+class Buffer {
+public:
+  Buffer(Device &device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment = 0);
+  ~Buffer();
+
+  Buffer(const Buffer &) = delete;
+  Buffer &operator=(const Buffer &) = delete;
+
+private:
+  Device &device;
+  VkDeviceSize instanceSize;
+  uint32_t instanceCount;
+  VkBufferUsageFlags usageFlags;
+  VkMemoryPropertyFlags memoryPropertyFlags;
+  VkDeviceSize bufferSize;
+
+  VkBuffer buffer = VK_NULL_HANDLE;
+  VkDeviceMemory bufferMemory = VK_NULL_HANDLE;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+//buffer.cpp
+Buffer::Buffer(Device &device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, 
+               VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) 
+    : device{device}, instanceSize{instanceSize}, instanceCount{instanceCount}, usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
+  bufferSize = instanceSize * instanceCount;
+  device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, bufferMemory);
+}
+\end{lstlisting}
+
+Before we can create the buffer, we have to talk about the minimum offset alignment. Basically, certain GPUs require that one instance is aligned to a certain offset.
+This offset is called the minimum offset alignment, which usually are 4, 16 or 256. For example, we might have to align each vertex to a 16 byte offset. That each instance has to be aligned to an offset that is a multiple of 16.
+In this case we might have a vertex size of 52 bytes. With the minimum offset alignment of 16 bytes, we would have to assign 64 bytes to each vertex, because 64 is the next multiple of 16.
+This offset allows the GPU to access the data faster.
+
+Alright but how do we get the next multiple of the minimum offset alignment? Let's think about it for a second.
+How can we get a multiple of 16 for example? Let's start by looking at the binary representation of some multiples of 16.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		Number & Binary  \\
+		\hline
+		16     & 0010000 \\
+		32     & 0100000 \\
+		48     & 0110000 \\
+		64     & 1000000 \\
+		80     & 1010000 \\
+		96     & 1100000 \\
+		112    & 1110000 \\
+		\hline
+	\end{tabular}
+\end{table} \FloatBarrier
+
+Do you see a pattern? The last 4 bits are always 0. That means we can get the a multiple of 4 by setting the last 2 bits to 0.
+This comes from the fact that each bit represents a power of 2. The 5th bit represents 16 and each bit after that represents a multiple of 16.
+Adding these bits together, which are already multiple of 16, will always result in a multiple of 16.
+For the number 52 we would have to set the last 4 bits to 0.
+
+\[ 52 = 00110100 \]
+\[ 48 = 00110000 \]
+
+But wait 48 is to small. Just setting the last 4 bits to 0 will give us the previous multiple of 16.
+We have to add 15 to the number to get the next multiple of 16. This is because when our number is already a multiple of 16, we want to keep it.
+
+\[ 52 + 15 = 67 &= 01000011 \]
+\[ 64 &= 1000000 \]
+
+If we would add 16 to the number, we would get a multiple of 16 that is to big, when we already have a multiple of 16.
+
+Wrong:
+\[ 48 + 16 = 64 = 1000000 \]
+With this approach we would assign 16 bytes more then we need to each vertex, filling the memory with unnecessary data.
+
+Right:
+\[ 48 + 15 = 63 = 0111111 \]
+\[ 48 = 0110000 \]
+
+So we have to add the minimum offset alignment minus 1 to the number and then set the last bits to 0.
+How do we set the last bits to 0? We can use the bitwise AND operator. The bitwise AND operator will set the bits to 0 if the corresponding bit in the other number is 0.
+We also have to implement multiple minimum offset alignments. Let's look a bit further.
+
+4 in binary is 100, 16 is 10000 and 256 is 100000000. Each of these numbers have only one bit set to 1, with the rest being 0. We want to keep all bits that are equal or bigger then our
+minimum offset alignment and set the rest to 0.
+
+When we have 52 + 16 = 68 = 1000100 we want to AND combine it with 1110000 to get 64 = 1000000. 1110000 might seem like a random number, but there is actually
+a way to get there from our minimum offset alignment of 16. When we look at the binary representation of 1110000 we see that the last 4 bits are 0. The number 16 also has the last 4 bits set to 0.
+Each bit before the last 4 bits is set to 1 in 1110000. When we subtract 1 from 16 we get 15 which is 0001111 in binary. When we invert the bits of 15 we get 1110000.
+This is the number we want to AND combine with our number. This will work for any minimum offset alignment.
+
+Let's implement this in code.
+Before we get the buffer size we will add a function that will get the alignment size of one instance. This function will be called \textit{getAlignmen}
+and will take the size of one instance and the minimum offset alignment as parameters. It will return the alignment size of one instance.
+Inside we will check if the min offset alignment is 0. If it is we will just return the instance size back. If it is not, we will
+the calculate the alignment size like we discussed before.
+
+\begin{lstlisting}[Language=C++]
+VkDeviceSize Buffer::getAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment) {
+  if (minOffsetAlignment == 0)
+    return instanceSize;
+
+  // Calculate the alignment size
+  // ~ is the bitwise NOT operator that inverts the bits of the number
+  return (instanceSize + minOffsetAlignment - 1) & ~(minOffsetAlignment - 1);
+}
+
+Buffer::Buffer(Device &device, VkDeviceSize instanceSize, uint32_t instanceCount, VkBufferUsageFlags usageFlags, 
+               VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize minOffsetAlignment) 
+    : device{device}, instanceSize{instanceSize}, instanceCount{instanceCount}, usageFlags{usageFlags}, memoryPropertyFlags{memoryPropertyFlags} {
+  alignmentSize = getAlignment(instanceSize, minOffsetAlignment);
+  bufferSize = alignmentSize * instanceCount;
+  device.createBuffer(bufferSize, usageFlags, memoryPropertyFlags, buffer, bufferMemory);
+}
+\end{lstlisting}
+
+\subsection{Buffer creation}
+
+Now we have to implement the \textit{createBuffer} function in the device class.
+This function will take the size of the buffer, the usage flags, the memory property flags, the buffer and the buffer memory as reference.
+We'll begin by filling the \textit{VkBufferCreateInfo} struct. This struct contains the size of the buffer, the usage flags and the sharing mode.
+
+\begin{lstlisting}[Language=C++]
+void Device::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
+  VkBufferCreateInfo bufferInfo = {};
+  bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+  bufferInfo.size = size;
+  bufferInfo.usage = usage;
+  bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+  if (vkCreateBuffer(device_, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create buffer!");
+}
+\end{lstlisting}
+
+Next we have to allocate the buffer memory on the GPU. We will have to get the memory requirements of the buffer and then fill the \textit{VkMemoryAllocateInfo} struct.
+This struct contains the size of the memory and the memory type index. To get the memory type index, we will use the \textit{findMemoryType} function that we have already
+implemented.
+
+Mapping the CPU to the buffer memory allows us to write to the buffer memory from the CPU. This is usefull because
+our model data will be stored on the CPU and then used on the GPU on runtime. The corresponding memory type has to have the
+\textit{VK\textunderscore MEMORY\textunderscore PROPERTY\textunderscore HOST\textunderscore VISIBLE\textunderscore BIT} flag set.
+But because the CPU and GPU are seperate devices, we will have to synchronize the data transfer between the CPU and GPU.
+To do so we have two options. Either we check if the memory type has the \textit{VK\textunderscore MEMORY\textunderscore PROPERTY\textunderscore HOST\textunderscore COHERENT\textunderscore BIT} flag set,
+which will allow Vulkan to automatically synchronize the data transfer between the CPU and GPU. Or we can manually synchronize the data transfer by flushing and invalidating the memory.
+We will use the first option, because it is easier to implement and will be sufficient for our needs.
+
+\begin{lstlisting}[Language=C++]
+void Device::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
+  ...
+  VkMemoryRequirements memRequirements;
+  vkGetBufferMemoryRequirements(device_, buffer, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+allocInfo.allocationSize = memRequirements.size;
+p<
+allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+
+if (vkAllocateMemory(device_, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
+  throw std::runtime_error("Failed to allocate buffer memory!");
+
+vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+}
+\end{lstlisting}
+
+Now all we have to do is bind the buffer to the buffer memory. We will can define a offset for the buffer memory, but we will set it to 0.
+
+\begin{lstlisting}[Language=C++]
+void Device::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory) {
+...
+vkBindBufferMemory(device_, buffer, bufferMemory, 0);
+}
+\end{lstlisting}
+
+\subsection{Buffer destruction}
+
+When our application closes we have to destroy the buffer and the free the memory on the GPU. We will add a destructor to the buffer class that will destroy the buffer and free the memory.
+
+\begin{lstlisting}[Language=C++]
+Buffer::~Buffer() {
+vkDestroyBuffer(device.device(), buffer, nullptr);
+vkFreeMemory(device.device(), bufferMemory, nullptr);
+}
+\end{lstlisting}
+
+\subsection{Model class}
+
+Now that we can create buffers, we will add a model class that will hold the vertex and index buffers. The model class will have a constructor that takes the device and a Builder class that
+is a struct in the model class. The Builder struct will be used to load in the model data and provide us with its vertices and indices. The model classes constructor will then
+call the \textit{createVertexBuffer} and \textit{createIndexBuffer} functions that will create the vertex and index buffers from the vertices and indices.
+
+But wait a second. We also have to add a vertex struct that will hold the position and color of the vertex.
+These values will be a vec3 from the \ac{GLM} library. The reason we use this vec3, is because
+it ensures a consistent memory layout of the data. This is important, because the data has to be sent to the GPU and the GPU has to know how to interpret the data.
+
+For the index buffer it will be fine to use a \textit{uint32\textunderscore t} type.
+We will also remove the copy and move constructors and assignment operators.
+
+\begin{lstlisting}[Language=C++]
+//model.hpp
+class Model {
+public:
+struct Vertex {
+  glm::vec3 position{};
+  glm::vec3 color{};
+};
+
+struct Builder {
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
+};
+
+Model(Device &device, const Model::Builder &builder);
+~Model();
+
+private:
+Device &device;
+
+Buffer vertexBuffer;
+Buffer indexBuffer;
+
+uint32_t vertexCount;
+
+void createVertexBuffer(const std::vector<Vertex> &vertices);
+void createIndexBuffer(const std::vector<uint32_t> &indices);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+//model.cpp
+Model::Model(Device &device, const Model::Builder &builder) : device{device} {
+createVertexBuffer(builder.vertices);
+createIndexBuffer(builder.indices);
+}
+\end{lstlisting}
+
+Let's begin by implementing the \textit{createVertexBuffer} function. This function will take the vertices as a parameter and instanciate two new buffers.
+The first buffer will be used to transfer the data from the CPU to the GPU. The second buffer will be used to store the data on the GPU for rendering.
+
+Let's begin with instanciating the first buffer, which will be called the staging buffer.
+We will need to get the vertex count and assure that we have at least 3 vertices, because we need at least 3 vertices to render a triangle.
+If we have 3 or more vertices we can get the size of one vertex and then calculate the overall size of the buffer.
+Then we can create the staging buffer.
+For the buffer usage flags we will use the \textit{VK\textunderscore BUFFER\textunderscore USAGE\textunderscore TRANSFER\textunderscore SRC\textunderscore BIT}
+flag, indicating that we will transfer the data from this buffer to a different buffer. The memory property flags, will have to ensure
+that the memory we will choose for staging the buffer is visible to the CPU and allows Vulkan to automatically synchronize the data transfer between the CPU and GPU
+for us. The \textit{VK\textunderscore MEMORY\textunderscore PROPERTY\textunderscore HOST\textunderscore VISIBLE\textunderscore BIT}
+indicates that the memory is visible to the CPU and the \\
+\textit{VK\textunderscore MEMORY\textunderscore PROPERTY\textunderscore HOST\textunderscore COHERENT\textunderscore BIT}
+indicates that we do not have to manually synchronize the data transfer between the CPU and GPU.
+
+\begin{lstlisting}[Language=C++]
+void Model::createVertexBuffer(const std::vector<Vertex> &vertices) {
+  vertexCount = static_cast<uint32_t>(vertices.size());
+  assert(vertexCount >= 3 && "Vertex count must be at least 3!");
+
+  uint32_t vertexSize = sizeof(vertices[0]);
+  VkDeviceSize bufferSize = vertexSize * vertexCount;
+
+  Buffer stagingBuffer{device, vertexSize, vertexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+}
+\end{lstlisting}
+
+Great, now we have a buffer that can be accessed from the CPU, will be used to later transfer the data to the actual vertex buffer and will automatically synchronize the data transfer between the CPU and GPU.
+Next we will have to map the buffers memory to the CPU. This actually just means, that we will retrieve a pointer to the memory that we can use on the CPU.
+We'll add a map function to the buffer class that calls the \textit{vkMapMemory} function, which will retriev the pointer to the memory and set it to a new generic pointer called \textit{mappedMemory}.
+When adding \textit{mappedMemory} as a member variable to the buffer class, we will have to instantiate it with \textit{nullptr}.
+It will take the size of the memory and the offset as parameters,
+ensure that we have a buffer and buffer memory and then call the \textit{vkMapMemory} function. For the size and offset we will use the \textit{VK\textunderscore WHOLE\textunderscore SIZE} constant and 0.
+This constant indicates that the entire remaining memory of the buffer will be written to. The output of the function will be the result of the \textit{vkMapMemory} function.
+
+\begin{lstlisting}[Language=C++]
+VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset) {
+  asser(buffer && bufferMemory && "Buffer has to be created before mapping!");
+  return vkMapMemory(device.device(), bufferMemory, offset, size, 0, &mappedMemory);
+}
+\end{lstlisting}
+
+The \textit{vkMapMemory} function takes the device, the buffer memory, the offset, the size of the memory, some flags and a pointer to the memory.
+There is one available flag, which is the \textit{VK\textunderscore MEMORY\textunderscore MAP\textunderscore PLACED\textunderscore BIT\textunderscore KHR} flag.
+But it we will only need it when remapping memory that is already mapped. We will set it to 0. The function will set a new member variable called \textit{mappedMemory} to the memory pointer.
+
+Now we can use this pointer to memcpy the data from the CPU to the GPU.
+We'll add a new function to the buffer class called \textit{writeToBuffer} that will take a generic pointer to the data that we want to write to the buffer, the size of the data and the offset.
+Inside we will make sure our buffer is mapped, then we check if the size of the data is equal to the \textit{VK\textunderscore WHOLE\textunderscore SIZE} constant.
+If it is not set to a different size, we will write the data to the beginning of the mapped memory.
+If it is not we will write the data considering an offset. To add the offset to our pointer, aka move the pointer by the offset size, we will have to cast it to a char pointer.
+This is needed because, in pointer arithmetic, incrementing a char pointer will move it by 1 byte (since a char is one byte in size).
+We will make the \textit{writeToBuffer} functions size optional with
+the default value of \textit{VK\textunderscore WHOLE\textunderscore SIZE} and the offset optional with the default value of 0.
+
+\begin{lstlisting}[Language=C++]
+void Buffer::writeToBuffer(const void *data, VkDeviceSize size, VkDeviceSize offset) {
+  assert(mappedMemory && "Cannot write to unmapped buffer!");
+
+  if(size == VK_WHOLE_SIZE){
+    memcpy(mappedMemory, data, bufferSize);
+  } else {
+    char *memOffset = (char *)mappedMemory;
+    memOffset += offset;
+    memcpy(memOffset, data, size);
+  }
+}
+\end{lstlisting}
+
+Now we can map the memory of the staging buffer and write the data to the buffer.
+
+\begin{lstlisting}[Language=C++]
+void Model::createVertexBuffer(const std::vector<Vertex> &vertices) {
+  ...
+  stagingBuffer.map();
+  stagingBuffer.writeToBuffer((void *)vertices.data());
+}
+\end{lstlisting}
+
+The data is successfully lying on the GPU now. We can now create the actual vertex buffer, that will be used for rendering.
+We will have to set the usage flags to \textit{VK\textunderscore BUFFER\textunderscore USAGE\textunderscore TRANSFER\textunderscore DST\textunderscore BIT}, to
+indicate that this buffer will be a destination for a transfer operation and the \\
+\textit{VK\textunderscore BUFFER\textunderscore USAGE\textunderscore VERTEX\textunderscore BUFFER\textunderscore BIT}
+flag. This flag indicates, that the buffer will be used as a vertex buffer. The memory property flags will have to ensure that the memory is device local,
+which means that the memory is only accessible by the GPU. This will allow the GPU to access the memory faster, because it does not have to synchronize the data transfer between the CPU and GPU.
+
+\textit{VK\textunderscore MEMORY\textunderscore PROPERTY\textunderscore DEVICE\textunderscore LOCAL\textunderscore BIT} flag.
+
+\begin{lstlisting}[Language=C++]
+void Model::createVertexBuffer(const std::vector<Vertex> &vertices) {
+  ...
+  vertexBuffer = std::make_unique<Buffer>(device, vertexSize, vertexCount, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
+\end{lstlisting}
+
+Okay, let's copy the data from the staging buffer to the vertex buffer. This can be done because both are located on the GPU and the GPU can access both of them.
+To do so we will add a function to the device class called \textit{copyBuffer} that will take the source buffer, the destination buffer and the size of the buffer as parameters.
+Because we need to send a command to the GPU to copy the data, we will have to allocate a new command buffer and begin recording the command buffer. For that, we will
+add a new function to the device class called \textit{beginSingleTimeCommands} that will return a new command buffer. This function will allocate a new command buffer from the command pool,
+begin recording the command buffer and return the command buffer. When beginning the command buffer, we can add the \\
+\textit{VK\textunderscore COMMAND\textunderscore USAGE\textunderscore ONE\textunderscore TIME\textunderscore SUBMIT\textunderscore BIT} flag to indicate that the command buffer will only be submitted once.
+
+\begin{lstlisting}[Language=C++]
+VkCommandBuffer Device::beginSingleTimeCommands() {
+  VkCommandBufferAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandPool = commandPool;
+  allocInfo.commandBufferCount = 1;
+
+  VkCommandBuffer commandBuffer;
+  vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer);
+
+  VkCommandBufferBeginInfo beginInfo = {};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+  vkBeginCommandBuffer(commandBuffer, &beginInfo);
+  return commandBuffer;
+}
+\end{lstlisting}
+
+We will call this function and then use the result to call the \textit{vkCmdCopyBuffer} function. This function will copy the data from the staging buffer to the vertex buffer.
+It will take the command buffer, the source buffer, the destination buffer, the region count and the regions as parameters. The region count will be 1 and the region will be a
+\textit{VkBufferCopy} struct that contains the size of the buffer and optionally the offsets of the source and destination buffer.
+
+\begin{lstlisting}[Language=C++]
+void Device::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+  VkBufferCopy copyRegion = {};
+  copyRegion.size = size;
+  vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+}
+\end{lstlisting}
+
+Next we end the command bufffer recording, submit it to the graphics queue and wait for the queue to finish. After that we will free the command buffer.
+Let's add a \textit{endSingleTimeCommands} function to the device class that will take the command buffer as a parameter and perform these steps.
+
+\begin{lstlisting}[Language=C++]
+void Device::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+  vkEndCommandBuffer(commandBuffer);
+
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &commandBuffer;
+
+  vkQueueSubmit(graphicsQueue_, 1, &submitInfo, VK_NULL_HANDLE);
+  vkQueueWaitIdle(graphicsQueue_);
+
+  vkFreeCommandBuffers(device_, commandPool, 1, &commandBuffer);
+}
+\end{lstlisting}
+
+Don't forget to call it inside the \textit{copyBuffer} function.
+
+\begin{lstlisting}[Language=C++]
+void Device::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+  VkBufferCopy copyRegion = {};
+  copyRegion.size = size;
+  vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+  endSingleTimeCommands(commandBuffer);
+}
+\end{lstlisting}
+
+Now we call the \textit{copyBuffer} function in the \textit{createVertexBuffer} function, passing in the staging buffer as the src, the vertex buffer as the dst buffer
+and the size of the buffer. We'll add a getter function to the buffer class that will return the buffer, to pass it to the \textit{copyBuffer} function.
+
+\begin{lstlisting}[Language=C++]
+void Model::createVertexBuffer(const std::vector<Vertex> &vertices) {
+  ...
+  device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(), bufferSize);
+}
+\end{lstlisting}
+
+The \textit{createIndexBuffer} function will be implemented in the same way as the \textit{createVertexBuffer} function. The only difference is that we will use the \\
+\textit{VK\textunderscore BUFFER\textunderscore USAGE\textunderscore INDEX\textunderscore BUFFER\textunderscore BIT} flag for the index buffer and that we will
+check for the minimum index count of 1. We will also have to add a new member variable to the model class that will store if the model has an index buffer.
+
+\begin{lstlisting}[Language=C++]
+void Model::createIndexBuffer(const std::vector<uint32_t> &indices) {
+  indexCount = static_cast<uint32_t>(indices.size());
+  hasIndexBuffer = indexCount > 0;
+
+  if(!hasIndexBuffer)
+    return;
+
+  uint32_t indexSize = sizeof(indices[0]);
+  VkDeviceSize bufferSize = indexSize * indexCount;
+
+  Buffer stagingBuffer{device, indexSize, indexCount, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+
+  stagingBuffer.map();
+  stagingBuffer.writeToBuffer((void *)indices.data());
+
+  indexBuffer = std::make_unique<Buffer>(device, indexSize, indexCount, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 
+                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+  device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(), bufferSize);
+}
+\end{lstlisting}
+
+We will have to make sure that the staging buffer is cleaned up when we close the application.
+For that we will add a function to the buffer class called \textit{unmap} that will call the \textit{vkUnmapMemory} function, if the buffer is mapped.
+The function will then set the \textit{mappedMemory} member variable to nullptr.
+
+\begin{lstlisting}[Language=C++]
+void Buffer::unmap() {
+  if(mappedMemory){
+    vkUnmapMemory(device.device(), bufferMemory);
+    mappedMemory = nullptr;
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+Buffer::~Buffer() {
+  unmap();
+  vkDestroyBuffer(device.device(), buffer, nullptr);
+  vkFreeMemory(device.device(), bufferMemory, nullptr);
+}
+\end{lstlisting}
+
+\subsection{Model Builder}
+
+The model builder will be used to load in the model data. We will add a \textit{loadModel} function to the builder class that will take the path to the model as a parameter.
+
+\begin{lstlisting}[Language=C++]
+struct Builder {
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
+
+  void loadModel(const std::string &filepath);
+};
+\end{lstlisting}
+
+Before we can start implementing the \textit{loadModel} function, we will have to take a look at the model data format.
+There are 3 common file formats that are used to store model data, the \ac{OBJ}, \ac{FBX} and \ac{glTF} format.
+The industry standart for model data in game development is the \ac{FBX} format. The problem with the \ac{FBX} format is that
+it is not well documented and not open source. I've read multiple times that the \ac{FBX} format is  proprietary and therfore a
+pain in the ass to implement. \ac{OBJ} on the other hand is super simple to implement, but does not give us many features
+like skeletal animation. Finally, \ac{glTF} offers pretty much the same features as \ac{FBX} but is better documented,
+open source and easier to implement.
+
+I've chosen to use the \ac{glTF} format, because we will need animations and it is easier to use then the \textit{FBX}
+format. Let's take a look. \ac{glTF} is, at it's core, is just a JSON file. The structure of our model will be
+structured like this:
+
+\begin{figure}[hbtp]
+	\centering \includegraphics[width=0.80\textwidth]{gltf-structure.png}
+	\caption{glTF structure}
+\end{figure} \FloatBarrier
+
+\ac{glTF} allows us to not only store an object but entire scenes, with multiple objects each.
+These scenes contain allot of data that I will not mention right now or at all. The only thing that
+we need right now is that the buffer contains the vertex and index data that we need. This buffer might
+refer to a binary data file containing the vertex and index data. It's parent object, the buffer view,
+will tell us where the data starts and how long it is. The accessor will tell us the format of the data,
+for example if it is a 3D vector or a 2D vector. Then we have a mesh that will contain the accessor
+, the material and some additional data like the primitive type. The material will contain the texture that will be used
+for the object. The texture will then contain references to the image that the object will use.
+
+We will not worry about how exactly that looks, since there is a library that will do that for us.
+The library is called \textit{tinygltf} and is a single header file that we can include in our project.
+We will add the \textit{tiny\textunderscore gltf.h}, \textit{json.hpp}, \textit{stb\textunderscore image.h} and
+\textit{stb\textunderscore image\textunderscore write.h} header files to our project
+and then implement the \textit{loadModel} function.
+To add the header files to our project we will have to download them from the
+\href{https://github.com/syoyo/tinygltf}{tinygltf} github repository and add it to our project.
+To add it you will have to do some digging, since adding a header file to a project is different for each development environment.
+You could for example add them to the \textit{/usr/include} directory on linux or add them to the project directory.
+
+Once that is done we can include them in our model file. We do so by defining the \textit{TINYGLTF\textunderscore IMPLEMENTATION},
+\textit{STB\textunderscore IMAGE\textunderscore IMPLEMENTATION} and \\
+\textit{STB\textunderscore IMAGE\textunderscore WRITE\textunderscore IMPLEMENTATION} macros before including the header file.
+
+\begin{lstlisting}[Language=C++]
+//model.cpp
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "tiny_gltf.h"
+\end{lstlisting}
+
+Now we can implement the \textit{loadModel} function. \textit{tinygltf} provides us with 2 functions that we can use to load in the model data.
+One for loading the model from JSON/ASCII files (.gltf) and one from binary files (.glb).
+We will use the ASCII function, since most of the time the model data will be stored in ASCII format. Sometimes buffer data will be stored in binary format.
+Bevor we can load in model data, we have to create a \textit{tinygltf} model and a \textit{tinygltf} loader. Additionally we need a error string and a warning string.
+
+The loader holds the \textit{LoadASCIIFromFile} function that will load in the model data from a file. It takes in a pointer to the \textit{tinygltf} model
+that we will write the data to, the error string that will be filled with an error message if the function fails, the warning string that will be filled with a warning message if one occurs
+and finally the path to the model file. The function will return a boolean that indicates if the function was successful or not. If the error string is not empty
+we will check if it is empty and debug log the error message. We'll do the same for the warning string and the result of the function.
+
+\begin{lstlisting}[Language=C++]
+void Model::Builder::loadModel(const std::string &filepath) {
+  tinygltf::Model gltfModel;
+  tinygltf::TinyGLTF loader;
+  std::string err;
+  std::string warn;
+
+  bool result = loader.LoadASCIIFromFile(&gltfModel, &err, &warn, filepath);
+
+  if(!err.empty())
+    LOG_ERROR(err);
+
+  if(!warn.empty())
+    LOG_WARN(warn);
+
+  if(!result)
+    throw std::runtime_error("Failed to load model!");
+}
+\end{lstlisting}
+
+Next we have to get the vertices and indices from the model data. The model contains a list of meshed that we can iterate over. For each mesh we will access each primitive.
+Each primitive has a list of attributes, that define the buffers accessors by index. For example, the vertex aka position buffer might be stored in the 0th accessor. Therfore
+the attribute with the key \textit{POSITION} will have the value 0. We will get the accessor by the index and then hangle to the buffer view using the accessors buffer view index.
+The buffer view will then give us the buffer that contains the data in binary format. We can then reinterpret cast the binary data to a float pointer. This will give us the vertex data
+in a sequential ordered array.
+
+\begin{lstlisting}[Language=C++]
+void Model::Builder::loadModel(const std::string &filepath) {
+  ...
+  for(const auto &mesh : gltfModel.meshes){
+    for(const auto &primitive: mesh.primitives){
+      const auto &vertexAccessor = gltfModel.accessors[primitive.attributes.find("POSITION")];
+      const auto &vertexBufferView = gltfModel.bufferViews[vertexAccessor.bufferView];
+      const auto &vertexBuffer = gltfModel.buffers[vertexBufferView.buffer];
+      const float *vertexData = reinterpret_cast<const float *>(&vertexBuffer.data[vertexBufferView.byteOffset + vertexAccessor.byteOffset]);
+    }
+  }
+}
+\end{lstlisting}
+
+Okay so the vertex data is now a buffer of floats. We will have to convert this buffer to a vector of vertices. But how exactly do we do that?
+The vertex data is stored in a sequential array with alternating x, y and z values. We will have to iterate over the vertex data and add the x, y and z values.
+as a new Vertex, to our vertices vector.
+
+\begin{lstlisting}[Language=C++]
+void Model::Builder::loadModel(const std::string &filepath) {
+  ...
+  for (size_t i = 0; i < vertexAccessor.count; i++) {                                                                                                                                                 
+    vertices.push_back({{vertexData[i * 3], vertexData[i * 3 + 1],                                                                   
+        vertexData[i * 3 + 2]}});                                                                                                                                                                                
+  }  
+}
+\end{lstlisting}
+
+Now we do the exact same for the indices data. With the exception that we will get the accessor by the index of the primitive indices attribute and
+store each element in the indices vector seperately as a uint32\textunderscore t. Additionally we will have to check if the model has indices, because
+not all models have indices. To do so we will check if the primitive has a indices attribute by checking if it is non negative.
+
+\begin{lstlisting}[Language=C++]
+  ...
+  if(primitive.indices >= 0){
+    const auto &indexAccessor = gltfModel.accessors[primitive.indices];
+    const auto &indexBufferView =
+        gltfModel.bufferViews[indexAccessor.bufferView];
+    const auto &indexBuffer = gltfModel.buffers[indexBufferView.buffer];
+    const uint32_t *indexData =
+        reinterpret_cast<const uint32_t *>(&indexBuffer.data[0]);
+
+    for (size_t i = 0; i < indexAccessor.count; i++) {
+      indices.push_back(indexData[i]);
+    }
+  }
+\end{lstlisting}
+
+\subsection{Model construction}
+
+Now that we have the model data, we can construct the model. To do so we will create a builder object and call the \textit{loadModel} function.
+For that, I've found a simple cube model online from this \href{https://sketchfab.com/3d-models/epic-simple-cube-3a180582490b4395bc6384ea2bb740aa}{sketchfab} website.
+I've downloaded the model and placed it in the models directory. Full credit goes to German\textunderscore Martian \cite{German_Martian} for creating the model.
+The model will be a shared pointer to the model class and will be created by passing the device and the builder object to the model constructor.
+The reason we use a shared pointer is because we will have to pass the model to the renderer class and we do not want to copy the model data.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+Model::Builder builder{};
+builder.loadModel("models/cube/cube.gltf");
+model = std::make_shared<Model>(device, builder);
+\end{lstlisting}
+
+\subsection{Buffer usage}
+
+We've created the vertex and index buffers and they are located on the GPU. But we still haven't told the GPU to use them.
+To do so we have to bind each models buffers to the graphics pipeline and then draw the model using the \textit{vkCmdDrawIndexed} function,
+which will ignore the predefined primitive topology and use the indices to draw the model.
+
+We will add a \textit{bind} function to the model class that will take the command buffer as a parameter and bind the vertex and index buffers to the graphics pipeline.
+We'll call this function while recording the command buffer, after binding the pipeline. Inside the \textit{bind} function we will call the \textit{vkCmdBindVertexBuffers}
+function, which allows us to bind multiple vertex buffers to the graphics pipeline. Because it takes an array of buffers and offsets, we will have to add our vertex buffer
+to an array and create an additional array for the offsets.
+
+\begin{lstlisting}[Language=C++]
+void Model::bind(VkCommandBuffer commandBuffer) {
+  VkBuffer vertexBuffers[] = {vertexBuffer->getBuffer()};
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+}
+\end{lstlisting}
+
+To understand, what the \textit{vkCmdBindVertexBuffers} function does, we have to take a look our graphics pipeline.
+The graphics pipeline has a vertex input state that defines the format and the location of the vertex data.
+The vertex input state needs a vertex buffer binding description, which will define the stride aka the size of one vertex and the input rate.
+The input rate will define how the data is read from the buffer.
+In our case we will use the \textit{VK\textunderscore VERTEX\textunderscore INPUT\textunderscore RATE\textunderscore VERTEX} to indicate that
+we will move to the next vertex after each vertex. Otherwise we could use the \textit{VK\textunderscore VERTEX\textunderscore INPUT\textunderscore RATE\textunderscore INSTANCE}
+to indicate that we will move to the next vertex after each instance.
+It also needs a vertex attribute description, which will define the format of the vertex data. This struct will define the binding, the location, the format and the format.
+The binding is used to link the vertex buffer binding description to the corresponding vertex attribute description. The location is used to link the vertex attribute description to the shader
+and the format is used to define if the data is a float, a vec2, a vec3 or a vec4. We will need two vertex attribute descriptions, one for each vertex attribute.
+Let's go ahead and add two functions to the Vertex struct that will return the binding description and the attribute descriptions.
+
+\begin{lstlisting}[Language=C++]
+//model.hpp
+struct Vertex {
+  glm::vec3 position{};
+  glm::vec3 color{};
+
+  static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
+  static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+};
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+//model.cpp
+std::vector<VkVertexInputBindingDescription> Vertex::getBindingDescriptions() {
+  std::vector<VkVertexInputBindingDescription> bindingDescriptions(0);
+  bindingDescriptions[0].binding = 0;
+  bindingDescriptions[0].stride = sizeof(Vertex);
+  bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+  return bindingDescription;
+}
+\end{lstlisting}
+
+For the attribute descriptions we will have to define the location of the vertex data. We will use the location 0 for the position and the location 1 for the color.
+Both the position and color will be a vec3, so we will use the \textit{VK\textunderscore FORMAT\textunderscore R32G32B32\textunderscore SFLOAT} format.
+Even tho the position is not a RGB value, we will use the RGB format, because it uses 3 floats.
+The binding will be 0 for both, because we only have one binding description and the offset will be the result of the \textit{offsetof} function for the position and color.
+The \textit{offsetof} calculates the offset of one attribute in a struct.
+
+\begin{lstlisting}[Language=C++]
+std::vector<VkVertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
+  std::vector<VkVertexInputAttributeDescription> attributeDescriptions = {};
+  attributeDescriptions.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position)});
+  attributeDescriptions.push_back({0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)});
+
+  return attributeDescriptions;
+}
+\end{lstlisting}
+
+Now we will have to add the vertex input state to the graphics pipeline.
+
+\begin{lstlisting}[Language=C++]
+void Pipeline::createGraphicsPipeline(const std::string &vertPath, const std::string &fragPath, const PipelineConfigInfo &configInfo) {
+  ...
+  auto bindingDescriptions = Model::Vertex::getBindingDescriptions();
+  auto attributeDescriptions = Model::Vertex::getAttributeDescriptions();
+
+  VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+  vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+  vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+  vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+  vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+}
+\end{lstlisting}
+
+Great! Now we have bound the vertex buffer to the graphics pipeline, specificly to the input assembler stage.
+But we have still not bound the index buffer to the graphics pipeline. To do so we will check if the model has an index buffer and if it does, we will call the \textit{vkCmdBindIndexBuffer}
+function. Since we can not bind multiple index buffers to the graphics pipeline at once, we can simple pass in the index buffer, the offset and the index type to the function.
+The index type is used to define how big the indices are. We will use the \textit{VK\textunderscore INDEX\textunderscore TYPE\textunderscore UINT32} type, because we are using 32 bit indices.
+
+\begin{lstlisting}[Language=C++]
+void Model::bind(VkCommandBuffer commandBuffer) {
+  VkBuffer vertexBuffers[] = {vertexBuffer->getBuffer()};
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+  if(hasIndexBuffer)
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
+}
+\end{lstlisting}
+
+Alright we have everything set up, so that we can draw the model. Currently we are using the \textit{vkCmdDraw} function to draw the model.
+This function does not take indices into account and will just draw the vertices in the order they are stored in the vertex buffer.
+To use the indices, we will have to use the \textit{vkCmdDrawIndexed} function. This function will take
+the command buffer, the index count, the instance count, the first index and the vertex offset as parameters..
+The instance count tells us how many time the model will be drawn.
+
+We will add a \textit{draw} function to the model class that will take the command buffer as a parameter and call the \textit{vkCmdDrawIndexed} function,
+if the model has an index buffer. If it does not have an index buffer, we will call the \textit{vkCmdDraw} function.
+
+\begin{lstlisting}[Language=C++]
+void Model::draw(VkCommandBuffer commandBuffer) {
+  if(hasIndexBuffer)
+    vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+  else
+    vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+}
+\end{lstlisting}
+
+Don't forget to call the \textit{bind} and \textit{draw} functions in the \textit{recordCommandBuffer} function.
+And since we need the model we will have to pass it to the \textit{recordCommandBuffer} function as a parameter.
+
+\begin{lstlisting}[Language=C++]
+void RenderSystem::recordCommandBuffer(int imageIndex, std::shared_ptr<Model> model) {
+  ...
+  pipeline->bind(commandBuffer);
+  model->bind(commandBuffer);
+  model->draw(commandBuffer);
+  ...
+}
+\end{lstlisting}
+
+\subsection{Vertex Shader}
+
+Currently we are only using the vertices in the input assembler stage. We are not using the vertices in the vertex shader.
+We can access them through a layout qualifier. The layout qualifier holds the locations of the vertex datas position and color.
+These locations are the ones we defined in the \textit{getAttributeDescriptions} function.
+
+Then, from this vec3 we can pass the position to the gl\textunderscore Position variable and add the w component to it.
+
+\begin{lstlisting}[Language=C++]
+#version 450
+
+layout(location = 0) in vec3 inPosition;
+
+void main() {
+	gl_Position = vec4(inPosition, 1.0);
+}
+\end{lstlisting}
+
+The \textit{in} keyword is used to get the data from the location. We can also use the \textit{out} keyword to pass data to the next stage.
+We will use the \textit{out} keyword later.
+
+Let's run our application and see if the cube is rendered. Hmm, the cube is not rendered. Let's take a look at our model data.
+Debuging the vertices, we see that our model is a cube ranging from -1 to 1 in all directions. But since every vertex outside of
+our \ac{CVV} will be clipped, including the ones that are at the edge of the \ac{CVV}, we will have to move the cube in front of the camera.
+This will also be the perfect timing to add a view and a projection matrix to our vertex shader, making our cube be rendered in perspective.
+
+\section{Push Constants}
+
+Push constants are a way to pass data to the shader. They are a small amount of memory that is pushed onto the \ac{GPU} when the command buffer is recorded.
+These constants are then accessible in the shader but not mutable. They are a way to pass data to the shader that is constant for the entire draw call.
+We will use push constants to move and rotate the cube in the vertex shader via a transformation matrix.
+
+\subsection{Game Objects}
+
+Before we start pushing constants we will make a few changes to our code. We will add a new class called \textit{GameObject} that will hold the model and the transform of the object
+The transform will be a struct holding the position, the rotation and the scale of the object and also some functions to turn the data into helpful matrices.
+Each game object will have a unique id that will be used to identify the object. We will also add a static \textit{createGameObject} function that
+sets the id of the object to the next id and returns the object. Let's also add a getter function for the id.
+
+
+\begin{lstlisting}[Language=C++]
+//game_object.hpp
+struct Transform {
+		glm::vec3 position{};
+		glm::vec3 rotation{};
+		glm::vec3 scale{1.0f, 1.0f, 1.0f};
+
+		glm::mat4 mat4();
+	};
+
+class GameObject {
+public:
+  using id_t = unsigned int;
+
+  static GameObject createGameObject(){
+      static id_t currentId = 0;
+      return GameObject{currentId++};
+    }
+
+  GameObject(const GameObject &) = delete;
+  GameObject &operator=(const GameObject &) = delete;
+  GameObject(GameObject &&) = default;
+  GameObject &operator=(GameObject &&) = default;
+
+  id_t getId() const { return id; }
+
+  std::shared_ptr<Model> model{};
+  Transform transform{};
+  glm::vec3 color{};
+
+private:
+  GameObject(id_t id) : id{id} {}
+
+  id_t id;
+};
+\end{lstlisting}
+
+Now we will have to apply our math knowledge to combine the position, rotation and scale into a transformation matrix.
+Before, we only had each of these matrices seperate. Now we will have to combine them into one matrix.
+One important thing to note is that the order of the matrices is important. This comes from the fact that, when we use matrices to transform objects,
+we are actually transforming the coordinate system. For example, if we first move an object and then rotate it, the object will rotate around the origin,
+which will move the object to a different position.
+
+The order of the matrices is as follows: scale, rotate, translate. Matrices are multiplied from right to left. So when we tranform an object we will have the following equation:
+
+\begin{equation}
+	\begin{aligned}
+		\vec{v'} = T_{translate} \cdot T_{rotate} \cdot T_{scale} \cdot \vec{v}
+	\end{aligned}
+\end{equation}
+
+We can simply cut out the vector v and multiply the matrices together to get the transformation matrix. But wait, we have 3 different ways to rotate an object.
+We can rotate it around the x, y or z axis. We will have to create a rotation matrix for each axis and then multiply them together to get the final rotation matrix.
+There are multiple ways to rotate an object, but the most common way is to use the Euler angles. There are 2 types of Euler angles, porper Euler angles and Tait-Bryan angles.
+The difference between the two is that proper Euler angles use the same axis for the first and third rotation, while Tait-Bryan angles use 3 distinct axis.
+The most common way in game development is to use the YXZ Tait-Bryan angles. This means that we first rotate the object around the y axis, then around the x axis and then around the z axis.
+Therefor the full transformation matrix will be assembled like this:
+
+\begin{equation}
+	\begin{aligned}
+		\begin{bmatrix}
+			1 & 0 & 0 & t_x \\
+			0 & 1 & 0 & t_y \\
+			0 & 0 & 1 & t_z \\
+			0 & 0 & 0 & 1
+		\end{bmatrix}
+		\cdot
+		\begin{bmatrix}
+			\cos(\theta_z)  & \sin(\theta_z) & 0 & 0 \\
+			-\sin(\theta_z) & \cos(\theta_z) & 0 & 0 \\
+			0               & 0              & 1 & 0 \\
+			0               & 0              & 0 & 1
+		\end{bmatrix}
+		\cdot
+		\begin{bmatrix}
+			1 & 0               & 0              & 0 \\
+			0 & \cos(\theta_x)  & \sin(\theta_x) & 0 \\
+			0 & -\sin(\theta_x) & \cos(\theta_x) & 0 \\
+			0 & 0               & 0              & 1
+		\end{bmatrix}
+		\\
+		\cdot
+		\begin{bmatrix}
+			\cos(\theta_y) & 0 & -\sin(\theta_y) & 0 \\
+			0              & 1 & 0               & 0 \\
+			\sin(\theta_y) & 0 & \cos(\theta_y)  & 0 \\
+			0              & 0 & 0               & 1
+		\end{bmatrix}
+		\cdot
+		\begin{bmatrix}
+			s_x & 0   & 0   & 0 \\
+			0   & s_y & 0   & 0 \\
+			0   & 0   & s_z & 0 \\
+			0   & 0   & 0   & 1
+		\end{bmatrix}
+	\end{aligned}
+\end{equation}
+
+Okay, we'll go through this step by step. First we will calculate the Tait-Bryan rotation matrix by multiplying the rotation matrices for the x, y and z axis
+in the y, x, z order.
+
+\begin{equation}
+	\begin{aligned}
+		\begin{bmatrix}
+			\cos(\theta_y)  & 0 & \sin(\theta_y) & 0 \\
+			0               & 1 & 0              & 0 \\
+			-\sin(\theta_y) & 0 & \cos(\theta_y) & 0 \\
+			0               & 0 & 0              & 1
+		\end{bmatrix}
+		\cdot
+		\begin{bmatrix}
+			1 & 0              & 0               & 0 \\
+			0 & \cos(\theta_x) & -\sin(\theta_x) & 0 \\
+			0 & \sin(\theta_x) & \cos(\theta_x)  & 0 \\
+			0 & 0              & 0               & 1
+		\end{bmatrix}
+		=
+		\fontsize{8}{12}\selectfont
+		\begin{bmatrix}
+			\cos(\theta_y)  & \sin(\theta_y) \sin(\theta_x) & \sin(\theta_y) \cos(\theta_x) & 0 \\
+			0               & \cos(\theta_x)                & -\sin(\theta_x)               & 0 \\
+			-\sin(\theta_y) & \cos(\theta_y)\sin(\theta_x)  & \cos(\theta_y) \cos(\theta_x) & 0 \\
+			0               & 0                             & 0                             & 1
+		\end{bmatrix}
+	\end{aligned}
+\end{equation}
+
+\begin{equation}
+	\begin{center}
+		R \cdot
+		\begin{bmatrix}
+			\cos(\theta_z) & -\sin(\theta_z) & 0 & 0 \\
+			\sin(\theta_z) & \cos(\theta_z)  & 0 & 0 \\
+			0              & 0               & 1 & 0 \\
+			0              & 0               & 0 & 1
+		\end{bmatrix}
+		\\
+		=
+		\fontsize{8}{12}\selectfont
+		\begin{bmatrix}
+			\cos(\theta_y) \cos(\theta_z) + \sin(\theta_y) \sin(\theta_x) \sin(\theta_z) & \sin(\theta_y) \sin(\theta_x) \cos(\theta_z) - \sin(\theta_z) \cos(\theta_y) & \sin(\theta_y) \cos(\theta_x) & 0 \\
+			\cos(\theta_x) \sin(\theta_z)                                                & \cos(\theta_x) \cos(\theta_z)                                                & -\sin(\theta_x)               & 0 \\
+			\cos(\theta_y) \sin(\theta_x) \sin(\theta_z) - \sin(\theta_y) \cos(\theta_z) & \sin(\theta_y) \sin(\theta_z) + \cos(\theta_y) \sin(\theta_x) \cos(\theta_z) & \cos(\theta_y) \cos(\theta_x) & 0 \\
+			0                                                                            & 0                                                                            & 0                             & 1
+		\end{bmatrix}
+	\end{center}
+\end{equation}
+
+Now we need to multiply the translation matrix with the rotation matrix and then multiply the result with the scale matrix.
+
+\begin{equation}
+	\begin{center}
+		\begin{bmatrix}
+			1 & 0 & 0 & t_x \\
+			0 & 1 & 0 & t_y \\
+			0 & 0 & 1 & t_z \\
+			0 & 0 & 0 & 1
+		\end{bmatrix}
+		\cdot
+		M_{rotation}
+		\\
+		\fontsize{8}{12}\selectfont
+		=
+		\begin{bmatrix}
+			\cos(\theta_y) \cos(\theta_z) + \sin(\theta_y) \sin(\theta_x) \sin(\theta_z) & \sin(\theta_y) \sin(\theta_x) \cos(\theta_z) - \sin(\theta_z) \cos(\theta_y) & \sin(\theta_y) \cos(\theta_x) & t_x \\
+			\cos(\theta_x) \sin(\theta_z)                                                & \cos(\theta_x) \cos(\theta_z)                                                & -\sin(\theta_x)               & t_y \\
+			\cos(\theta_y) \sin(\theta_x) \sin(\theta_z) - \sin(\theta_y) \cos(\theta_z) & \sin(\theta_y) \sin(\theta_z) + \cos(\theta_y) \sin(\theta_x) \cos(\theta_z) & \cos(\theta_y) \cos(\theta_x) & t_z \\
+			0                                                                            & 0                                                                            & 0                             & 1
+		\end{bmatrix}
+	\end{center}
+\end{equation}
+
+\begin{equation}
+	\begin{center}
+		R \cdot
+		\begin{bmatrix}
+			s_x & 0   & 0   & 0 \\
+			0   & s_y & 0   & 0 \\
+			0   & 0   & s_z & 0 \\
+			0   & 0   & 0   & 1
+		\end{bmatrix}
+		=
+		\\
+		\fontsize{8}{12}\selectfont
+		\begin{bmatrix}
+			s_x (\cos(\theta_y) \cos(\theta_z) + \sin(\theta_y) \sin(\theta_x) \sin(\theta_z)) & s_y \cdot (\sin(\theta_y) \sin(\theta_x) \cos(\theta_z) - \sin(\theta_z) \cos(\theta_y)) & s_z \sin(\theta_y) \cos(\theta_x)) & t_x \\
+			s_x \cos(\theta_x) \sin(\theta_z)                                                  & s_y \cos(\theta_x) \cos(\theta_z)                                                        & s_z (-\sin(\theta_x))              & t_y \\
+			s_x (\cos(\theta_y) \sin(\theta_x) \sin(\theta_z) - \sin(\theta_y) \cos(\theta_z)) & s_y \cdot (\sin(\theta_y) \sin(\theta_z) + \cos(\theta_y) \sin(\theta_x) \cos(\theta_z)) & s_z \cos(\theta_y) \cos(\theta_x)  & t_z \\
+			0                                                                                  & 0                                                                                        & 0                                  & 1
+		\end{bmatrix}
+	\end{center}
+\end{equation}
+
+Great! That's our combined transformation matrix. We could have just used some glm functions to get the same result, but calculating it by hand is a good way to understand how matrices work and is
+also a more performant way to have the transformation matrix already calculated, since we would have to perform theses calculations in each frame. Let's add the \textit{mat4} function to the Transform struct.
+First we will get all the sin and cos values for the rotation angles and then we will return a glm::mat4 with the calculated values.
+
+\begin{lstlisting}
+//game_object.cpp
+glm::mat4 mat4(){
+  const float c1 = glm::cos(position.y);
+  const float s1 = glm::sin(position.y);
+  const float c2 = glm::cos(position.x);
+  const float s2 = glm::sin(position.x);
+  const float c3 = glm::cos(position.z);
+  const float s3 = glm::sin(position.z);
+  return glm::mat4{{
+                       scale.x * (c1 * c3 + s1 * s2 * s3),
+                       scale.x * c2 * s3,
+                       scale.x * (c1 * s2 * s3 - s1 * c3),
+                       0.f,
+                   },
+                   {
+                       scale.y * (s1 * s2 * c3 - s3 * c1),
+                       scale.y * c2 * c3,
+                       scale.y * (s1 * s3 + c1 * s2 * c3),
+                       0.f,
+                   },
+                   {
+                       scale.z * s1 * c2,
+                       scale.z * -s2,
+                       scale.z * c1 * c2,
+                       0.f,
+                   },
+                   {position.x, position.y, position.z, 1.f}};
+}
+\end{lstlisting}
+
 \printbibliography[
 	heading=bibintoc, title={Bibliography}
 ]
 
+\end{document}
 \end{document}
