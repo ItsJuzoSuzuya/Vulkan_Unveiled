@@ -5032,8 +5032,6 @@ bool SwapChain::compareSwapFormats(const SwapChain &oldSwapChain) {
 }
 \end{lstlisting}
 
-\listoffigures
-
 \chapter{Game Engine}
 
 \section{Introduction}
@@ -5090,15 +5088,15 @@ Buffer::Buffer(Device &device, VkDeviceSize instanceSize, uint32_t instanceCount
 }
 \end{lstlisting}
 
-Before we can create the buffer, we have to talk about the minimum offset alignment. Basically, certain GPUs require that one instance is aligned to a certain offset.
 This offset is called the minimum offset alignment, which usually are 4, 16 or 256. For example, we might have to align each vertex to a 16 byte offset. That each instance has to be aligned to an offset that is a multiple of 16.
+Before we can create the buffer, we have to talk about the minimum offset alignment. Basically, certain GPUs require that one instance is aligned to a certain offset.
 In this case we might have a vertex size of 52 bytes. With the minimum offset alignment of 16 bytes, we would have to assign 64 bytes to each vertex, because 64 is the next multiple of 16.
 This offset allows the GPU to access the data faster.
 
 Alright but how do we get the next multiple of the minimum offset alignment? Let's think about it for a second.
 How can we get a multiple of 16 for example? Let's start by looking at the binary representation of some multiples of 16.
 
-\begin{table}[H]
+\begin{table}[h]
 	\centering
 	\begin{tabular}{|c|c|}
 		\hline
@@ -5113,9 +5111,9 @@ How can we get a multiple of 16 for example? Let's start by looking at the binar
 		112    & 1110000 \\
 		\hline
 	\end{tabular}
-\end{table} \FloatBarrier
+\end{table}
 
-Do you see a pattern? The last 4 bits are always 0. That means we can get the a multiple of 4 by setting the last 2 bits to 0.
+Do you see a pattern? The last 4 bits are always 0. That means we can get the a multiple of 16 by setting the last 4 bits to 0.
 This comes from the fact that each bit represents a power of 2. The 5th bit represents 16 and each bit after that represents a multiple of 16.
 Adding these bits together, which are already multiple of 16, will always result in a multiple of 16.
 For the number 52 we would have to set the last 4 bits to 0.
@@ -5674,17 +5672,33 @@ not all models have indices. To do so we will check if the primitive has a indic
 
 \subsection{Model construction}
 
-Now that we have the model data, we can construct the model. To do so we will create a builder object and call the \textit{loadModel} function.
-For that, I've found a simple cube model online from this \href{https://sketchfab.com/3d-models/epic-simple-cube-3a180582490b4395bc6384ea2bb740aa}{sketchfab} website.
+Now that we have the model data, we can construct the model. To do so we will add a static \textit{createModelFromFile} function to the model class that will take the device and the path to the model file as parameters.
+This function will create a builder object and call the \textit{loadModel} function. Then it will return a unique pointer to the model object.
+For the model, I've found a simple cube model online from this \href{https://sketchfab.com/3d-models/epic-simple-cube-3a180582490b4395bc6384ea2bb740aa}{sketchfab} website.
 I've downloaded the model and placed it in the models directory. Full credit goes to German\textunderscore Martian \cite{German_Martian} for creating the model.
 The model will be a shared pointer to the model class and will be created by passing the device and the builder object to the model constructor.
 The reason we use a shared pointer is because we will have to pass the model to the renderer class and we do not want to copy the model data.
 
 \begin{lstlisting}[Language=C++]
-//app.cpp
-Model::Builder builder{};
-builder.loadModel("models/cube/cube.gltf");
-model = std::make_shared<Model>(device, builder);
+std::unique_ptr<Model> Model::createModelFromFile(Device &device,
+                                                  const std::string &filepath) {
+  Builder builder = {};
+  builder.loadModel(filepath);
+
+  return std::make_unique<Model>(device, builder);
+}
+\end{lstlisting}
+
+The \texit{createModelFromFile} function will be called in a \textit{loadGameObjects} function in the Application classes constructor.
+
+\begin{lstlisting}[Language=C++]
+App::App() {
+  loadGameObjects();
+}
+
+void App::loadGameObjects() {
+ model  = Model::createModelFromFile(device, "models/cube/scene.gltf");
+}
 \end{lstlisting}
 
 \subsection{Buffer usage}
@@ -5808,17 +5822,32 @@ void Model::draw(VkCommandBuffer commandBuffer) {
 }
 \end{lstlisting}
 
-Don't forget to call the \textit{bind} and \textit{draw} functions in the \textit{recordCommandBuffer} function.
-And since we need the model we will have to pass it to the \textit{recordCommandBuffer} function as a parameter.
+To call the bind and draw command we will have to add a \textit{renderGameObjects} function to the render system class and call it in the \textit{drawFrame} function
+after the \textit{recordCommandBuffer} function. We will have to pass the command buffer and the model to the \textit{renderGameObjects} function. Since we can only render
+objects while the render pass is active, we will have to extract the \textit{vkCmdEndRenderPass} function from the \textit{recordCommandBuffer} function and call it after
+the \textit{renderGameObjects} function.
 
 \begin{lstlisting}[Language=C++]
-void RenderSystem::recordCommandBuffer(int imageIndex, std::shared_ptr<Model> model) {
-  ...
-  pipeline->bind(commandBuffer);
+void RenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, std::shared_ptr<Model> model) {
   model->bind(commandBuffer);
   model->draw(commandBuffer);
-  ...
 }
+
+void RenderSystem::endRenderPass(VkCommandBuffer commandBuffer) {
+  vkCmdEndRenderPass(commandBuffer);
+}
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+void App::drawFrame(RenderSystem &renderSystem) {
+  if (auto commandBuffer = renderSystem.beginFrame()) {
+    renderSystem.recordCommandBuffer(commandBuffer);
+    renderSystem.renderGameObjects(commandBuffer, model);
+    renderSystem.endRenderPass(commandBuffer);
+    renderSystem.endFrame();
+  }
+}
+  
 \end{lstlisting}
 
 \subsection{Vertex Shader}
@@ -5859,7 +5888,6 @@ Before we start pushing constants we will make a few changes to our code. We wil
 The transform will be a struct holding the position, the rotation and the scale of the object and also some functions to turn the data into helpful matrices.
 Each game object will have a unique id that will be used to identify the object. We will also add a static \textit{createGameObject} function that
 sets the id of the object to the next id and returns the object. Let's also add a getter function for the id.
-
 
 \begin{lstlisting}[Language=C++]
 //game_object.hpp
@@ -6061,12 +6089,12 @@ First we will get all the sin and cos values for the rotation angles and then we
 \begin{lstlisting}
 //game_object.cpp
 glm::mat4 mat4(){
-  const float c1 = glm::cos(position.y);
-  const float s1 = glm::sin(position.y);
-  const float c2 = glm::cos(position.x);
-  const float s2 = glm::sin(position.x);
-  const float c3 = glm::cos(position.z);
-  const float s3 = glm::sin(position.z);
+  const float c1 = glm::cos(rotation.y);
+  const float s1 = glm::sin(rotation.y);
+  const float c2 = glm::cos(rotation.x);
+  const float s2 = glm::sin(rotation.x);
+  const float c3 = glm::cos(rotation.z);
+  const float s3 = glm::sin(rotation.z);
   return glm::mat4{{
                        scale.x * (c1 * c3 + s1 * s2 * s3),
                        scale.x * c2 * s3,
@@ -6089,9 +6117,159 @@ glm::mat4 mat4(){
 }
 \end{lstlisting}
 
+Now that we have to create a GameObject, for our model and set the position and scale of the object.
+To do so we will modify the \textit{loadGameObjects} function in the Application class to create a GameObject, set the model and the position and scale of the object
+and push it to a vector of GameObjects.
+
+\begin{lstlisting}[Language=C++]
+void App::loadGameObjects() {
+  std::shared_ptr<Model> cubeModel =
+      Model::createModelFromFile(device, "models/cube/scene.gltf");
+  GameObject cube = GameObject::createGameObject();
+  cube.model = cubeModel;
+
+  gameObjects.push_back(std::move(cube));
+}
+\end{lstlisting}
+
+Accordingly we will have to modify the \textit{renderGameObjects} function in the RenderSystem class to take in a vector of GameObjects and bind and draw each object.
+
+\begin{lstlisting}[Language=C++]
+void RenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, const std::vector<GameObject> &gameObjects) {
+  for(const auto &gameObject : gameObjects){
+    gameObject.model->bind(commandBuffer);
+    gameObject.model->draw(commandBuffer);
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+void App::drawFrame(RenderSystem &renderSystem) {
+  if (auto commandBuffer = renderSystem.beginFrame()) {
+    renderSystem.recordCommandBuffer(commandBuffer);
+    renderSystem.renderGameObjects(commandBuffer, gameObjects);
+    renderSystem.endRenderPass(commandBuffer);
+    renderSystem.endFrame();
+  }
+}
+\end{lstlisting}
+
+\subsection{Push Constant Data}
+
+Now we can start pushing the transformation matrix to the shader. To do so we will have to add a new struct to the RenderSystem class that will hold the transformation matrix.
+The transformation matrix will be a glm::mat4 called modelMatrix. The reason we need a new struct is because we will have to provide the size of the push constant data to the pipeline,
+when we push the data to the shader.
+
+\begin{lstlisting}[Language=C++]
+//render_system.cpp
+struct PushConstantData {
+  glm::mat4 modelMatrix;
+};
+\end{lstlisting}
+
+We will also have to adjust our pipeline layout, so that it knows that we will use push constants. For that case we will have to add a push constant range to the pipeline layout,
+that will define the size of the push constant data and the shader stages that will use the push constants. We will use the vertex shader stage for now.
+
+\begin{lstlisting}[Language=C++]
+void RenderSystem::createPipelineLayout(
+    VkDescriptorSetLayout descriptorSetLayout) {
+  VkPushConstantRange pushConstantRange = {};
+  pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  pushConstantRange.offset = 0;
+  pushConstantRange.size = sizeof(PushConstantData);
+  std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
+
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount =
+      0; // static_cast<uint32_t>(layouts.size());
+  pipelineLayoutInfo.pSetLayouts = nullptr; // layouts.data();
+  pipelineLayoutInfo.pushConstantRangeCount = 1;
+  pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+
+  if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr,
+                             &pipelineLayout) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create pipeline layout!");
+}
+\end{lstlisting}
+
+\subsection{Pushing the data}
+
+Inside our \textit{renderGameObjects} function we will push the push constant data to the shader. To do so we will create a PushConstantData object and provide its modelMatrix with the result from the mat4 function of the transform object.
+Then have to call the \textit{vkCmdPushConstants} function. This function will take the command buffer, the pipeline layout, the shader stages we will push to, the offset and the size of the push constant data and the data itself.
+Vulkan requires GPU's to allow a minimum of 128 bytes for push constants, which is exactly the size of two 4x4 matrices. This is obviously not much data, but it is enough to pass our model matrix to the shader.
+The data will be pushed to the vertex shader, because we will use the model matrix to transform the vertices. The offset can later be used to push different matrices to different shader stages.
+
+\begin{lstlisting}[Language=C++]
+void RenderSystem::renderGameObjects(VkCommandBuffer commandBuffer,
+                                     std::vector<GameObject> &gameObjects) {
+  for (GameObject &gameObject : gameObjects) {
+    PushConstantData push{};
+    push.modelMatrix = gameObject.transform.mat4();
+
+    vkCmdPushConstants(commandBuffer, pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT,
+                       0, sizeof(PushConstantData), &push);
+
+    gameObject.model->bind(commandBuffer);
+    gameObject.model->draw(commandBuffer);
+  }
+}
+\end{lstlisting}
+
+\subsection{Transformation in the shader}
+
+We can now access the push constants in the shader via a layout qualifier called \textit{push\textunderscore constant}. This layout qualifier will be uniform, which means that it will be constant for the entire draw call,
+aka for each vertex. The created Object will be called Push and has to have the same structure as the PushConstantData struct. We will then access the modelMatrix and multiply it with the vertex position.
+
+\begin{lstlisting}[Language=C++]
+#version 450
+layout(location = 0) in vec3 inPosition;
+
+layout(push_constant) uniform Push {
+  mat4 modelMatrix;
+} push;
+
+void main() {
+  gl_Position = push.modelMatrix * vec4(inPosition, 1.0);
+}
+\end{lstlisting}
+
+\subsection{Final Result}
+
+We can now specify a position rotation and scale for our game object and render it. Let's try by setting the position of the cube to (0, 0, 1) and the scale to (0.5, 0.5, 0.5).
+We will also rotate the cube around the z axis by 45 degrees, which we will have to provide as radians. The final result should be a rotated and scaled square in the center of the screen.
+
+\begin{lstlisting}[Language=C++]
+void App::loadGameObjects() {
+  std::shared_ptr<Model> cubeModel =
+      Model::createModelFromFile(device, "models/cube/scene.gltf");
+  GameObject cube = GameObject::createGameObject();
+  cube.model = cubeModel;
+  cube.transform.position = {0.f, 0.f, 1.f};
+  cube.transform.scale = {0.5f, 0.5f, 0.5f};
+  cube.transform.rotation = {0.f, 0.f, glm::radians(45.f)};
+
+  gameObjects.push_back(std::move(cube));
+}
+\end{lstlisting}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/rotated_cube.png}
+	\caption{Rotated and scaled cube}
+\end{figure}
+
+Currently we are rendering the cube in orthographic projection. We will have to create the projection view matrix and pass it to the shader to render the cube in perspective.
+Since this matrix changes very often, we will not use push constants to pass the matrix to the shader. Instead we will use a uniform buffer object.
+
+\section{Uniform Buffers}
+
+\listoffigures
+
 \printbibliography[
 	heading=bibintoc, title={Bibliography}
 ]
 
-\end{document}
 \end{document}

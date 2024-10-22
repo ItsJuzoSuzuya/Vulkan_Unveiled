@@ -1,3 +1,5 @@
+#ifndef MODEL_HPP
+#define MODEL_HPP
 #include "buffer.hpp"
 #include "device.hpp"
 #include <cstdint>
@@ -40,6 +42,9 @@ public:
   void bind(VkCommandBuffer commandBuffer);
   void draw(VkCommandBuffer commandBuffer);
 
+  static std::unique_ptr<Model>
+  createModelFromFile(Device &device, const std::string &filepath);
+
 private:
   Device &device;
 
@@ -51,3 +56,4 @@ private:
   void createIndexBuffer(const std::vector<uint32_t> &indices);
 };
 } // namespace engine
+#endif

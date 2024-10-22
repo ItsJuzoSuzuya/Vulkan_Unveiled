@@ -2,12 +2,12 @@
 namespace engine {
 
 glm::mat4 Transform::mat4() {
-  const float c1 = glm::cos(position.y);
-  const float s1 = glm::sin(position.y);
-  const float c2 = glm::cos(position.x);
-  const float s2 = glm::sin(position.x);
-  const float c3 = glm::cos(position.z);
-  const float s3 = glm::sin(position.z);
+  const float c1 = glm::cos(rotation.y);
+  const float s1 = glm::sin(rotation.y);
+  const float c2 = glm::cos(rotation.x);
+  const float s2 = glm::sin(rotation.x);
+  const float c3 = glm::cos(rotation.z);
+  const float s3 = glm::sin(rotation.z);
   return glm::mat4{{
                        scale.x * (c1 * c3 + s1 * s2 * s3),
                        scale.x * c2 * s3,

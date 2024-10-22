@@ -3,12 +3,17 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <glm/ext/scalar_constants.hpp>
 #include <memory>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
 namespace engine {
+
+struct PushConstantData {
+  glm::mat4 modelMatrix{1.f};
+};
 
 RenderSystem::RenderSystem(Device &device, Window &window,
                            VkDescriptorSetLayout descriptorSetLayout)
@@ -41,6 +46,11 @@ void RenderSystem::recreateSwapChain() {
 
 void RenderSystem::createPipelineLayout(
     VkDescriptorSetLayout descriptorSetLayout) {
+  VkPushConstantRange pushConstantRange = {};
+  pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  pushConstantRange.size = sizeof(PushConstantData);
+  pushConstantRange.offset = 0;
+
   std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -48,6 +58,8 @@ void RenderSystem::createPipelineLayout(
   pipelineLayoutInfo.setLayoutCount =
       0; // static_cast<uint32_t>(layouts.size());
   pipelineLayoutInfo.pSetLayouts = nullptr; // layouts.data();
+  pipelineLayoutInfo.pushConstantRangeCount = 1;
+  pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
   if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr,
                              &pipelineLayout) != VK_SUCCESS)
@@ -101,8 +113,7 @@ VkCommandBuffer RenderSystem::beginFrame() {
   return commandBuffer;
 }
 
-void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer,
-                                       std::shared_ptr<Model> model) {
+void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   VkRenderPassBeginInfo renderPassInfo = {};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
   renderPassInfo.renderPass = swapChain->getRenderPass();
@@ -134,10 +145,24 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer,
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
   pipeline->bind(commandBuffer);
+}
 
-  model->bind(commandBuffer);
-  model->draw(commandBuffer);
+void RenderSystem::renderGameObjects(VkCommandBuffer commandBuffer,
+                                     std::vector<GameObject> &gameObjects) {
+  for (GameObject &gameObject : gameObjects) {
+    PushConstantData push{};
+    push.modelMatrix = gameObject.transform.mat4();
 
+    vkCmdPushConstants(commandBuffer, pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),
+                       &push);
+
+    gameObject.model->bind(commandBuffer);
+    gameObject.model->draw(commandBuffer);
+  }
+}
+
+void RenderSystem::endRenderPass(VkCommandBuffer commandBuffer) {
   vkCmdEndRenderPass(commandBuffer);
 }
 

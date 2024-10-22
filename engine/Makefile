@@ -1,4 +1,4 @@
-CFLAGS = -std=c++17 -ggdb 
+CFLAGS = -std=c++20 -ggdb 
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 SOURCES := $(shell find src -name '*.cpp')

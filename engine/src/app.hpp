@@ -1,7 +1,7 @@
 #ifndef APP_HPP
 #define APP_HPP
 #include "core/render_system.hpp"
-#include <memory>
+#include <vector>
 
 namespace engine {
 class App {
@@ -18,8 +18,9 @@ private:
   Device device{window};
 
   void drawFrame(RenderSystem &renderSystem);
+  void loadGameObjects();
 
-  std::shared_ptr<Model> model;
+  std::vector<GameObject> gameObjects;
 };
 } // namespace engine
 #endif

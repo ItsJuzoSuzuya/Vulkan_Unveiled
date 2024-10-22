@@ -89,6 +89,14 @@ void Model::Builder::loadModel(const std::string &filepath) {
   }
 }
 
+std::unique_ptr<Model> Model::createModelFromFile(Device &device,
+                                                  const std::string &filepath) {
+  Builder builder = {};
+  builder.loadModel(filepath);
+
+  return std::make_unique<Model>(device, builder);
+}
+
 Model::Model(Device &device, const Model::Builder &builder) : device{device} {
   createVertexBuffer(builder.vertices);
   createIndexBuffer(builder.indices);

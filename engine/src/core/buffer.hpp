@@ -1,3 +1,5 @@
+#ifndef BUFFER_HPP
+#define BUFFER_HPP
 #include "device.hpp"
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
@@ -39,3 +41,4 @@ private:
   void unmap();
 };
 } // namespace engine
+#endif
