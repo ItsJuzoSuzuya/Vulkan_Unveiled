@@ -28,7 +28,6 @@ public:
 
   std::shared_ptr<Model> model{};
   Transform transform{};
-  glm::vec3 color{};
 
 private:
   id_t id;

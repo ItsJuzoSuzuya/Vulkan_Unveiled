@@ -84,6 +84,7 @@ void App::run() {
 void App::loadGameObjects() {
   std::shared_ptr<Model> cubeModel =
       Model::createModelFromFile(device, "models/cube/scene.gltf");
+
   GameObject cube = GameObject::createGameObject();
   cube.model = cubeModel;
   cube.transform.position = {0.f, 0.f, 2.f};
