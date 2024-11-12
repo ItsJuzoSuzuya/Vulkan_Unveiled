@@ -1,5 +1,6 @@
 #ifndef RENDERSYSTEM_HPP
 #define RENDERSYSTEM_HPP
+#include "frame_info.hpp"
 #include "game_object.hpp"
 #include "pipeline.hpp"
 #include "swapchain.hpp"
@@ -17,12 +18,15 @@ public:
   RenderSystem(const RenderSystem &) = delete;
   RenderSystem &operator=(const RenderSystem &) = delete;
 
+  int getFrameIndex() const { return currentFrameIndex; }
+
   VkCommandBuffer beginFrame();
   VkCommandBuffer getCurrentCommandBuffer() const {
     return commandBuffers[currentFrameIndex];
   }
+  float getAspectRatio() const { return swapChain->extentAspectRatio(); }
   void recordCommandBuffer(VkCommandBuffer commandBuffer);
-  void renderGameObjects(VkCommandBuffer commandBuffer,
+  void renderGameObjects(FrameInfo &frameInfo,
                          std::vector<GameObject> &gameObjects);
   void endRenderPass(VkCommandBuffer commandBuffer);
   void endFrame();

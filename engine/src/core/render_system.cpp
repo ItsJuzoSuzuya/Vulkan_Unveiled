@@ -55,9 +55,8 @@ void RenderSystem::createPipelineLayout(
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount =
-      0; // static_cast<uint32_t>(layouts.size());
-  pipelineLayoutInfo.pSetLayouts = nullptr; // layouts.data();
+  pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+  pipelineLayoutInfo.pSetLayouts = layouts.data();
   pipelineLayoutInfo.pushConstantRangeCount = 1;
   pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
@@ -147,18 +146,24 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   pipeline->bind(commandBuffer);
 }
 
-void RenderSystem::renderGameObjects(VkCommandBuffer commandBuffer,
+void RenderSystem::renderGameObjects(FrameInfo &frameInfo,
                                      std::vector<GameObject> &gameObjects) {
+  pipeline->bind(frameInfo.commandBuffer);
+
+  vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+                          &frameInfo.descriptorSet, 0, nullptr);
+
   for (GameObject &gameObject : gameObjects) {
     PushConstantData push{};
     push.modelMatrix = gameObject.transform.mat4();
 
-    vkCmdPushConstants(commandBuffer, pipelineLayout,
+    vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),
                        &push);
 
-    gameObject.model->bind(commandBuffer);
-    gameObject.model->draw(commandBuffer);
+    gameObject.model->bind(frameInfo.commandBuffer);
+    gameObject.model->draw(frameInfo.commandBuffer);
   }
 }
 

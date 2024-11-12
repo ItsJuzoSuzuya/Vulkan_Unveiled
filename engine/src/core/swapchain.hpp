@@ -1,6 +1,7 @@
 #ifndef SWAPCHAIN_HPP
 #define SWAPCHAIN_HPP
 #include "device.hpp"
+#include <cwchar>
 #include <memory>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -21,6 +22,10 @@ public:
   VkRenderPass getRenderPass() { return renderPass; }
   VkFramebuffer getFrameBuffer(int index) { return framebuffers[index]; }
   VkExtent2D extent() { return swapChainExtent; }
+  float extentAspectRatio() {
+    return static_cast<float>(swapChainExtent.width) /
+           static_cast<float>(swapChainExtent.height);
+  }
 
   VkResult acquireNextImage(uint32_t *imageIndex);
   VkResult submitCommandBuffer(const VkCommandBuffer *commandBuffer,

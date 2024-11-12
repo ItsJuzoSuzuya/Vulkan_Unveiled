@@ -1,9 +1,11 @@
 #ifndef APP_HPP
 #define APP_HPP
+#include "core/descriptors.hpp"
 #include "core/render_system.hpp"
 #include <vector>
 
 namespace engine {
+
 class App {
 public:
   static constexpr int WIDTH = 800;
@@ -17,7 +19,8 @@ private:
   Window window{WIDTH, HEIGHT, "Vulkan Application"};
   Device device{window};
 
-  void drawFrame(RenderSystem &renderSystem);
+  std::unique_ptr<DescriptorPool> descriptorPool;
+
   void loadGameObjects();
 
   std::vector<GameObject> gameObjects;

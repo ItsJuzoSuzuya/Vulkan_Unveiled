@@ -25,6 +25,7 @@ Graphics Programming}} \author {Nick Schefner}
   \acro{FBX}{Filmbox}
   \acro{glTF}{Graphics Library Transmission Format}
   \acro{OBJ}{Wavefront Object}
+  \acro{UBO}{Uniform Buffer Object}
 \end{acronym}
 
 \begin{document} \maketitle
@@ -866,7 +867,7 @@ So the scaling matrix looks like this:
 	\end{bmatrix}
 \]
 
-Now we can combine both transformations to get the final projection matrix:
+Now we can combine both transformations to get the orthographic projection matrix:
 
 \[
 	\begin{bmatrix}
@@ -891,8 +892,90 @@ Now we can combine both transformations to get the final projection matrix:
 	\end{bmatrix}
 \]
 
-This is the projection matrix that is used to transform the view space to the clip space.
-The clip space is then used to determine what is visible on the screen and what is not.
+Now we have to combine the orthographic projection matrix with the perspective projection matrix
+to get the final projection matrix.
+
+\[
+
+	\begin{bmatrix}
+		\frac{2}{r - l} & 0               & 0               & -\frac{l + r}{r - l} \\
+		0               & \frac{2}{t - b} & 0               & -\frac{t + b}{b - t} \\
+		0               & 0               & \frac{1}{f - n} & -\frac{n}{f - n}     \\
+		0               & 0               & 0               & 1                    \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		n & 0 & 0     & 0      \\
+		0 & n & 0     & 0      \\
+		0 & 0 & f + n & -f * n \\
+		0 & 0 & 1     & 0      \\
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		\frac{2n}{r - l} & 0                & -\frac{l + r}{r - l} & 0                    \\
+		0                & \frac{2n}{t - b} & -\frac{t + b}{b - t} & 0                    \\
+		0                & 0                & \frac{f}{f - n}      & -\frac{f * n}{f - n} \\
+		0                & 0                & 1                    & 0                    \\
+	\end{bmatrix}
+\]
+
+Considering that we are looking though the center of the view frustum, we can
+simplify the projection matrix to this:
+
+r = -l, b = -t \\
+\rightarrow r + l = 0, t + b  = 0 \\
+\rightarrow r - l = 2r, t - b = 2t
+
+\[
+	\begin{bmatrix}
+		\frac{n}{r} & 0           & 0               & 0                    \\
+		0           & \frac{n}{t} & 0               & 0                    \\
+		0           & 0           & \frac{f}{f - n} & -\frac{f * n}{f - n} \\
+		0           & 0           & 1               & 0                    \\
+	\end{bmatrix}
+\]
+
+If we now know the aspect ration of the screen and the field of view, we can calculate the top right corner of the view frustums near plane
+with some trigonometry. The aspect ratio is the width of the screen divided by the height of the screen and the field of view is the angle
+between the top and bottom of the view frustums near plane from the camera.
+
+When we imagine a triangle by creating lines from the camera to the centre, with the length of n,
+and to the top centre of the view frustum, we can calculate the top of the near plane with
+the tangent of the FOV divided by 2, times the near plane distance.
+
+\[
+	\frac{t}{n} = tan(\frac{fov}{2}) | \cdot n
+\]
+\[
+	t = tan(\frac{fov}{2}) * n
+\]
+
+For the right side we can use the aspect ratio and the top of the near plane to calculate the right side.
+
+\[
+	\frac{r}{t} = aspect | \cdot t
+\]
+\[
+	r = aspect * t
+\]
+\[
+	r = aspect * tan(\frac{fov}{2}) * n
+\]
+
+So the full perspective projection matrix can be calculated like this:
+
+\[
+	\begin{bmatrix}
+		\frac{1}{aspect * tan(\frac{fov}{2})} & 0                            & 0               & 0                    \\
+		0                                     & \frac{1}{tan(\frac{fov}{2})} & 0               & 0                    \\
+		0                                     & 0                            & \frac{f}{f - n} & -\frac{f * n}{f - n} \\
+		0                                     & 0                            & 1               & 0                    \\
+	\end{bmatrix}
+\]
+
+This is the projection matrix that is used to transform the view space to the clip space
+by first transforming the view frustum to a quadratic view volume and then moving and scaling
+it to the proportions of the clip space. The clip space is then used to determine what is visible on the screen and what is not.
 Everything that is visible will now be projected onto the 2D screen.
 
 \subsection{Viewport transformation}
@@ -4400,28 +4483,8 @@ present it on our surface.
 \section{Rendering and Presentation}
 
 We have everything set up to render one single frame, but in games we have to render multiple frames. To do so we have to
-add a loop that renders frames until the window is closed. We actually already have a loop that polls for events in our
-application class, so we will just add a \textit{drawFrame} function that will be called in the loop and takes the
-render system that will be used to render the frame.
-
-\begin{lstlisting}[Language=C++]
-//app.hpp
-private:
-  ...
-  void drawFrame(RenderSystem &renderSystem);
-\end{lstlisting}
-
-\begin{lstlisting}[Language=C++]
-void App::run() {
-  RenderSystem renderSystem{device, window, nullptr};
-  while (!window.shouldClose()) {
-    glfwPollEvents();
-    drawFrame(renderSystem);
-  }
-}
-\end{lstlisting}
-
-This sounds easy, because we already have the command buffers that we can use to render the frame. But the problem is that
+utilize the loop that we have in our \textit{run} function. Inside this loop we have to render the frame and present it to the
+surface. This sounds easy, because we already have the command buffers that we can use to render the frame. But the problem is that
 when we submit the command buffers to the queue, the CPU will not wait for the GPU to finish the rendering process. This means that
 the CPU will submit the next frame before the GPU has finished the rendering of the current frame, which means that we have
 to synchronize the CPU and the GPU manually. We also have to synchronize the queue families. For example we want to submit the
@@ -4492,7 +4555,7 @@ vkDestroyFence(device.device(), inFlightFence, nullptr);
 
 \subsection{Acquiring an image}
 
-Now that we have the synchronization objects we can start with the \textit{drawFrame} function. The first thing that we have to do
+Now that we have the synchronization objects we can start with the rendering. The first thing that we have to do
 is acquire the next image's index that we will render to. Before we can do that we need to wait for our fence to be opened.
 That means we have to wait for the GPU to finish the rendering of the previous frame.
 We will first call the \textit{vkWaitForFences} function that takes the device, the count of fences,
@@ -4559,12 +4622,16 @@ VkCommandBuffer RenderSystem::beginFrame() {
 }
 \end{lstlisting}
 
-Let's go ahead and call the \textit{beginFrame} function in the \textit{drawFrame} function and then record the command buffer.
+Let's go ahead and call the \textit{beginFrame} function in the \textit{run} function and then record the command buffer.
 
 \begin{lstlisting}[Language=C++]
-void App::drawFrame(RenderSystem &renderSystem) {
-  if(auto commandBuffer = renderSystem.beginFrame()){
-    renderSystem.recordCommandBuffer(commandBuffer); 
+void App::run() {
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    if(auto commandBuffer = renderSystem.beginFrame()){
+      renderSystem.recordCommandBuffer(commandBuffer); 
+    }
   }
 }
 \end{lstlisting}
@@ -4661,14 +4728,18 @@ if (result != VK_SUCCESS)
 }
 \end{lstlisting}
 
-Finally we add the \textit{endFrame} function to the \textit{drawFrame} function.
+Finally we add the \textit{endFrame} function to the \textit{run} function.
 
 \begin{lstlisting}[Language=C++]
-void App::drawFrame(RenderSystem &renderSystem) {
-if(auto commandBuffer = renderSystem.beginFrame()){
-  renderSystem.recordCommandBuffer(commandBuffer); 
-  renderSystem.endFrame();
-}
+void App::run() {
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    if(auto commandBuffer = renderSystem.beginFrame()){
+      renderSystem.recordCommandBuffer(commandBuffer); 
+      renderSystem.endFrame();
+    }
+  }
 }
 \end{lstlisting}
 
@@ -4685,7 +4756,11 @@ void App::run() {
   RenderSystem renderSystem{device, window, nullptr};
   while (!window.shouldClose()) {
     glfwPollEvents();
-    drawFrame(renderSystem);
+
+    if(auto commandBuffer = renderSystem.beginFrame()){
+      renderSystem.recordCommandBuffer(commandBuffer); 
+      renderSystem.endFrame();
+    }
   }
 
   vkDeviceWaitIdle(device.device());
@@ -5822,7 +5897,7 @@ void Model::draw(VkCommandBuffer commandBuffer) {
 }
 \end{lstlisting}
 
-To call the bind and draw command we will have to add a \textit{renderGameObjects} function to the render system class and call it in the \textit{drawFrame} function
+To call the bind and draw command we will have to add a \textit{renderGameObjects} function to the render system class and call it in the \textit{run} function
 after the \textit{recordCommandBuffer} function. We will have to pass the command buffer and the model to the \textit{renderGameObjects} function. Since we can only render
 objects while the render pass is active, we will have to extract the \textit{vkCmdEndRenderPass} function from the \textit{recordCommandBuffer} function and call it after
 the \textit{renderGameObjects} function.
@@ -5839,15 +5914,18 @@ void RenderSystem::endRenderPass(VkCommandBuffer commandBuffer) {
 \end{lstlisting}
 
 \begin{lstlisting}[Language=C++]
-void App::drawFrame(RenderSystem &renderSystem) {
-  if (auto commandBuffer = renderSystem.beginFrame()) {
-    renderSystem.recordCommandBuffer(commandBuffer);
-    renderSystem.renderGameObjects(commandBuffer, model);
-    renderSystem.endRenderPass(commandBuffer);
-    renderSystem.endFrame();
+void App::run() {
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    if (auto commandBuffer = renderSystem.beginFrame()) {
+      renderSystem.recordCommandBuffer(commandBuffer);
+      renderSystem.renderGameObjects(commandBuffer, model);
+      renderSystem.endRenderPass(commandBuffer);
+      renderSystem.endFrame();
+    }
   }
 }
-  
 \end{lstlisting}
 
 \subsection{Vertex Shader}
@@ -6144,12 +6222,16 @@ void RenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, const std::v
 \end{lstlisting}
 
 \begin{lstlisting}[Language=C++]
-void App::drawFrame(RenderSystem &renderSystem) {
-  if (auto commandBuffer = renderSystem.beginFrame()) {
-    renderSystem.recordCommandBuffer(commandBuffer);
-    renderSystem.renderGameObjects(commandBuffer, gameObjects);
-    renderSystem.endRenderPass(commandBuffer);
-    renderSystem.endFrame();
+void App::run() {
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    if (auto commandBuffer = renderSystem.beginFrame()) {
+      renderSystem.recordCommandBuffer(commandBuffer);
+      renderSystem.renderGameObjects(commandBuffer, gameObjects);
+      renderSystem.endRenderPass(commandBuffer);
+      renderSystem.endFrame();
+    }
   }
 }
 \end{lstlisting}
@@ -6238,8 +6320,9 @@ void main() {
 
 \subsection{Final Result}
 
-We can now specify a position rotation and scale for our game object and render it. Let's try by setting the position of the cube to (0, 0, 1) and the scale to (0.5, 0.5, 0.5).
-We will also rotate the cube around the z axis by 45 degrees, which we will have to provide as radians. The final result should be a rotated and scaled square in the center of the screen.
+We can now specify a position rotation and scale for our game object and render it. Let's try by setting the position of the cube to (0, 0, 2) and the scale to (0.5, 0.5, 0.5).
+We will also rotate the cube around the z axis by 45 degrees and around the y axis by 30 degrees, which we will have to provide as radians.
+The final result should be a rotated and scaled square in the center of the screen.
 
 \begin{lstlisting}[Language=C++]
 void App::loadGameObjects() {
@@ -6247,9 +6330,9 @@ void App::loadGameObjects() {
       Model::createModelFromFile(device, "models/cube/scene.gltf");
   GameObject cube = GameObject::createGameObject();
   cube.model = cubeModel;
-  cube.transform.position = {0.f, 0.f, 1.f};
+  cube.transform.position = {0.f, 0.f, 2.f};
   cube.transform.scale = {0.5f, 0.5f, 0.5f};
-  cube.transform.rotation = {0.f, 0.f, glm::radians(45.f)};
+  cube.transform.rotation = {0.f, glm::radians(30.f), glm::radians(45.f)};
 
   gameObjects.push_back(std::move(cube));
 }
@@ -6266,10 +6349,708 @@ Since this matrix changes very often, we will not use push constants to pass the
 
 \section{Uniform Buffers}
 
+Uniform buffers are a way to pass data to a shader that is persistent for the entire draw call and is identical for each invocation of the shader.
+These \ac{UBO} also have the advantage that they can hold more data than push constants. For now, we will use a uniform buffer to pass the perspective projection matrix to the shader,
+to render the cube in perspective.
+
+First we will have to create one \ac{UBO} for each frame in flight in our \textit{run} function. To create the buffer we can use our Buffer class.
+If you remember, to create a Buffer instance we have to provide the device, the size of the buffer, the usage of the buffer and the properties of the buffer.
+The size of the buffer will be the size of the projection view matrix. While we could simply use the size of the matrix, we will look ahead and add a struct that will hold all of the
+global \ac{UBO} data.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+namespace engine {
+  struct GlobalUbo{
+    glm::mat4 projectionView{1.f};
+  };
+  ...
+}
+\end{lstlisting}
+
+We called the matrix projectionView, because it will later hold the combined projection and view matrix. For now we will just use the projection matrix.
+Now we can just use the sizeof function to get the size of the GlobalUbo struct. The usage of the buffer will be \textit{VK\textunderscore BUFFER\textunderscore USAGE\textunderscore UNIFORM\textunderscore BUFFER\textunderscore BIT}.
+For the properties of the buffer we will just use the \\ \textit{VK\textunderscore MEMORY\textunderscore PROPERTY\textunderscore HOST\textunderscore VISIBLE\textunderscore BIT}
+But wait a second, we previously used one staging buffer and one device local buffer. Why are we only using one buffer and why are we not using the \textit{VK\textunderscore MEMORY\textunderscore PROPERTY\textunderscore HOST\textunderscore COHERENT\textunderscore BIT} property?
+
+The reason we used a staging buffer when creating the vertex and index buffer is because we had to copy potentially large and mostly static data to the device.
+Therefore, copying the data to the more performant device local memory is a good idea. But in the case of the \ac{UBO} we will have to update the data every frame.
+Additionly, the data is not that large, so the process of copying the data to the device local memory would be a waste of time and memory.
+
+\begin{lstlisting}[Language=C++]
+void App::run() {
+  std::vector<std::unique_ptr<Buffer>> uboBuffers(SwapChain::MAX_FRAMES_IN_FLIGHT);
+  for (int i = 0; i < uboBuffers.size(); i++) {
+    uboBuffers[i] = std::make_unique<Buffer>(
+        device, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+  }
+
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    if (auto commandBuffer = renderSystem.beginFrame()) {
+      renderSystem.recordCommandBuffer(commandBuffer);
+      renderSystem.renderGameObjects(commandBuffer, gameObjects);
+      renderSystem.endRenderPass(commandBuffer);
+      renderSystem.endFrame();
+    }
+  }
+}
+\end{lstlisting}
+
+After creation of the buffer we will have to map the memory of the buffer to the host memory. This will allow us to write data to the buffer.
+
+\begin{lstlisting}[Language=C++]
+void App::run() {
+  ...
+  for (int i = 0; i < uboBuffers.size(); i++) {
+    uboBuffers[i] = std::make_unique<Buffer>(
+        device, sizeof(GlobalUbo), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    uboBuffers[i]->map();
+  }
+  ...
+}
+\end{lstlisting}
+
+Now that we have the mapped memory we can write the perspective projection matrix to the buffer with the \textit{writeToBuffer} function.
+Currently our matrix is a 4x4 identity matrix, which is not a perspective projection matrix. We will add a camera object in a second that will handle the perpective projection matrix.
+Let's just create a GlobalUbo object and write it to the buffer for now. Since the data changes every frame, we will have to write the data to the buffer every frame. But we
+have mutliple buffers, so we will have to get the current frame index and write the data to the buffer of the same index.
+
+\begin{lstlisting}[Language=C++]
+void App::run() {
+  ...
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    if (auto commandBuffer = renderSystem.beginFrame()) {
+      int frameIndex = renderSystem.getFrameIndex();
+
+      GlobalUbo ubo{};
+      uboBuffers[frameIndex]->writeToBuffer(&ubo);
+
+      renderSystem.recordCommandBuffer(commandBuffer);
+      renderSystem.renderGameObjects(commandBuffer, gameObjects);
+      renderSystem.endRenderPass(commandBuffer);
+      renderSystem.endFrame();
+    }
+  }
+}
+\end{lstlisting}
+
+You might remember me saying that when we don't use device local memory we might have to synchronize the memory ourselves. This is the case here.
+When we map our buffer we basically link host memory to device memory. This means that we write the data to the CPU's cache.
+When we use non-coherent memory, the changes we make to the CPU cache are not automatically written to the device memory, because the GPU does not have access to the CPU cache.
+To do this we will have to flush the memory, which will write the data to the GPU. We will add a \textit{flush} function to the Buffer class that will flush the memory of the buffer.
+
+\begin{lstlisting}[Language=C++]
+void App::run() {
+  ...
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    if (auto commandBuffer = renderSystem.beginFrame()) {
+      int frameIndex = renderSystem.getFrameIndex();
+
+      GlobalUbo ubo{};
+      uboBuffers[frameIndex]->writeToBuffer(&ubo);
+      uboBuffers[frameIndex]->flush();
+
+      renderSystem.recordCommandBuffer(commandBuffer);
+      renderSystem.renderGameObjects(commandBuffer, gameObjects);
+      renderSystem.endRenderPass(commandBuffer);
+      renderSystem.endFrame();
+    }
+  }
+}
+\end{lstlisting}
+
+The \textit{flush} function will use the \textit{vkFlushMappedMemoryRanges} function to flush the memory of the buffer.
+It takes the device, the number of memory ranges, the memory ranges and the result as parameters. The memory range will be a VkMappedMemoryRange struct
+that will describe CPU cache memory that we want to flush. We will have to provide the memory of the buffer, the offset and the size of the memory.
+We will also add optional parameters to the \textit{writeToBuffer} function that will allow us to specify the size and the offset of the data we want to write to the buffer.
+As default values we will use \textit{VK\textunderscore WHOLE\textunderscore SIZE} and 0.
+
+\begin{lstlisting}[Language=C++]
+//buffer.hpp
+...
+public:
+  void flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+...
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+//buffer.cpp
+...
+void Buffer::flush(VkDeviceSize size, VkDeviceSize offset) {
+  VkMappedMemoryRange memoryRange = {};
+  memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+  memoryRange.size = size;
+  memoryRange.offset = offset;
+  memoryRange.memory = bufferMemory;
+
+  vkFlushMappedMemoryRanges(device.device(), 1, &memoryRange);
+}
+...
+\end{lstlisting}
+
+\subsection{Descriptors}
+
+Uniform buffers are provided to the Pipeline via descriptor sets. A Descriptor set is simply a collection of descriptions of resources.
+These descriptions are importent for the Pipeline layout, because it tells the pipeline layout where the resources are located and how they are used.
+In our case it will describe where to find the uniform buffer object and in which shader stages it will be used. Each descriptor set can have multiple descriptions,
+aka bindings. Descriptor sets are allocated from a descriptor pool, which works similar to the command pool. We will have to create a descriptor pool and allocate a descriptor set from it.
+
+Let's create a descriptors file that will hold the descriptor pool and the descriptor set layout classes. Both will have a Builder subclass that will allow us to build the descriptor pool and the descriptor set layout.
+Each of them will have the device and vulkans descriptor pool or descriptor set layout as private members.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.hpp
+namespace engine {
+  class DescriptorSetLayout {
+  public:
+    class Builder {};
+
+  private:
+    const Device &device;
+    VkDescriptorSetLayout descriptorSetLayout;
+  };
+
+  class DescriptorPool {
+    public:
+      class Builder {};
+
+    private:
+      const Device &device;
+      VkDescriptorPool descriptorPool;
+    };
+}
+\end{lstlisting}
+
+\subsection{Descriptor Set Layout}
+
+We will start with the descriptor set layout. The descriptor set layout will hold the description of the uniform buffer object.
+The Builder class will have a constructor, that sets the device, and a \textit{addBinding} function, that will create a
+\textit{VkDescriptorSetLayoutBinding} struct, add it to an unordered map of bindings and return a reference to the Builder class.
+The Builder class will also have a \textit{build} function that will call the constructor of the DescriptorSetLayout class
+and return a unique pointer to an DescriptorSetLayout object. It takes in a \textit{uint32\textunderscore t} parameter that will be the binding key,
+a \textit{VkDescriptorType} parameter, a \textit{VkShaderStageFlags} parameter and an optional \textit{uint32\textunderscore t} parameter that will be the amount of bindings.
+For the descriptor set layout we will have a constructor that will take the device and the
+unordere map of bindings as parameter and store them as private members. We will also have a destructor that will destroy the descriptor set layout.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.hpp
+class DescriptorSetLayout {
+public:
+  class Builder {
+  public:
+    Builder(Device &device) : device{device} {};
+    Builder &addBinding(uint32_t binding, 
+      VkDescriptorType descriptorType, 
+      VkShaderStageFlags stageFlags, 
+      uint32_t count = 1);
+    std::unique_ptr<DescriptorSetLayout> build() const;
+
+  private:
+    Device &device;
+    std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> 
+      bindings{};
+  };
+
+  DescriptorSetLayout(
+      Device &device,
+      std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings);
+  ~DescriptorSetLayout();
+
+private:
+  Device &device;
+  VkDescriptorSetLayout descriptorSetLayout;
+  std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings{};
+};
+\end{lstlisting}
+
+The \textit{addBinding} function will create a \textit{VkDescriptorSetLayoutBinding} struct and populate it with the parameters.
+It will then add the binding to the bindings map with the binding key as the key and the layoutBinding as the value.
+The constructor of the DescriptorSetLayout class will create a vector of \textit{VkDescriptorSetLayoutBinding} structs and populate it with the bindings from the bindings map.
+It will then create a \textit{VkDescriptorSetLayoutCreateInfo} struct and populate it with the layoutBindings vector.
+Finally it will call the \textit{vkCreateDescriptorSetLayout} function to create the descriptor set layout.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+DescriptorSetLayout::Builder &DescriptorSetLayout::Builder::addBinding(
+    uint32_t binding, VkDescriptorType descriptorType,
+    VkShaderStageFlags stageFlags, uint32_t count) {
+  VkDescriptorSetLayoutBinding layoutBinding{};
+  layoutBinding.binding = binding;
+  layoutBinding.stageFlags = stageFlags;
+  layoutBinding.descriptorType = descriptorType;
+  layoutBinding.descriptorCount = count;
+  bindings[binding] = layoutBinding;
+  return *this;
+}
+
+std::unique_ptr<DescriptorSetLayout>
+DescriptorSetLayout::Builder::build() const {
+  return std::make_unique<DescriptorSetLayout>(device, bindings);
+}
+
+DescriptorSetLayout::DescriptorSetLayout(
+    Device &device,
+    std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings)
+    : device{device}, bindings{bindings} {
+  std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+  for (const auto &binding : bindings)
+    layoutBindings.push_back(binding.second);
+
+  VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+  layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  layoutCreateInfo.pBindings = layoutBindings.data();
+  layoutCreateInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+
+  if (vkCreateDescriptorSetLayout(device.device(), &layoutCreateInfo, nullptr,
+                                  &descriptorSetLayout) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create descriptor set layout!");
+}
+
+DescriptorSetLayout::~DescriptorSetLayout() {
+  vkDestroyDescriptorSetLayout(device.device(), descriptorSetLayout, nullptr);
+}
+\end{lstlisting}
+
+The reason we use an unordered map to store the bindings is to later be able to access the bindings by their key and check if they exist.
+This will be useful before we allocate the descriptor set from the descriptor pool. If we just had a vector of bindings we would have to iterate over the vector to find the binding we want to check.
+Doing it this way will allow us to use the \textit{count} function of the unordered map to check if the binding exists.
+
+We will now have to create the layout and add the binding that uses the \textit{VK\textunderscore DESCRIPTOR\textunderscore TYPE\textunderscore UNIFORM\textunderscore BUFFER} type
+and the \textit{VK\textunderscore SHADER\textunderscore STAGE\textunderscore VERTEX\textunderscore BIT} stage flags.
+Finally we will build it and provide the render system with the descriptor set layout vulkan object. To do so we will have to add a getter function to the DescriptorSetLayout class.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+void App::run() {
+  ...
+  auto descriptorSetLayout =
+      DescriptorSetLayout::Builder(device)
+          .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                      VK_SHADER_STAGE_VERTEX_BIT)
+          .build();
+  RenderSystem renderSystem{device, window,
+                            descriptorSetLayout->getDescriptorSetLayout()};
+  ...
+
+}
+\end{lstlisting}
+
+If you remember, we have already set up the descriptor set layout in the pipeline layout, but we were not ready to use them. Therefore we set the layout count to 0
+and the layout to nullptr. Now we will have to set the layout count to a static cast of the size of the layout vector and the layout to the data of the layout vector.
+
+\begin{lstlisting}[Language=C++]
+//render_system.cpp
+void RenderSystem::createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout) {
+  std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
+
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+  pipelineLayoutInfo.pSetLayouts = layouts.data();
+
+  if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create pipeline layout!");
+}
+\end{lstlisting}
+
+\subsection{Descriptor Pool}
+
+Now that the pipeline layout is set up we will have to create a descriptor pool. To create the descriptor pool, vulkan needs
+to know how big the pool should be and how many descriptor sets we will need at maximum.
+Therefore we will have to add a \textit{maxSets} variable and a vector of \textit{VkDescriptorPoolSize} to the Builder class.
+You can have multiple descriptor pool sizes in one descriptor pool, because you can have multiple descriptor types in one descriptor set.
+The pool builder class will have a \textit{setMaxSets} function that will set the maxSets variable and return a reference to the Builder class.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.hpp
+...
+class DescriptorPool {
+  public:
+  class Builder {
+    public:
+      Builder(Device &device) : device{device} {};
+      Builder &setMaxSets(uint32_t maxSets);
+      std::unique_ptr<DescriptorPool> build() const;
+
+    private:
+      Device &device;
+      uint32_t maxSets;
+      std::vector<VkDescriptorPoolSize> poolSizes{};
+    };
+  ...
+};
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+...
+DescriptorPool::Builder &DescriptorPool::Builder::setMaxSets(uint32_t count) {
+  maxSets = count;
+  return *this;
+}
+...
+\end{lstlisting}
+
+The builder class will also have a \textit{addPoolSize} function that will create a \textit{VkDescriptorPoolSize} struct and add it to the poolSizes vector.
+The \textit{VkDescriptorPoolSize} struct can be initialized with the descriptor type and the descriptor count that we will give as parameters to the function.
+The descriptor type is nessesary for the GPU to optimize the memory allocation for the descriptor pool.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+...
+DescriptorPool::Builder &
+DescriptorPool::Builder::addPoolSize(VkDescriptorType descriptorType,
+                                     uint32_t count) {
+  poolSizes.push_back({descriptorType, count});
+  return *this;
+}
+...
+\end{lstlisting}
+
+Finally we will need the build function that will create a unique pointer to a DescriptorPool object.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+...
+std::unique_ptr<DescriptorPool> DescriptorPool::Builder::build() const {
+  return std::make_unique<DescriptorPool>(device, maxSets, poolSizes);
+}
+...
+\end{lstlisting}
+
+The constructor of the DescriptorPool class will create a \textit{VkDescriptorPoolCreateInfo} struct and populate it with the maxSets variable, the poolSizes vector and the flags.
+For now we won't use the flags, so we will set it to 0. We will then call the \textit{vkCreateDescriptorPool} function to create the descriptor pool and store it in a private member.
+It will also set the device and the descriptor pool as private members.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+...
+DescriptorPool::DescriptorPool(
+    Device &device, uint32_t maxSets, const std::vector<VkDescriptorPoolSize> &poolSizes): device{device} {
+
+  VkDescriptorPoolCreateInfo createInfo = {};
+  createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+  createInfo.pPoolSizes = poolSizes.data();
+  createInfo.maxSets = maxSets;
+  createInfo.flags = 0;
+
+  vkCreateDescriptorPool(device.device(), &createInfo, nullptr,
+                         &descriptorPool);
+}
+...
+\end{lstlisting}
+
+For the cleanup we will have to add a destructor that will destroy the descriptor pool.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+...
+DescriptorPool::~DescriptorPool() {
+		vkDestroyDescriptorPool(device.device(), descriptorPool, nullptr);
+	}
+...
+\end{lstlisting}
+
+To create the pool we will create a DescriptorPool object we will use the builder in our apps constructor.
+First we will set the maxSets to the amount of frames in flight, since we will have one descriptor set for each frame.
+Then we will add a pool size with the \textit{VK\textunderscore DESCRIPTOR\textunderscore TYPE\textunderscore UNIFORM\textunderscore BUFFER} type and the amount of frames in flight as count.
+Finally we will build the pool and store it as a private member of the App class.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+void App::run() {
+  descriptorPool = DescriptorPool::Builder(device)
+                       .setMaxSets(SwapChain::MAX_FRAMES_IN_FLIGHT)
+                       .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                    SwapChain::MAX_FRAMES_IN_FLIGHT)
+                       .build();
+  ...
+}
+\end{lstlisting}
+
+\subsection{Descriptor Set Allocation}
+
+Now that we have the descriptor pool we will have to allocate a descriptor set for each frame in flight.
+To do so we will first simply add a \textit{allocateDescriptor} function to the DescriptorPool class that will allocate a descriptor set from the descriptor pool
+and return if the allocation was successful. The function will take a \textit{VkDescriptorSetLayout} and a reference to a \textit{VkDescriptorSet} as parameters.
+We need the layout to know what type of descriptor set we want to allocate. Inside the \textit{allocateDescriptor} function we will create a \textit{VkDescriptorSetAllocateInfo} struct
+and populate it with the descriptor pool, the layout and the amount of sets we want to allocate. We will then call the \textit{vkAllocateDescriptorSets} function to allocate the descriptor set
+and return if the allocation was successful.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+bool DescriptorPool::allocateDescriptor(VkDescriptorSetLayout setLayout,
+                                        VkDescriptorSet &set) {
+  VkDescriptorSetAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  allocInfo.descriptorPool = descriptorPool;
+  allocInfo.pSetLayouts = &setLayout;
+  allocInfo.descriptorSetCount = 1;
+
+  if (vkAllocateDescriptorSets(device.device(), &allocInfo, &set) !=
+      VK_SUCCESS) {
+    return false;
+  } else {
+    return true;
+  }
+}
+\end{lstlisting}
+
+Instead of directly allocating the descriptor set in the App class, we will create a new class called \textit{DescriptorWriter} that will be a friend of the other descriptor classes.
+We do this to manage writing the buffer to the descriptor set, allocating the descriptor sets and overwriting the descriptor sets in one class.
+The \textit{DescriptorWriter} class will have a constructor that will take the the descriptor pool and the descriptor set layout references as parameters
+and set them as private members. It will also have a \textit{writeBuffer} function that will take the binding we want to write to and a \textit{VkDescriptorBufferInfo} struct as parameters.
+It then returns a reference to the \textit{DescriptorWriter} object. Again, we will have a \textit{build} function that will take in the descriptor set reference as a parameter
+that will later be used to allocate the descriptor set. The function will return if the allocation was successful.
+Finally add a \textit{overwrite} function that will take in the descriptor set reference as a parameter.
+
+The \texit{writeBuffer} function will create a \textit{VkWriteDescriptorSet} struct and populate it with the descriptor set, the binding, the type of descriptor, the buffer info and the count.
+These writes will be stored in a vector of \textit{VkWriteDescriptorSet} structs and only used when updating the descriptor set with the \textit{overwrite} function that will call the \textit{vkUpdateDescriptorSets} function.
+Before we allow the \textit{DescriptorWriter} class to do anything we will assert that the binding we want to write to exists in the descriptor set layout. Also, we will assert that the descriptor count is 1.
+To update a descriptor set we will iterate over each write and set its descriptor set to the descriptor set we want to update.
+
+\begin{lstlisting}[Language=C++]
+//descriptors.hpp
+class DescriptorSetLayout{
+  friend class DescriptorWriter;
+  ...
+};
+
+class DescriptorPool{
+  friend class DescriptorWriter;
+  ...
+};
+
+class DescriptorWriter {
+public:
+  DescriptorWriter(DescriptorSetLayout &setLayout, DescriptorPool &pool)
+      : setLayout{setLayout}, pool{pool} {};
+  DescriptorWriter &writeBuffer(uint32_t binding,
+                                VkDescriptorBufferInfo *bufferInfo);
+  bool build(VkDescriptorSet &set);
+  void overwrite(VkDescriptorSet &set);
+
+private:
+  DescriptorSetLayout &setLayout;
+  DescriptorPool &pool;
+  std::vector<VkWriteDescriptorSet> writes;
+};
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+//descriptors.cpp
+DescriptorWriter &
+DescriptorWriter::writeBuffer(uint32_t binding,
+                              VkDescriptorBufferInfo *bufferInfo) {
+  assert(setLayout.bindings.count(binding) == 1 &&
+         "Layout does not cotain specified binding");
+
+  auto &bindingDescription = setLayout.bindings[binding];
+
+  assert(bindingDescription.descriptorCount == 1 &&
+         "Binding single descriptor info, but multiple expexcted");
+
+  VkWriteDescriptorSet write = {};
+  write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  write.dstBinding = binding;
+  write.pBufferInfo = bufferInfo;
+  write.descriptorCount = 1;
+
+  writes.push_back(write);
+
+  return *this;
+}
+
+bool DescriptorWriter::build(VkDescriptorSet &set) {
+  bool success =
+      pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
+  if (!success) {
+    return false;
+  } else {
+    overwrite(set);
+    return true;
+  }
+}
+
+void DescriptorWriter::overwrite(VkDescriptorSet &set) {
+  for (auto &write : writes) {
+    write.dstSet = set;
+  }
+
+  vkUpdateDescriptorSets(pool.device.device(), writes.size(), writes.data(), 0,
+                         nullptr);
+}
+\end{lstlisting}
+
+All we need to know now it get the buffer info from the buffer class by adding a \textit{descriptorInfo} function to the Buffer class.
+This function will instantiate a \textit{VkDescriptorBufferInfo} struct, populate it with the buffer and the size of the buffer and return it.
+
+\begin{lstlisting}[Language=C++]
+//buffer.cpp
+...
+VkDescriptorBufferInfo Buffer::descriptorInfo() {
+  VkDescriptorBufferInfo bufferInfo = {};
+  bufferInfo.offset = 0;
+  bufferInfo.range = bufferSize;
+  bufferInfo.buffer = buffer;
+  return bufferInfo;
+}
+...
+\end{lstlisting}
+
+Now let's create a vector of descriptor sets, iterate over each of them, get the buffer info,
+write the buffer to the descriptor writes and build the descriptor set.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+void App::run() {
+  ...
+  //layout creation
+
+  std::vector<VkDescriptorSet> descriptorSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
+  DescriptorWriter descriptorWriter{*descriptorSetLayout, *descriptorPool};
+  for (auto &descriptorSet : descriptorSets) {
+    VkDescriptorBufferInfo bufferInfo = uboBuffers[frameIndex]->descriptorInfo();
+    descriptorWriter.writeBuffer(0, &bufferInfo);
+    descriptorWriter.build(descriptorSet);
+  }
+
+  //render system creation
+  ...
+}
+\end{lstlisting}
+
+And with that we have created a descriptor pool and allocated a descriptor set for each frame in flight.
+
+\subsection{Binding the Descriptor Set}
+
+All we have to do now is bind the descriptor set to the pipeline before we draw the game objects.
+We could simply add the descriptor set as a parameter to the \textit{renderGameObjects} function and bind it to the pipeline.
+But it is more common to stack all of the frame specific data into a struct and give it to the \textit{renderGameObjects} function.
+This struct will hold the frame index, the descriptor set, the camera and the command buffer that will be used to render the game objects.
+We will call it \textit{FrameInfo}. Let's create a new file called \textit{frame\textunderscore info.hpp} that will hold the \textit{FrameInfo} struct.
+
+\begin{lstlisting}[Language=C++]
+//frame_info.hpp
+#include "camera.hpp"
+#include <vulkan/vulkan_core.h>
+
+namespace engine {
+struct FrameInfo {
+  int frameIndex;
+  VkCommandBuffer commandBuffer;
+  Camera camera;
+  VkDescriptorSet descriptorSet;
+};
+} // namespace engine
+\end{lstlisting}
+
+Now we will instanciate it in the loop and pass it to the \textit{renderGameObjects} function.
+Don't forget to change the parameters of the \textit{renderGameObjects} function to take a \textit{FrameInfo} object reference.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+...
+while (!window.shouldClose()) {
+  glfwPollEvents();
+
+  if (auto commandBuffer = renderSystem.beginFrame()) {
+    int frameIndex = renderSystem.getFrameIndex();
+    FrameInfo frameInfo{frameIndex, commandBuffer, camera,
+                        descriptorSets[frameIndex]};
+
+    GlobalUbo ubo{};
+    ubo.projectionView = camera.getProjection();
+    uboBuffers[frameIndex]->writeToBuffer(&ubo);
+    uboBuffers[frameIndex]->flush();
+
+    renderSystem.recordCommandBuffer(commandBuffer);
+    renderSystem.renderGameObjects(frameInfo, gameObjects);
+    renderSystem.endRenderPass(commandBuffer);
+    renderSystem.endFrame();
+  }
+}
+...
+\end{lstlisting}
+
+Inside the \textit{renderGameObjects} function we will have to bind the descriptor set to the pipeline.
+To do so we will have to call the \textit{vkCmdBindDescriptorSets} function. This function will take the command buffer, the pipeline bind point, the pipeline layout, the first set index,
+the amount of descriptor sets, the descriptor set and the dynamic offsets count and data that we will ignore.
+
+\begin{lstlisting}[Language=C++]
+//render_system.cpp
+void RenderSystem::renderGameObjects(FrameInfo &frameInfo,
+                                     std::vector<GameObject> &gameObjects) {
+  pipeline->bind(frameInfo.commandBuffer);
+
+  vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+                          &frameInfo.descriptorSet, 0, nullptr);
+
+  for (GameObject &gameObject : gameObjects) {
+    PushConstantData push{};
+    push.modelMatrix = gameObject.transform.mat4();
+
+    vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),
+                       &push);
+
+    gameObject.model->bind(frameInfo.commandBuffer);
+    gameObject.model->draw(frameInfo.commandBuffer);
+  }
+}
+\end{lstlisting}
+
+And with that we have successfully bound the descriptor set to the pipeline.
+
+\subsection{Vertex Shader}
+
+Finally we need to change the vertex shader to use the projection view matrix to transform the vertices.
+To do so we can access the layout qualifiers first set and binding in the vertex shader.
+This will be a uniform buffer object that will hold the projection view matrix with the same structure as the GlobalUbo struct.
+Finally we only have to multiply the model matrix with the projection view matrix to get the final position of the vertex.
+
+\begin{lstlisting}[Language=C++]
+#version 460
+
+layout(location = 0) in vec3 position;
+
+layout(push_constant) uniform Push {
+  mat4 modelMatrix;
+} push;
+
+layout(set = 0, binding = 0) uniform GlobalUbo{
+  mat4 projectionMatrix;
+} ubo;
+
+void main() {
+  gl_Position = ubo.projectionMatrix * push.modelMatrix * vec4(position, 1.0);
+}
+\end{lstlisting}
+
+After compiling everything we should see a rotated and scaled cube in the center of the screen where the edges are not parallel to each other.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/perspective_cube.png}
+	\caption{Rotated and scaled cube in perspective}
+\end{figure}
+
 \listoffigures
 
 \printbibliography[
 	heading=bibintoc, title={Bibliography}
 ]
 
+\end{document}
 \end{document}

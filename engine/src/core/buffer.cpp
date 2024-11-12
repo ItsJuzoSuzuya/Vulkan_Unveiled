@@ -56,4 +56,21 @@ void Buffer::writeToBuffer(void *data, VkDeviceSize size, VkDeviceSize offset) {
   }
 }
 
+void Buffer::flush(VkDeviceSize size, VkDeviceSize offset) {
+  VkMappedMemoryRange mappedRange = {};
+  mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+  mappedRange.size = size;
+  mappedRange.offset = offset;
+  mappedRange.memory = bufferMemory;
+  vkFlushMappedMemoryRanges(device.device(), 1, &mappedRange);
+}
+
+VkDescriptorBufferInfo Buffer::descriptorInfo() {
+  VkDescriptorBufferInfo bufferInfo = {};
+  bufferInfo.offset = 0;
+  bufferInfo.range = bufferSize;
+  bufferInfo.buffer = buffer;
+  return bufferInfo;
+}
+
 } // namespace engine

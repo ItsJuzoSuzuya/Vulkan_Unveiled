@@ -17,10 +17,12 @@ public:
   Buffer &operator=(const Buffer &) = delete;
 
   VkBuffer getBuffer() { return buffer; }
+  VkDescriptorBufferInfo descriptorInfo();
 
   VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
   void writeToBuffer(void *data, VkDeviceSize size = VK_WHOLE_SIZE,
                      VkDeviceSize offset = 0);
+  void flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
 private:
   VkBuffer buffer = VK_NULL_HANDLE;
