@@ -1,8 +1,9 @@
 #include "app.hpp"
 #include "core/buffer.hpp"
 #include "core/model.hpp"
-#include "core/render_system.hpp"
 #include "core/swapchain.hpp"
+#include "movement_controller.hpp"
+#include <chrono>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/trigonometric.hpp>
 #include <memory>
@@ -59,8 +60,24 @@ void App::run() {
   camera.setPerspectiveProjection(glm::radians(90.f),
                                   renderSystem.getAspectRatio(), 0.1f, 10.f);
 
+  MovementController movementController{};
+
+  GameObject player = GameObject::createGameObject();
+
+  auto currentTime = std::chrono::high_resolution_clock::now();
+
   while (!window.shouldClose()) {
     glfwPollEvents();
+
+    auto newTime = std::chrono::high_resolution_clock::now();
+    float deltaTime =
+        std::chrono::duration<float, std::chrono::seconds::period>(newTime -
+                                                                   currentTime)
+            .count();
+    currentTime = newTime;
+
+    movementController.move(window.getGLFWwindow(), deltaTime, player);
+    camera.follow(player.transform.position, player.transform.rotation);
 
     if (auto commandBuffer = renderSystem.beginFrame()) {
       int frameIndex = renderSystem.getFrameIndex();
@@ -68,7 +85,7 @@ void App::run() {
                           descriptorSets[frameIndex]};
 
       GlobalUbo ubo{};
-      ubo.projectionView = camera.getProjection();
+      ubo.projectionView = camera.getProjection() * camera.getView();
       uboBuffers[frameIndex]->writeToBuffer(&ubo);
       uboBuffers[frameIndex]->flush();
 

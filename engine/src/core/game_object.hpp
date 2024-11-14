@@ -1,3 +1,4 @@
+#pragma once
 #include "model.hpp"
 #include <glm/ext/matrix_transform.hpp>
 

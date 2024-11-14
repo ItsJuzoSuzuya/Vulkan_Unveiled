@@ -23,6 +23,7 @@ public:
   VkExtent2D getExtent() {
     return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
   }
+  GLFWwindow *getGLFWwindow() { return window; }
 
   void createSurface(VkInstance instance, VkSurfaceKHR *surface) {
     std::cout << glfwVulkanSupported() << std::endl;
