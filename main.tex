@@ -5932,22 +5932,39 @@ void App::run() {
 
 Currently we are only using the vertices in the input assembler stage. We are not using the vertices in the vertex shader.
 We can access them through a layout qualifier. The layout qualifier holds the locations of the vertex datas position and color.
-These locations are the ones we defined in the \textit{getAttributeDescriptions} function.
+These locations are the ones we defined in the \textit{getAttributeDescriptions} function and to access them we will use the in keyword.
 
-Then, from this vec3 we can pass the position to the gl\textunderscore Position variable and add the w component to it.
+Then, from these vec3's we can pass the position to the gl\textunderscore Position variable and add the w component to it.
+The color will be passed to the fragment shader by passing it to an out variable called fragColor. This out variable will be passed to the next pipeline stage.
 
 \begin{lstlisting}[Language=C++]
-#version 450
+#version 460
 
 layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inColor;
+
+layout(location = 0) out vec3 fragColor;
 
 void main() {
 	gl_Position = vec4(inPosition, 1.0);
+  fragColor = inColor;
 }
 \end{lstlisting}
 
-The \textit{in} keyword is used to get the data from the location. We can also use the \textit{out} keyword to pass data to the next stage.
-We will use the \textit{out} keyword later.
+To use the \textit{fragColor} variable in the fragment shader we will have to use the in keyword to define the variable as an input variable
+and then pass it to a vec 4 out variable that will be outputted to the framebuffer. This will ensure that each fragment will be colored with the color of the vertex.
+
+\begin{lstlisting}[Language=C++]
+#version 460
+
+layout (location = 0) in vec3 fragColor;
+
+layout (location = 0) out vec4 outColor;
+
+void main() {
+  outColor = vec4(fragColor, 1.0);
+}
+\end{lstlisting}
 
 Let's run our application and see if the cube is rendered. Hmm, the cube is not rendered. Let's take a look at our model data.
 Debuging the vertices, we see that our model is a cube ranging from -1 to 1 in all directions. But since every vertex outside of
@@ -5995,7 +6012,6 @@ public:
 
   std::shared_ptr<Model> model{};
   Transform transform{};
-  glm::vec3 color{};
 
 private:
   GameObject(id_t id) : id{id} {}
@@ -6306,8 +6322,11 @@ We can now access the push constants in the shader via a layout qualifier called
 aka for each vertex. The created Object will be called Push and has to have the same structure as the PushConstantData struct. We will then access the modelMatrix and multiply it with the vertex position.
 
 \begin{lstlisting}[Language=C++]
-#version 450
+#version 460
 layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inColor;
+
+layout(location = 0) out vec3 fragColor;
 
 layout(push_constant) uniform Push {
   mat4 modelMatrix;
@@ -6315,6 +6334,7 @@ layout(push_constant) uniform Push {
 
 void main() {
   gl_Position = push.modelMatrix * vec4(inPosition, 1.0);
+  fragColor = inColor;
 }
 \end{lstlisting}
 
@@ -7023,7 +7043,11 @@ Finally we only have to multiply the model matrix with the projection view matri
 \begin{lstlisting}[Language=C++]
 #version 460
 
-layout(location = 0) in vec3 position;
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inColor;
+
+layout(location = 0) out vec3 fragColor;
+
 
 layout(push_constant) uniform Push {
   mat4 modelMatrix;
@@ -7034,7 +7058,8 @@ layout(set = 0, binding = 0) uniform GlobalUbo{
 } ubo;
 
 void main() {
-  gl_Position = ubo.projectionMatrix * push.modelMatrix * vec4(position, 1.0);
+  gl_Position = ubo.projectionMatrix * push.modelMatrix * vec4(inPosition, 1.0);
+  fragColor = inColor;
 }
 \end{lstlisting}
 
