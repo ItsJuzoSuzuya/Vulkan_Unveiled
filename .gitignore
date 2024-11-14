@@ -16,5 +16,6 @@ main.bbl-SAVE-ERROR
 main.bcf-SAVE-ERROR
 reviews/
 engine/debug.log
+*.o
 
 
