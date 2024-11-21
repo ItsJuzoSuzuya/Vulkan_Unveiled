@@ -1,6 +1,7 @@
 #include "camera.hpp"
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
+#include <iostream>
 
 namespace engine {
 void Camera::setPerspectiveProjection(float fov, float aspect, float near,
@@ -14,7 +15,7 @@ void Camera::setPerspectiveProjection(float fov, float aspect, float near,
   projectionMatrix[3][2] = -(far * near) / (far - near);
 }
 
-void Camera::setView(glm::vec3 position, glm::vec3 rotation) {
+void Camera::setView(const glm::vec3 &position, const glm::vec3 &rotation) {
   const float c1 = glm::cos(rotation.y);
   const float s1 = glm::sin(rotation.y);
   const float c2 = glm::cos(rotation.x);
@@ -35,9 +36,9 @@ void Camera::setView(glm::vec3 position, glm::vec3 rotation) {
   viewMatrix[0][2] = w.x;
   viewMatrix[1][2] = w.y;
   viewMatrix[2][2] = w.z;
-  viewMatrix[3][0] = -position.x;
-  viewMatrix[3][1] = -position.y;
-  viewMatrix[3][2] = -position.z;
+  viewMatrix[3][0] = -glm::dot(u, position);
+  viewMatrix[3][1] = -glm::dot(v, position);
+  viewMatrix[3][2] = -glm::dot(w, position);
 };
 
 } // namespace engine

@@ -1,18 +1,51 @@
 #include "movement_controller.hpp"
 #include <GLFW/glfw3.h>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
 
 namespace engine {
 
 void MovementController::move(GLFWwindow *window, float dt,
                               GameObject &gameObject) {
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    gameObject.transform.position.x -= 1.0f * dt;
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    gameObject.transform.position.x += 1.0f * dt;
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    gameObject.transform.position.z += 1.0f * dt;
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    gameObject.transform.position.z -= 1.0f * dt;
+  if (firstMouse) {
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+    firstMouse = false;
+    return;
+  }
+
+  double newMouseX, newMouseY;
+  glfwGetCursorPos(window, &newMouseX, &newMouseY);
+
+  double deltaX = newMouseX - mouseX;
+  double deltaY = newMouseY - mouseY;
+
+  glm::vec3 rotateDirection{0.f};
+  if (newMouseX != mouseX)
+    rotateDirection.y = deltaX;
+  if (newMouseY != mouseY)
+    rotateDirection.x = -deltaY;
+
+  gameObject.transform.rotation += rotateDirection * dt;
+
+  float yaw = gameObject.transform.rotation.y;
+
+  const glm::vec3 forwardDirection{sin(yaw), 0, cos(yaw)};
+  const glm::vec3 rightDirection{forwardDirection.z, 0, -forwardDirection.x};
+
+  glm::vec3 moveDirection{0.f};
+  if (glfwGetKey(window, keys.left) == GLFW_PRESS)
+    moveDirection = -rightDirection;
+  if (glfwGetKey(window, keys.right) == GLFW_PRESS)
+    moveDirection = rightDirection;
+  if (glfwGetKey(window, keys.forward) == GLFW_PRESS)
+    moveDirection = forwardDirection;
+  if (glfwGetKey(window, keys.backward) == GLFW_PRESS)
+    moveDirection = -forwardDirection;
+
+  gameObject.transform.position += moveDirection * dt;
+
+  mouseX = newMouseX;
+  mouseY = newMouseY;
 };
 
 } // namespace engine

@@ -7,12 +7,12 @@ namespace engine {
 class Camera {
 public:
   void setPerspectiveProjection(float fov, float aspect, float near, float far);
-  void setView(glm::vec3 position, glm::vec3 rotaion);
+  void setView(const glm::vec3 &position, const glm::vec3 &rotaion);
 
   const glm::mat4 &getProjection() const { return projectionMatrix; }
   const glm::mat4 &getView() const { return viewMatrix; }
 
-  void follow(glm::vec3 position, glm::vec3 rotation,
+  void follow(const glm::vec3 &position, glm::vec3 &rotation,
               glm::vec3 offset = {0.f, 0.f, 0.f}) {
     setView(position + offset, rotation);
   }

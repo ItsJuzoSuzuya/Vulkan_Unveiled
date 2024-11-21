@@ -5,7 +5,19 @@ namespace engine {
 
 class MovementController {
 public:
+  struct KeyMapping {
+    int forward = GLFW_KEY_W;
+    int backward = GLFW_KEY_S;
+    int left = GLFW_KEY_A;
+    int right = GLFW_KEY_D;
+  };
+
   void move(GLFWwindow *window, float dt, GameObject &gameObject);
+
+private:
+  KeyMapping keys{};
+  double mouseX, mouseY;
+  bool firstMouse = true;
 };
 
 } // namespace engine
