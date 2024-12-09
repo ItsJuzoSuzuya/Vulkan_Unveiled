@@ -13,6 +13,7 @@ namespace engine {
 
 struct PushConstantData {
   glm::mat4 modelMatrix{1.f};
+  glm::mat3 normalMatrix{1.f};
 };
 
 RenderSystem::RenderSystem(Device &device, Window &window,
@@ -157,6 +158,7 @@ void RenderSystem::renderGameObjects(FrameInfo &frameInfo,
   for (GameObject &gameObject : gameObjects) {
     PushConstantData push{};
     push.modelMatrix = gameObject.transform.mat4();
+    push.normalMatrix = gameObject.transform.normalMatrix();
 
     vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),

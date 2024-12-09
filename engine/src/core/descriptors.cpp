@@ -121,10 +121,6 @@ bool DescriptorPool::allocateDescriptor(VkDescriptorSetLayout setLayout,
 DescriptorWriter &
 DescriptorWriter::writeBuffer(uint32_t binding,
                               VkDescriptorBufferInfo *bufferInfo) {
-  std::cout << "Binding: " << binding << std::endl;
-  std::cout << "Binding Count: " << setLayout.bindings.count(binding)
-            << std::endl;
-
   assert(setLayout.bindings.count(binding) == 1 &&
          "Layout does not cotain specified binding");
 

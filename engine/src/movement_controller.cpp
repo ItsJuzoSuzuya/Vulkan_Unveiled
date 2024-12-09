@@ -1,7 +1,5 @@
 #include "movement_controller.hpp"
-#include <GLFW/glfw3.h>
 #include <glm/ext/vector_float3.hpp>
-#include <glm/ext/vector_float4.hpp>
 
 namespace engine {
 
@@ -20,10 +18,8 @@ void MovementController::move(GLFWwindow *window, float dt,
   double deltaY = newMouseY - mouseY;
 
   glm::vec3 rotateDirection{0.f};
-  if (newMouseX != mouseX)
-    rotateDirection.y = deltaX;
-  if (newMouseY != mouseY)
-    rotateDirection.x = -deltaY;
+  rotateDirection.y = deltaX;
+  rotateDirection.x = -deltaY;
 
   gameObject.transform.rotation += rotateDirection * dt;
 

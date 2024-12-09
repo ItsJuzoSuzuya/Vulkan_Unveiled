@@ -9,6 +9,7 @@ struct Transform {
   glm::vec3 scale{1.f, 1.f, 1.f};
 
   glm::mat4 mat4();
+  glm::mat3 normalMatrix();
 };
 
 class GameObject {

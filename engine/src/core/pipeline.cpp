@@ -41,9 +41,6 @@ void Pipeline::createGraphicsPipeline(const std::string &vertFilepath,
   std::vector<char> vertCode = readFile(vertFilepath);
   std::vector<char> fragCode = readFile(fragFilepath);
 
-  std::cout << "Vertex shader size: " << vertCode.size() << std::endl;
-  std::cout << "Fragment shader size: " << fragCode.size() << std::endl;
-
   createShaderModule(vertCode, &vertShaderModule);
   createShaderModule(fragCode, &fragShaderModule);
 

@@ -16,6 +16,7 @@ public:
   struct Vertex {
     glm::vec3 position{};
     glm::vec3 color{1.f, 0.f, 0.f};
+    glm::vec3 normal{};
 
     static std::vector<VkVertexInputBindingDescription>
     getBindingDescriptions();

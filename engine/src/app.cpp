@@ -1,10 +1,12 @@
 #include "app.hpp"
 #include "core/buffer.hpp"
+#include "core/game_object.hpp"
 #include "core/model.hpp"
 #include "core/swapchain.hpp"
 #include "movement_controller.hpp"
 #include <chrono>
 #include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <utility>
@@ -17,6 +19,9 @@ namespace engine {
 
 struct GlobalUbo {
   glm::mat4 projectionView{1.f};
+  glm::vec4 ambientLightColor{1.f, 1.f, 1.f, .02f};
+  glm::vec3 lightPosition{-1.f};
+  alignas(16) glm::vec4 lightColor{1.f};
 };
 
 App::App() {
