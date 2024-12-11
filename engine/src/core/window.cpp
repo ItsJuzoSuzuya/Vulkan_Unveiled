@@ -36,4 +36,6 @@ void Window::framebufferResizeCallback(GLFWwindow *window, int width,
   app->width = width;
   app->height = height;
 }
+
+void Window::close() { glfwSetWindowShouldClose(window, GLFW_TRUE); }
 } // namespace engine

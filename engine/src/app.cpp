@@ -4,6 +4,7 @@
 #include "core/model.hpp"
 #include "core/swapchain.hpp"
 #include "movement_controller.hpp"
+#include <GLFW/glfw3.h>
 #include <chrono>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -72,6 +73,9 @@ void App::run() {
 
   while (!window.shouldClose()) {
     glfwPollEvents();
+
+    if (glfwGetKey(window.getGLFWwindow(), GLFW_KEY_ESCAPE))
+      window.close();
 
     auto newTime = std::chrono::high_resolution_clock::now();
     float deltaTime =

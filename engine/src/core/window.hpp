@@ -35,6 +35,8 @@ public:
   bool wasWindowResized() { return framebufferResized; }
   void resetWindowResizedFlag() { framebufferResized = false; }
 
+  void close();
+
 private:
   void initWindow();
 
