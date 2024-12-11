@@ -682,7 +682,7 @@ as the frustum. Then we move the orthographic view volume to the origin
 and scale it to the size of the clip space, which is plus and minus the
 w coordinate on all axes. The w coordinate is almost always set to 1 by the user,
 so the clip space is a cube with the length of 2 on all axes except the z axis,
-because the negative z axis is the behind the camera we just have the positive
+because the negative z axis is behind the camera we just have the positive
 z axis.
 
 Let's start with the transformation of the view frustum to the orthographic
@@ -7068,8 +7068,849 @@ After compiling everything we should see a rotated and scaled cube in the center
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.8\textwidth]{images/perspective_cube.png}
-	\caption{Rotated and scaled cube in perspective}
+	\caption{Rotated and scaled cube with perspective projection}
 \end{figure}
+
+\section{Movement}
+
+\subsection{View Transformation}
+
+The perspective projection matrix is a matrix that transforms the view frustum to a orthogonal frustum.
+It assumes that the camera is at the origin and looks down the negative z-axis. But in video games the camera can move and rotate
+freely as a player. Therefor we will have to move and rotate the camera to simulate the movement of the player.
+To adjust the gameobjects accordingly to the cameras position and rotation we will have to create a view matrix.
+The view matrix moves and rotates the world in a way that the camera is at the origin and looks down the negative z-axis.
+In other words, the view matrix is the inverse of the camera model matrix. It will undo the movement and rotation of the camera.
+
+The model matrix of the camera will be retrieved from a player game object via the \textit{mat4} function.
+Let's calculate the invers of the model matrix. Since the camera will not be scaled, we won't apply scaling.
+First we will need the inverse of the translation matrix. The inverse of a translation matrix is the negative of the translation vector.
+
+\[
+	\begin{bmatrix}
+		1 & 0 & 0 & -x \\
+		0 & 1 & 0 & -y \\
+		0 & 0 & 1 & -z \\
+		0 & 0 & 0 & 1
+	\end{bmatrix}
+\]
+
+Next we will have to calculate the inverse of the rotation matrices. To better understand this we will have to look a bit deeper into the rotation matrices.
+For example if we take apart the rotation matrix of the y-axis we will see that each column of the matrix describes the right, up and forward vector of the camera.
+
+\[
+	\begin{bmatrix}
+		\cos(\theta)  & 0 & \sin(\theta) \\
+		0             & 1 & 0            \\
+		-\sin(\theta) & 0 & \cos(\theta) \\
+	\end{bmatrix}
+\]
+
+The first vector describes where the vector that points to the right of the camera is pointing to.
+The second vector describes where the vector that points up is pointing to.
+And the third vector describes where the vector that points forward is pointing to.
+
+If we rotate by 0 degrees we will have the following vectors:
+
+\[
+	Right:
+	\begin{bmatrix}
+		1 \\
+		0 \\
+		0 \\
+	\end{bmatrix}
+	Up:
+	\begin{bmatrix}
+		0 \\
+		1 \\
+		0 \\
+	\end{bmatrix}
+	Forward:
+	\begin{bmatrix}
+		0 \\
+		0 \\
+		1 \\
+	\end{bmatrix}
+\]
+
+But if we rotate by 90 degrees we will have the following vectors:
+
+\[
+	Right:
+	\begin{bmatrix}
+		0  \\
+		0  \\
+		-1 \\
+	\end{bmatrix}
+	Up:
+	\begin{bmatrix}
+		0 \\
+		1 \\
+		0 \\
+	\end{bmatrix}
+	Forward:
+	\begin{bmatrix}
+		1 \\
+		0 \\
+		0 \\
+	\end{bmatrix}
+\]
+
+Now that we know how the rotation matrix works we can calculate the inverse of the rotation matrix.
+The inverse of each rotation matrix is the transposed matrix. The transposed matrix is the matrix where the rows are the columns of the original matrix.
+So our inverse rotation matrix will be:
+
+\[
+	\begin{bmatrix}
+		\cos(\theta) & 0 & -\sin(\theta) \\
+		0            & 1 & 0             \\
+		\sin(\theta) & 0 & \cos(\theta)  \\
+	\end{bmatrix}
+\]
+
+When we do this for all three rotation matrices and add the translation matrix we will get the view matrix:
+
+\[
+	\fontsize{8}{12}\selectfont
+	\begin{bmatrix}
+		\cos(\theta_y) \cos(\theta_z) + \sin(\theta_y) \sin(\theta_x) \sin(\theta_z) & \cos(\theta_x) \sin(\theta_z) & \cos(\theta_y) \sin(\theta_x) \sin(\theta_z) - \sin(\theta_y) \cos(\theta_z) & -t_x \\
+		\sin(\theta_y) \sin(\theta_x) \cos(\theta_z) - \sin(\theta_z) \cos(\theta_y) & \cos(\theta_x) \cos(\theta_z) & \sin(\theta_y) \sin(\theta_z) + \cos(\theta_y) \sin(\theta_x) \cos(\theta_z) & -t_y \\
+		\sin(\theta_y) \cos(\theta_x)                                                & -\sin(\theta_x)               & \cos(\theta_y) \cos(\theta_x)                                                & -t_z \\
+		0                                                                            & 0                             & 0                                                                            & 1    \\
+	\end{bmatrix}
+\]
+
+The problem is that to calculate the projection view matrix we will have to multiply the projection matrix with the view matrix.
+Since the view matrix will be on the right side of the multiplication we will have to transpose the matrix to multiply the x translation vector with the projection matrix's first row,
+the y translation vector with the projection matrix's second row and the z translation vector with the projection matrix's third row.
+The transposed view matrix will look like this:
+
+\[
+	\fontsize{8}{12}\selectfont
+	\begin{bmatrix}
+		\cos(\theta_y) \cos(\theta_z) + \sin(\theta_y) \sin(\theta_x) \sin(\theta_z) & \sin(\theta_y) \sin(\theta_x) \cos(\theta_z) - \sin(\theta_z) \cos(\theta_y) & \sin(\theta_y) \cos(\theta_x) & 0 \\
+		\cos(\theta_x) \sin(\theta_z)                                                & \cos(\theta_x) \cos(\theta_z)                                                & -\sin(\theta_x)               & 0 \\
+		\cos(\theta_y) \sin(\theta_x) \sin(\theta_z) - \sin(\theta_y) \cos(\theta_z) & \sin(\theta_y) \sin(\theta_z) + \cos(\theta_y) \sin(\theta_x) \cos(\theta_z) & \cos(\theta_y) \cos(\theta_x) & 0 \\
+		-t_x                                                                         & -t_y                                                                         & -t_z                          & 1 \\
+	\end{bmatrix}
+\]
+
+One final thing we will have to do is to consider that the cameras position is not always where the position of the camera game object is.
+For example when we rotate the camera by 90 degrees on the y-axis and move it in the positive x direction, the camera will move in the negative z direction.
+This happens because we first rotate the world and then move the camera. To consider rotation in our translation we will take the dot product of the translation vector and the rotation matrix's
+right, up and forward vector. This will give us the translation vector in the world space.
+
+For example if we rotate the camera by 90 degrees on the y-axis and move it by 1 in the positive x direction we will be at the position (0, 0, -1).
+To get this result we will have to consider the right vector when moving the camera on the x axis, since the x axis is the right vector of the camera at the origin.
+The new translation on the x axis will be the dot product of the right vector after rotation and the translation vector.
+
+\[
+	\begin{bmatrix}
+		0  \\
+		0  \\
+		-1 \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		1 \\
+		0 \\
+		0 \\
+	\end{bmatrix}
+	=
+	0
+\]
+
+This is the translation on the x axis. If you think about it this makes sense.
+When we tranlate the camera we first rotate by 90 degrees to the right and then move by 1 in the positive x direction.
+After rotation we actually move in the negative z direction. When we want to get back to the centre we first rotate by -90 degrees and since we
+actually moved on the z axis we will not move on the x axis. When we do the the same for the y and z axis we will get the following translation vector:
+
+\[
+	\begin{bmatrix}
+		0 \\
+		0 \\
+		1 \\
+	\end{bmatrix}
+\]
+
+But because we need the inverse we will have to negate the translation vector.
+So the translation vector will be the negative dot product of the translation vector and the rotation matrix's right, up and forward vector respectively.
+Our final view matrix will look like this:
+
+\[
+	\fontsize{8}{12}\selectfont
+	\begin{bmatrix}
+		\cos(\theta_y) \cos(\theta_z) + \sin(\theta_y) \sin(\theta_x) \sin(\theta_z) & \sin(\theta_y) \sin(\theta_x) \cos(\theta_z) - \sin(\theta_z) \cos(\theta_y) & \sin(\theta_y) \cos(\theta_x)                  & 0 \\
+		\cos(\theta_x) \sin(\theta_z)                                                & \cos(\theta_x) \cos(\theta_z)                                                & -\sin(\theta_x)                                & 0 \\
+		\cos(\theta_y) \sin(\theta_x) \sin(\theta_z) - \sin(\theta_y) \cos(\theta_z) & \sin(\theta_y) \sin(\theta_z) + \cos(\theta_y) \sin(\theta_x) \cos(\theta_z) & \cos(\theta_y) \cos(\theta_x)                  & 0 \\
+		-(rotation_{\text{right}} \cdot translation)                                 & -(rotation_{\text{up}} \cdot translation)                                    & -(rotation_{\text{forward}} \cdot translation) & 1 \\
+	\end{bmatrix}
+\]
+
+In the case of our 90 degree rotation on the y-axis and the translation by 1 in the positive x direction we will get the following view matrix:
+
+\[
+	\fontsize{8}{12}\selectfont
+	\begin{bmatrix}
+		0  & 0 & 1  & 0 \\
+		0  & 1 & 0  & 0 \\
+		-1 & 0 & 0  & 0 \\
+		0  & 0 & -1 & 1 \\
+	\end{bmatrix}
+\]
+
+Let's start implementing the view matrix. We will add a \textit{setView} function that will take a constant position and constant rotation vector as parameters
+and a new view matrix member variable. We will also add a \textit{getView} function that will return the view matrix.
+
+\begin{lstlisting}[Language=C++]
+//camera.hpp
+class Camera {
+public:
+  ...
+  void setView(const glm::vec3 &position, const glm::vec3 &rotation);
+  glm::mat4 &getViewMatrix() const { return viewMatrix; }
+
+private:
+  ...
+  glm::mat4 viewMatrix{1.f};
+};
+\end{lstlisting}
+
+The implementation is quite simple, first we will get the sin and cos of the rotation vector and create the right, up and forward vectors.
+Then we reset our view matrix and populate it with the right, up and forward vectors and the invers translation.
+
+\begin{lstlisting}[Language=C++]
+//camera.cpp
+void Camera::setView(const glm::vec3 &position, const glm::vec3 &rotation) {
+  const float c1 = glm::cos(rotation.y);
+  const float s1 = glm::sin(rotation.y);
+  const float c2 = glm::cos(rotation.x);
+  const float s2 = glm::sin(rotation.x);
+  const float c3 = glm::cos(rotation.z);
+  const float s3 = glm::sin(rotation.z);
+  const glm::vec3 u{c1 * c3 + s1 * s2 * s3, c2 * s3, c1 * s2 * s3 - s1 * c3};
+  const glm::vec3 v{s1 * s2 * c3 - s3 * c1, c2 * c3, s1 * s3 + c1 * s2 * c3};
+  const glm::vec3 w{s1 * c2, -s2, c1 * c2};
+
+  viewMatrix = glm::mat4{1.f};
+  viewMatrix[0][0] = u.x;
+  viewMatrix[1][0] = u.y;
+  viewMatrix[2][0] = u.z;
+  viewMatrix[0][1] = v.x;
+  viewMatrix[1][1] = v.y;
+  viewMatrix[2][1] = v.z;
+  viewMatrix[0][2] = w.x;
+  viewMatrix[1][2] = w.y;
+  viewMatrix[2][2] = w.z;
+  viewMatrix[3][0] = -glm::dot(u, position);
+  viewMatrix[3][1] = -glm::dot(v, position);
+  viewMatrix[3][2] = -glm::dot(w, position);
+};
+\end{lstlisting}
+
+Now we can simply set the view matrix in our game loop and multiply it with the projection matrix to get the projection view matrix.
+We will set the view matrix to a position of (0, -0.5, 0) and a rotation of (0, -glm::radians(25.f), 0) to turn left and move up.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+...
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    camera.setView({0.f, 0.5f, 0.5f}, {0.f, -glm::radians(25.f), 0.f});
+
+    if (auto commandBuffer = renderSystem.beginFrame()) {
+      int frameIndex = renderSystem.getFrameIndex();
+      FrameInfo frameInfo{frameIndex, commandBuffer, camera,
+                          descriptorSets[frameIndex]};
+
+      GlobalUbo ubo{};
+      ubo.projectionView = camera.getProjection() * camera.getView();
+      uboBuffers[frameIndex]->writeToBuffer(&ubo);
+      uboBuffers[frameIndex]->flush();
+
+      renderSystem.recordCommandBuffer(commandBuffer);
+      renderSystem.renderGameObjects(frameInfo, gameObjects);
+      renderSystem.endRenderPass(commandBuffer);
+      renderSystem.endFrame();
+    }
+  }
+  vkDeviceWaitIdle(device.device());
+\end{lstlisting}
+
+The result should be a image where it seems like the camera has stepped up and rotated to the left.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/view_transformation.png}
+	\caption{Rotated cube with perspective projection and view transformation}
+\end{figure} \FloatBarrier
+
+\subsection{Moving a player}
+
+Now that we can move the camera we can will add some input handling that will move the camera with the WASD keys and rotate it with the mouse.
+Let's begin by instanciating a new game object called player.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+void App::run() {
+  ...
+  GameObject player = GameObject::createGameObject();
+
+  while (!window.shouldClose()) {
+    ...
+}
+\end{lstlisting}
+
+Now we will need a MovementController class that will handle the movement of the player. This class will be not a core class and have a \textit{move} function that will take a game object to move and
+a pointer to the \textit{GLFWwindow} object to get the inputs. It will simply check for keyboard or mouse inputs and move the player accordingly. But since the move function will be called
+every frame, faster computers will move the player faster than slower computers. To fix this we will have to multiply the movement by the delta time. The delta time is the time it took to render the last frame.
+So when we have a faster computer the delta time will be smaller and the player will move slower in each frame, but because the frames are rendered faster the player will move the same distance in the same time.
+
+\begin{lstlisting}[Language=C++]
+//movement_controller.hpp
+#include "core/game_object.hpp"
+#include <GLFW/glfw3.h>
+
+namespace engine {
+
+class MovementController {
+public:
+  void move(GLFWwindow *window, float dt, GameObject &gameObject);
+};
+
+} // namespace engine
+\end{lstlisting}
+
+Before we implement the move function we will add some key mappings in a subclass of the MovementController class called KeyMapping.
+Inside the KeyMapping class we will map the GLFW key codes to a corresponding movement variable.
+
+\begin{lstlisting}[Language=C++]
+//movement_controller.hpp
+class MovementController {
+public:
+  class KeyMapping {
+  public:
+    int forward = GLFW_KEY_W;
+    int backward = GLFW_KEY_S;
+    int left = GLFW_KEY_A;
+    int right = GLFW_KEY_D;
+  };
+  void move(GLFWwindow *window, float dt, GameObject &gameObject);
+
+private:
+  KeyMapping keys{};
+};
+\end{lstlisting}
+
+Let's go ahead and start with the translation. Later we will add the rotation.
+We will first define where the forward and right vectors of the player are pointing to.
+These vectors depend on the rotation of the player. To be more precise, both vectors depend on the
+yaw of the player. The yaw is the rotation around the y-axis. The x-axis rotation is the pitch and the z-axis rotation is the roll.
+By looking at the rotation matrix again, we can see that the forward vector is the third column of the rotation matrix
+and the right vector is the first column of the rotation matrix.  We will then instanciate a translation vector and set it to zero.
+Then we will check which keys are pressed and add the corresponding vectors to the translation vector.
+Because we don't want the player to move slower when moving diagonally we will normalize the translation vector.
+Finally we will multiply the translation vector by the delta time and add it to the position of the player.
+
+\begin{lstlisting}[Language=C++]
+//movement_controller.cpp
+#include "movement_controller.hpp"
+#include <glm/ext/vector_float3.hpp>
+
+namespace engine {
+
+void MovementController::move(GLFWwindow *window, float dt,
+                              GameObject &gameObject) {
+  float yaw = gameObject.transform.rotation.y;
+
+  const glm::vec3 forwardDirection{sin(yaw), 0, cos(yaw)};
+  const glm::vec3 rightDirection{forwardDirection.z, 0, -forwardDirection.x};
+
+  glm::vec3 moveDirection{0.f};
+  if (glfwGetKey(window, keys.left) == GLFW_PRESS)
+    moveDirection = -rightDirection;
+  if (glfwGetKey(window, keys.right) == GLFW_PRESS)
+    moveDirection = rightDirection;
+  if (glfwGetKey(window, keys.forward) == GLFW_PRESS)
+    moveDirection = forwardDirection;
+  if (glfwGetKey(window, keys.backward) == GLFW_PRESS)
+    moveDirection = -forwardDirection;
+
+  moveDirection = glm::normalize(moveDirection);
+  gameObject.transform.position += moveDirection * dt;
+};
+
+} // namespace engine
+\end{lstlisting}
+
+Before we can use the MovementController class we will have instanciate it and calculate the delta time.
+For the delta time we will use a high resolution clock from the \textit{chrono} extension.
+Before the game loop we will save the current time with the \textit{now} function from the \textit{std::chrono::high\textunderscore resolution\textunderscore clock} class.
+In the game loop we will get the new time and calculate the delta time with the \textit{duration} function from the \textit{std::chrono} extension.
+This function will take the difference between the new time and the old time and convert it to a predefined time unit. We will use seconds and store the result in a float variable.
+To retrieve the time as a float we will call the \textit{count} function on the result of the \textit{duration} function.
+Then we will set the current time to the new time.
+Finally we call the \textit{move} function of the MovementController class and pass the window, the delta time and the player game object.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+void App::run() {
+  ...
+  MovementController movementController{};
+
+  GameObject player = GameObject::createGameObject();
+
+  auto currentTime = std::chrono::high_resolution_clock::now();
+
+  while (!window.shouldClose()) {
+    glfwPollEvents();
+
+    auto newTime = std::chrono::high_resolution_clock::now();
+    float deltaTime =
+        std::chrono::duration<float, std::chrono::seconds::period>(newTime -
+                                                                   currentTime)
+            .count();
+    currentTime = newTime;
+
+    movementController.move(window.getGLFWwindow(), deltaTime, player);
+}
+\end{lstlisting}
+
+Since the \textit{move} function takes the window as a parameter we will have to add a \textit{getGLFWwindow} function to the Window class that will return the \textit{GLFWwindow} object.
+
+\begin{lstlisting}[Language=C++]
+//window.hpp
+class Window {
+public:
+  ...
+  GLFWwindow *getGLFWwindow() { return window; }
+  ...
+};
+\end{lstlisting}
+
+Now we can move the player with the WASD keys.
+
+The next step is to add the rotation of the player with the mouse.
+To do so we will adjust our Window class. We will set the input mode of the window to GLFW\textunderscore CURSOR\textunderscore DISABLED.
+This will hide the cursor and lock it to the windows center. We will also check if raw mouse motion is supported and enable it if it is.
+This last step is optional but it will give us more precise mouse movement by disabling mouse acceleration.
+
+\begin{lstlisting}[Language=C++]
+//window.cpp
+...
+void Window::initWindow() {
+  glfwInit();
+
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+  window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+  glfwSetWindowUserPointer(window, this);
+  glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+  if (glfwRawMouseMotionSupported())
+    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+}
+...
+\end{lstlisting}
+
+Now we will add the mouse movement to the \textit{move} function of the MovementController class.
+To get the current mouse position we will use the \textit{glfwGetCursorPos} function. This function
+takes the window and two pointers to double values as parameters. The function will then set the double values to the x and y position of the cursor.
+We will need a private member variable to store the last mouse position. We will then calculate the difference between the current and the last mouse position
+and add the difference to the rotation of the player.
+
+\begin{lstlisting}[Language=C++]
+//movement_controller.cpp
+void MovementController::move(GLFWwindow *window, float dt,
+                              GameObject &gameObject) {
+  double newMouseX, newMouseY;
+  glfwGetCursorPos(window, &newMouseX, &newMouseY);
+
+  double deltaX = newMouseX - mouseX;
+  double deltaY = newMouseY - mouseY;
+
+  glm::vec3 rotateDirection{0.f};
+  rotateDirection.y = deltaX;
+  rotateDirection.x = -deltaY;
+
+  gameObject.transform.rotation += rotateDirection * dt;
+
+  mouseX = newMouseX;
+  mouseY = newMouseY;
+  ...
+}
+\end{lstlisting}
+
+Of couse when we start the game the mouseX and mouseY variables will be uninitialized. To fix this we will add a simple boolean variable that will be set to false when the mouse position is initialized.
+
+\begin{lstlisting}[Language=C++]
+//movement_controller.cpp
+void MovementController::move(GLFWwindow *window, float dt,
+                              GameObject &gameObject) {
+  if (firstMouse) {
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+    firstMouse = false;
+    return;
+  }
+  ...
+}
+\end{lstlisting}
+
+With this we can move the player with the WASD keys and rotate it with the mouse.
+
+\section{Lightning}
+
+Currently our cube looks very flat and boring. To make it look more interesting and realistic we will add lightning.
+Lightning in computer graphics is the simulation of light rays that hit an object and are reflected to the camera.
+There are many different lightning models that simulate different materials and light sources.
+
+For this tutorial we will use a combination of the Lambertian Diffuse and a basic attenuation model to simulate a matte surface with a point light source.
+The Lambertian Diffuse model is a simple model that simulates a matte surface. It does not take the view direction into account and assumes that the light is reflected equally in all directions.
+This is obviously not true in real life but it is a good approximation and is very cheap to calculate.
+
+The attenuation model is a simple model that simulates the decrease of light intensity with distance.
+It is based on the inverse square law that states that the intensity of light decreases with the square of the distance.
+
+\subsection{Lambertian Diffuse}
+
+The Lambertian Diffuse model calculates the intensity of the light that hits the surface of an object. It is based on the angle between the normal of the surface and the direction of the light.
+A normal is a vector that is pointing away from the object and is perpendicular to the surface of the object. In the case of our cube the normals are pointing perpendicular to the faces of the cube.
+The intensity is then calulated by evaluating the angle between the normal and the light direction with the dot product. The dot product of two vectors is the cosine of the angle between the two vectors.
+The reason we use the cosine is because we want the light intensity to be at max when the light is hitting the surface directly and at zero when the light is hitting the surface at a 90 degree angle.
+But because the angle will be negative when the light is hitting the surface from an angle greater than 90 degrees we will have to clamp the result to zero.
+
+Before we begin with the lighting implementation we will have to get the normals of the cube when we load the model.
+Inside of the \textit{Vertex} struct we will add a normal member variable and adjust the \textit{Vertex::getAttributeDescriptions} function accordingly.
+
+\begin{lstlisting}[Language=C++]
+//model.hpp
+...
+class Model {
+public:
+  struct Vertex {
+    glm::vec3 position{};
+    glm::vec3 color{1.f, 0.f, 0.f};
+    glm::vec3 normal{};
+
+    static std::vector<VkVertexInputBindingDescription>
+    getBindingDescriptions();
+    static std::vector<VkVertexInputAttributeDescription>
+    getAttributeDescriptions();
+  };
+  ...
+};
+\end{lstlisting}
+
+Inside the \textit{Vertex::getAttributeDescriptions} function we will add a new attribute description for the normal.
+
+\begin{lstlisting}[Language=C++]
+//model.cpp
+...
+attributeDescriptions.push_back(
+    {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)});
+...
+\end{lstlisting}
+
+Luckily, gltf models already provide normals for each vertex. We will have to adjust the \textit{loadModel} function to load the normals from the gltf model.
+It works basically the same as the position loading, but instead of the \textit{POSITION} accessor we will use the \textit{NORMAL} accessor.
+
+\begin{lstlisting}[Language=C++
+//model.cpp
+void Model::Builder::loadModel(const std::string &filepath) {
+  ...
+  for (const auto &mesh : gltfModel.meshes) {
+    for (const auto &primitive : mesh.primitives) {
+      ...VertexBuffer loading...
+      const auto &normalAccessor =
+          gltfModel.accessors[primitive.attributes.at("NORMAL")];
+      const auto &normalBufferView =
+          gltfModel.bufferViews[normalAccessor.bufferView];
+      const auto &normalBuffer = gltfModel.buffers[normalBufferView.buffer];
+      const float *normalData = reinterpret_cast<const float *>(
+          &normalBuffer
+               .data[normalBufferView.byteOffset + normalAccessor.byteOffset]);
+
+      for (size_t i = 0; i < vertexAccessor.count; i++) {
+        Vertex vertex{};
+        vertex.position = {vertexData[i * 3], vertexData[i * 3 + 1],
+                           vertexData[i * 3 + 2]};
+        vertex.normal = {normalData[i * 3], normalData[i * 3 + 1],
+                         normalData[i * 3 + 2]};
+        vertices.push_back(vertex);
+      }
+      ...IndexBuffer loading...
+    }
+  }
+}
+\end{lstlisting}
+
+Great now that we have the normals we also have to create a normal matrix. Just as the model matrix transforms the vertices of the object to the world space,
+the normal matrix transforms the normals of the object to the world space. Okay but why not use the model matrix for the normals? The reason is best explained with an example.
+Let's imagine a triangle where the vertices are at the positions (1, 1, 0), (-1, 1, 0) and (0, 0, 1).
+The normal of this triangle can be calculated by taking the cross product of two edges of the triangle.
+
+The first triangle edge is the vector from (1,1,0) to (-1,1,0) which is (-2, 0, 0).
+The second triangle edge is the vector from (1,1,0) to (0,0,1) which is (-1, -1, 1).
+
+The cross product of these two vectors is the normal of the triangle which is (0, -2, -2) or (0, 2, 2) depending on the order of the cross product.
+This normal is already provided by the gltf model. But what happens when we scale the triangle by 2 in the z direction, effectively transforming the third vertex to (0, 0, 2)?
+
+Vector 1 is still (-2, 0, 0) and vector 2 will turn into (-1, -1, 2). The cross product of these two vectors is now (0, -4, -2) or (0, 4, 2).
+Because of the way the cross product works, each axis of the normal will be scaled by the scale factor except for the axis that we scaled the object in.
+So when we scale the object on the z axis it will scale the x and y axis of the normal by the scale factor. This is something that the model matrix does not do.
+The model matrix scales the object by the same factor by the scale factor for the corresponding axis.
+
+Since we want to scale the other axes of the normal by the scale factor we can simply multiply the scaled axis by the inverse of the scale factor.
+So when we scale the object by 2 in the z direction we will can multiply the z axis of the normal by 0.5 to get the correct normal.
+This is correct since we only care about the direction of the normal and not the length of the normal.
+
+The reason the y axis of the example normal is scaled by 2 is because when we scale the object by 2 in the z direction the triangle flattens, what means that the normal will point further up then before.
+This can be perfectly seen when we draw both triangles on a piece of paper and draw the normals of the triangles.
+
+//Add images here
+
+So the normal matrix will be the same as the model matrix but with the inverse scale factors and without the translation.
+We cut out the translation because it does not affect the direction of the normal.
+Let's add a \texit{normalMatrix} function to the Transform struct that will return the normal matrix.
+
+\begin{lstlisting}[Language=C++]
+//game_object.cpp
+
+glm::mat3 Transform::normalMatrix() {
+  const float c1 = glm::cos(rotation.y);
+  const float s1 = glm::sin(rotation.y);
+  const float c2 = glm::cos(rotation.x);
+  const float s2 = glm::sin(rotation.x);
+  const float c3 = glm::cos(rotation.z);
+  const float s3 = glm::sin(rotation.z);
+  const glm::vec3 invScale = 1.f / scale;
+
+  return glm::mat3{
+      {
+          invScale.x * (c1 * c3 + s1 * s2 * s3),
+          invScale.x * c2 * s3,
+          invScale.x * (c1 * s2 * s3 - s1 * c3),
+      },
+      {
+          invScale.y * (s1 * s2 * c3 - s3 * c1),
+          invScale.y * c2 * c3,
+          invScale.y * (s1 * s3 + c1 * s2 * c3),
+      },
+      {
+          invScale.z * s1 * c2,
+          invScale.z * -s2,
+          invScale.z * c1 * c2,
+      },
+  };
+}
+
+\end{lstlisting}
+
+Now we will need to add a member variable to the PushConstantData struct that will hold the normal matrix.
+
+\begin{lstlisting}[Language=C++]
+//render_system.cpp
+
+struct PushConstantData {
+  glm::mat4 modelMatrix;
+  glm::mat3 normalMatrix;
+};
+\end{lstlisting}
+
+Further more we will have to populate the normal matrix in the \textit{renderGameObjects} function.
+
+\begin{lstlisting}[Language=C++]
+//render_system.cpp
+
+void RenderSystem::renderGameObjects(FrameInfo &frameInfo,
+                                     std::vector<GameObject> &gameObjects) {
+  pipeline->bind(frameInfo.commandBuffer);
+
+  vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+                          &frameInfo.descriptorSet, 0, nullptr);
+
+  for (GameObject &gameObject : gameObjects) {
+    PushConstantData push{};
+    push.modelMatrix = gameObject.transform.mat4();
+    push.normalMatrix = gameObject.transform.normalMatrix();
+
+    vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),
+                       &push);
+
+    gameObject.model->bind(frameInfo.commandBuffer);
+    gameObject.model->draw(frameInfo.commandBuffer);
+  }
+}
+\end{lstlisting}
+
+Now we can access the normal matrix in the vertex shader. We will add a new member variable to the PushConstant struct that will hold the normal matrix.
+We will also add a new in variable to the vertex shader that will hold the normal.
+
+\begin{lstlisting}[Language=C++]
+//shader.vert
+
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec3 inColor;
+layout(location = 2) in vec3 inNormal;
+
+layout(location = 0) out vec3 fragColor;
+
+layout(push_constant) uniform Push {
+  mat4 modelMatrix;
+  mat3 normalMatrix;
+} push;
+...
+\end{lstlisting}
+
+We're finished with the normals and can focus on the lambertian diffuse model.
+Like mentioned before the lambertian diffuse model calculates the intensity of the light that hits the surface of an object.
+The intensity is calculated by evaluating the angle between the normal of the surface and the direction of the light using the dot product.
+The dot product of two vectors is the cosine of the angle between the two vectors.
+Since we need the direction of the light we will have to provide the position of the light source.
+We can not provide it as a push constant, because it does not contain enough space for another vec3.
+Remember that the push constant is limited to 128 bytes, aka 32 floats, aka two 4x4 matrices.
+But wait we use one 4x4 matrix and one 3x3 matrix, so we have 28 floats left.
+Actually we will only have 16 floats left, because the 3x3 matrix will be aligned to 16 bytes.
+This means that each row of the 3x3 matrix will be assigned to a 16 byte boundary, so the 3x3 matrix will be 48 bytes in total.
+So in fact we will only have 16 floats left, which would be enough for the light position.
+Nonetheless we will provide it via the uniform buffer, because we will also provide the color of the light source and an ambient light color.
+If you want to provide the light position via the push constant you can do so by adding the light position to the push constant and the light color to the uniform buffer.
+I chose to provide the light position via the uniform buffer, because it is more flexible and we can add more light sources later on.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+
+struct GlobalUbo {
+  glm::mat4 projectionView{1.f};
+  glm::vec4 ambientLightColor{1.f, 1.f, 1.f, .02f};
+  glm::vec3 lightPosition{-1.f};
+  alignas(16) glm::vec4 lightColor{1.f};
+};
+...
+\end{lstlisting}
+
+Take into consideration that each object in the uniform buffer will be automatically aligned to 16 bytes. This means, that
+the shader can only access objects on a 16 byte boundary. This is why we have to add the \textit{alignas(16)} attribute to the \textit{lightColor} member variable.
+Without this attribute the \textit{lightColor} member would begin at the 92th byte of the uniform buffer, because the mat4, vec3 and vec4 objects are 92 bytes in total.
+Because of the alignment rules, the shader would access the \textit{lightColor} member at the 96th byte, which would cut out the first 4 bytes of the \textit{lightColor} member.
+This would result in a wrong value for the \textit{lightColor} member.
+But the \textit{alignas(16)} attribute will align the \textit{lightColor} member to the 96th byte, so the shader can access the \textit{lightColor} member correctly.
+
+For the light intensity, we will first have to calculate the world position of the vertex and its normals.
+This means we will have to multiply the vertex position with the model matrix and the normal with the normal matrix.
+We will then calculate the direction of the light by subtracting the world position of the vertex from the world position of the light.
+The light position is provided as a vec3, so we will have to convert the world position of the vertex to a vec3 by dividing the world position by accessing its x, y and z components.
+
+Before we can calculate the intensity we will have to normalize the normal and the light direction. We do this, to simplify the calculation of the dot product.
+The full formula for the dot product is:
+
+\[
+	\vec{a} \cdot \vec{b} = \left\| \vec{a} \right\| \left\| \vec{b} \right\| \cos(\theta)
+\]
+
+Where $\vec{a}$ and $\vec{b}$ are the two vectors and $\theta$ is the angle between the two vectors.
+When we normalize the vectors the length of the vectors will be 1 and the formula simplifies to:
+
+\[
+	\vec{a} \cdot \vec{b} = \cos(\theta)
+\]
+
+This is the reason why we normalize the vectors before calculating the dot product.
+The intensity is then calculated by taking the dot product of the normal and the light direction.
+Since the dot product can be negative when the normal is facing away from the light, we will have to clamp the result to zero.
+
+\begin{lstlisting}[Language=C++]
+//shader.vert
+...
+void main() {
+  vec4 worldPosition = push.modelMatrix * vec4(inPosition, 1.0);
+  vec3 normalWorldSpace = normalize(push.normalMatrix * inNormal);
+  vec3 directionToLight = normalize(ubo.lightPosition - worldPosition.xyz);
+
+  float lightIntensity = max(dot(normalWorldSpace, directionToLight), 0);
+}
+\end{lstlisting}
+
+We will then multiply the light and ambient colors x, y and z components with it's w component, which is the
+opacity or alpha value of the color. This is done to change the light and ambient color intensity with the alpha value.
+
+\begin{lstlisting}[Language=C++]
+//shader.vert
+...
+void main() {
+  ...
+  vec3 lightColor = ubo.lightColor.xyz * ubo.lightColor.w;
+  vec3 ambientLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
+}
+\end{lstlisting}
+
+Now we can get the diffuse color by multiplying the light intensity with the light color.
+With the diffuse color we can calculate the final color by adding the diffuse color to the ambient light color and multiply the result with the vertex color.
+We should also not forget to pass the final color to the fragment shader and multiply the world position with the projection view matrix
+to set the gl\textunderscore Position.
+
+\begin{lstlisting}[Language=C++]
+//shader.vert
+...
+void main() {
+  ...
+  vec3 diffuseLight = lightColor * lightIntensity;
+
+  fragColor = inColor * (ambientLight + diffuseLight);
+  gl_Position = ubo.projectionMatrix * worldPosition;
+}
+\end{lstlisting}
+
+With all of that done we should see a cube that is lit by a light source.
+
+\subsection{Attenuation}
+
+The attenuation model simulates the decrease of light intensity with distance.
+This simulation is based on the inverse square law that states that the intensity of light decreases with the square of the distance.
+The attenuation model is based on three factors: the constant factor, the linear factor and the quadratic factor.
+
+The constant factor is a constant value that is added to the attenuation model.
+It is usually set to 1 to avoid division by zero and to fully illuminate the object when the light source is close to the object.
+
+The linear factor is a value that is multiplied with the distance between the light source and the object.
+It is used to simulate a linear decrease of light intensity with distance. The linear factor is usually set to a value between 0 and 1.
+
+The quadratic factor is a value that is multiplied with the square of the distance between the light source and the object.
+It is used to simulate a quadratic decrease of light intensity with distance. The quadratic factor is usually set to a value between 0 and 1.
+
+So the attenuation model is calculated by the following formula:
+
+\[
+	\frac{lightIntensity}{constant + linear \cdot distance + quadratic \cdot distance^2}
+\]
+
+For the constant factor we will use 1, for the linear and quadratic factor we will use 0.2 to simulate a medium decrease of light intensity with distance.
+We have to calculate the distance between the light source and the object. We can do this with the length function that calculates the length of a vector.
+Because we normalized the light direction vector the lenght will be alway 1. So we have to undop the normalization and normalize the vector later when we have to.
+
+\begin{lstlisting}[Language=C++]
+//shader.vert
+...
+void main() {
+  vec4 worldPosition = push.modelMatrix * vec4(inPosition, 1.0);
+  vec3 normalWorldSpace = normalize(push.normalMatrix * inNormal);
+
+  vec3 directionToLight = ubo.lightPosition - worldPosition.xyz;
+  float distanceToLight = length(directionToLight);
+
+  float lightIntensity = max(dot(normalWorldSpace, normalize(directionToLight)), 0);
+  lightIntensity = lightIntensity / (1.0 + 0.2 * distanceToLight + 0.2 * distanceToLight * distanceToLight);
+  ...
+}
+\end{lstlisting}
+
+You can now see the light intensity decrease with distance by changing the light position.
 
 \listoffigures
 
