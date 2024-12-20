@@ -7680,7 +7680,7 @@ Let's add a \texit{normalMatrix} function to the Transform struct that will retu
 \begin{lstlisting}[Language=C++]
 //game_object.cpp
 
-glm::mat3 Transform::normalMatrix() {
+glm::mat4 Transform::normalMatrix() {
   const float c1 = glm::cos(rotation.y);
   const float s1 = glm::sin(rotation.y);
   const float c2 = glm::cos(rotation.x);
@@ -7689,22 +7689,26 @@ glm::mat3 Transform::normalMatrix() {
   const float s3 = glm::sin(rotation.z);
   const glm::vec3 invScale = 1.f / scale;
 
-  return glm::mat3{
+  return glm::mat4{
       {
           invScale.x * (c1 * c3 + s1 * s2 * s3),
           invScale.x * c2 * s3,
           invScale.x * (c1 * s2 * s3 - s1 * c3),
+          0.f,
       },
       {
           invScale.y * (s1 * s2 * c3 - s3 * c1),
           invScale.y * c2 * c3,
           invScale.y * (s1 * s3 + c1 * s2 * c3),
+          0.f,
       },
       {
           invScale.z * s1 * c2,
           invScale.z * -s2,
           invScale.z * c1 * c2,
+          0.f,
       },
+      {0.f, 0.f, 0.f, 1.f},
   };
 }
 
@@ -7717,7 +7721,7 @@ Now we will need to add a member variable to the PushConstantData struct that wi
 
 struct PushConstantData {
   glm::mat4 modelMatrix;
-  glm::mat3 normalMatrix;
+  glm::mat4 normalMatrix;
 };
 \end{lstlisting}
 
@@ -7763,7 +7767,7 @@ layout(location = 0) out vec3 fragColor;
 
 layout(push_constant) uniform Push {
   mat4 modelMatrix;
-  mat3 normalMatrix;
+  mat4 normalMatrix;
 } push;
 ...
 \end{lstlisting}
@@ -7775,13 +7779,7 @@ The dot product of two vectors is the cosine of the angle between the two vector
 Since we need the direction of the light we will have to provide the position of the light source.
 We can not provide it as a push constant, because it does not contain enough space for another vec3.
 Remember that the push constant is limited to 128 bytes, aka 32 floats, aka two 4x4 matrices.
-But wait we use one 4x4 matrix and one 3x3 matrix, so we have 28 floats left.
-Actually we will only have 16 floats left, because the 3x3 matrix will be aligned to 16 bytes.
-This means that each row of the 3x3 matrix will be assigned to a 16 byte boundary, so the 3x3 matrix will be 48 bytes in total.
-So in fact we will only have 16 floats left, which would be enough for the light position.
-Nonetheless we will provide it via the uniform buffer, because we will also provide the color of the light source and an ambient light color.
-If you want to provide the light position via the push constant you can do so by adding the light position to the push constant and the light color to the uniform buffer.
-I chose to provide the light position via the uniform buffer, because it is more flexible and we can add more light sources later on.
+That's why we will provide it via the uniform buffer and also provide the color of the light source and an ambient light color.
 
 \begin{lstlisting}[Language=C++]
 //app.cpp
@@ -7824,13 +7822,14 @@ When we normalize the vectors the length of the vectors will be 1 and the formul
 This is the reason why we normalize the vectors before calculating the dot product.
 The intensity is then calculated by taking the dot product of the normal and the light direction.
 Since the dot product can be negative when the normal is facing away from the light, we will have to clamp the result to zero.
+We will also transform the normal matrix to a mat3 matrix, so that we can multiply it with the vec3 normal.
 
 \begin{lstlisting}[Language=C++]
 //shader.vert
 ...
 void main() {
   vec4 worldPosition = push.modelMatrix * vec4(inPosition, 1.0);
-  vec3 normalWorldSpace = normalize(push.normalMatrix * inNormal);
+  vec3 normalWorldSpace = normalize(mat3(push.normalMatrix) * inNormal);
   vec3 directionToLight = normalize(ubo.lightPosition - worldPosition.xyz);
 
   float lightIntensity = max(dot(normalWorldSpace, directionToLight), 0);
@@ -7899,18 +7898,153 @@ Because we normalized the light direction vector the lenght will be alway 1. So 
 ...
 void main() {
   vec4 worldPosition = push.modelMatrix * vec4(inPosition, 1.0);
-  vec3 normalWorldSpace = normalize(push.normalMatrix * inNormal);
+  vec3 normalWorldSpace = normalize(mat3(push.normalMatrix) * inNormal);
 
   vec3 directionToLight = ubo.lightPosition - worldPosition.xyz;
   float distanceToLight = length(directionToLight);
 
   float lightIntensity = max(dot(normalWorldSpace, normalize(directionToLight)), 0);
-  lightIntensity = lightIntensity / (1.0 + 0.2 * distanceToLight + 0.2 * distanceToLight * distanceToLight);
+  float attenuation = lightIntensity / (1.0 + 0.2 * distanceToLight + 0.2 * distanceToLight * distanceToLight);
   ...
 }
 \end{lstlisting}
 
 You can now see the light intensity decrease with distance by changing the light position.
+
+\subsection{Per Fragment Lightning}
+
+Currently we handle the lightning per vertex. This means that the light intensity is calculated for each vertex and the color of the vertex is interpolated between the vertices.
+This is a simple and fast way to calculate lightning but it can lead to flat looking objects with sharp transitions between the colors.
+To counteract this we can calculate the light intensity per fragment. This requires us to interpolate the normals and fragment positions between the vertices and calculate the light intensity in the fragment shader.
+To interpolate the normals we will have to pass the normals to the rasterizer. Just as the color and position,
+the normals are interpolated between the vertices inside the rasterizer and further pushed to the fragment shader.
+Inside of the fragment shader we will then calculate the light intensity and the final color.
+
+Let's first adjust the vertex shader. We will only calculate the world position and the world normal, pass them further, apply the projection matrix to the world position and pass the color to the fragment shader.
+
+\begin{lstlisting}[Language=C++]
+//shader.vert
+...
+layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec3 fragPositionWorld;
+layout(location = 2) out vec3 fragNormalWorld;
+
+void main() {
+  vec4 worldPosition = push.modelMatrix * vec4(inPosition, 1.0);
+  fragNormalWorld = normalize(mat3(push.normalMatrix) * inNormal);
+  fragPositionWorld = worldPosition.xyz;
+
+  gl_Position = ubo.projectionMatrix * worldPosition;
+  fragColor = inColor;
+}
+\end{lstlisting}
+
+Inside of the fragment shader we will calculate the light intensity and the final color.
+There are two condition that we have to take into account. The normals are interpolated between the vertices and result in normals that are not normalized.
+This means that we will need to normalize the normals before calculating the light intensity.
+The second condition is that we will need the data from the uniform buffer. But when creating the descripor set layout we defined the binding only for the vertex buffer.
+We will have to change the binding to include the fragment shader as well.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+...
+auto descriptorSetLayout =
+    DescriptorSetLayout::Builder(device)
+        .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+        .build();
+...
+\end{lstlisting}
+
+\begin{lstlisting}[Language=C++]
+//shader.frag
+#version 460
+
+layout(location = 0) in vec3 fragColor;
+layout(location = 1) in vec3 fragPositionWorld;
+layout(location = 2) in vec3 fragNormalWorld;
+
+layout(location = 0) out vec4 outColor;
+
+layout(set = 0, binding = 0) uniform GlobalUbo{
+  mat4 projectionMatrix;
+  vec4 ambientLightColor;
+  vec3 lightPosition;
+  vec4 lightColor;
+} ubo;
+
+void main() {
+  vec3 directionToLight = ubo.lightPosition - fragPositionWorld;
+  float distanceToLight = length(directionToLight);
+
+  float lightIntensity = max(dot(normalize(fragNormalWorld), normalize(directionToLight)), 0);
+  float attenuation = lightIntensity / (1.0 + 0.2 * distanceToLight + 0.2 * distanceToLight * distanceToLight);
+
+  vec3 lightColor = ubo.lightColor.xyz * ubo.lightColor.w;
+  vec3 diffuseLight = lightColor * attenuation;
+
+  vec3 ambientLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
+  outColor = vec4(fragColor * (ambientLight + diffuseLight), 1.0f);
+}
+\end{lstlisting}
+
+This should result in a more realistic looking cube.
+To see the effect even better we can add a second cube as a floor.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+...
+  GameObject floor = GameObject::createGameObject();
+  floor.model = cubeModel;
+  floor.transform.position = {0.f, -1.f, 0.f};
+  floor.transform.scale = {10.f, 0.1f, 10.f};
+  gameObjects.push_back(std::move(floor));
+...
+\end{lstlisting}
+
+Let's compile and run the application.
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/floor_error.png}
+	\caption{Per fragment lightning}
+\end{figure} \FloatBarrier
+
+Whoops I forgot that the y axis is flipped in the Vulkan coordinate system. You know what. The flipped y axis is quite annoying and unintuitive.
+It's is also not the standard in computer graphics but rather originates from a more accurate representation of the graphics hardware, because
+most drivers use a top left origin for the framebuffer. But because we are using Vulkan we can change the y axis to the standard bottom left origin.
+This will unflip the y axis and make the coordinate system more intuitive.
+
+To do so we will have to change the viewport by setting the y value to the height of the swapchains extent. This will set the origin of the viewport to the bottom left corner of the window.
+Then we will also have to negate the viewports height since it's y axis is pointing down and we want it to point up.
+
+\begin{lstlisting}[Language=C++]
+//render_system.cpp
+...
+  VkViewport viewport = {};
+  viewport.x = 0;
+  viewport.y = static_cast<float>(swapChain->extent().height);
+  viewport.width = static_cast<float>(swapChain->extent().width);
+  viewport.height = -static_cast<float>(swapChain->extent().height);
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+  vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+...
+\end{lstlisting}
+
+When compiling and running the application we should see the cube and the floor as expected, but the camera movement is inverted.
+Let's fix this by uninverting the x axis of the mouse movement.
+
+\begin{lstlisting}[Language=C++]
+//movement_controller.cpp
+...
+glm::vec3 rotateDirection{0.f};
+rotateDirection.y = deltaX;
+rotateDirection.x = deltaY;
+...
+\end{lstlisting}
+
+Perfect. Now we have a cube that is lit by a light source and a floor that is also lit by the light source.
 
 \listoffigures
 

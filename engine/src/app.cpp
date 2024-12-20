@@ -3,6 +3,7 @@
 #include "core/game_object.hpp"
 #include "core/model.hpp"
 #include "core/swapchain.hpp"
+#include "heightmap.hpp"
 #include "movement_controller.hpp"
 #include <GLFW/glfw3.h>
 #include <chrono>
@@ -36,6 +37,9 @@ App::App() {
 }
 
 void App::run() {
+  HeightMap heightMap = HeightMap(10, 10, 10);
+  heightMap.print();
+
   std::vector<std::unique_ptr<Buffer>> uboBuffers(
       SwapChain::MAX_FRAMES_IN_FLIGHT);
   for (int i = 0; i < uboBuffers.size(); i++) {
@@ -47,7 +51,7 @@ void App::run() {
   auto descriptorSetLayout =
       DescriptorSetLayout::Builder(device)
           .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                      VK_SHADER_STAGE_VERTEX_BIT)
+                      VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
           .build();
 
   std::vector<VkDescriptorSet> descriptorSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -115,7 +119,12 @@ void App::loadGameObjects() {
   cube.transform.position = {0.f, 0.f, 2.f};
   cube.transform.scale = {0.5f, 0.5f, 0.5f};
   cube.transform.rotation = {0.f, glm::radians(30.f), glm::radians(45.f)};
-
   gameObjects.push_back(std::move(cube));
+
+  GameObject floor = GameObject::createGameObject();
+  floor.model = cubeModel;
+  floor.transform.position = {0.f, -1.f, 0.f};
+  floor.transform.scale = {10.f, 0.1f, 10.f};
+  gameObjects.push_back(std::move(floor));
 }
 } // namespace engine

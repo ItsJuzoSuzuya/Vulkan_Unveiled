@@ -19,7 +19,7 @@ void MovementController::move(GLFWwindow *window, float dt,
 
   glm::vec3 rotateDirection{0.f};
   rotateDirection.y = deltaX;
-  rotateDirection.x = -deltaY;
+  rotateDirection.x = deltaY;
 
   gameObject.transform.rotation += rotateDirection * dt;
 
