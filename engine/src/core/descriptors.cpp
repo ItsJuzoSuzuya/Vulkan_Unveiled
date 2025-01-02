@@ -118,23 +118,25 @@ bool DescriptorPool::allocateDescriptor(VkDescriptorSetLayout setLayout,
 
 //                      Descriptor Writer                               //
 
-DescriptorWriter &
-DescriptorWriter::writeBuffer(uint32_t binding,
-                              VkDescriptorBufferInfo *bufferInfo) {
+DescriptorWriter &DescriptorWriter::writeBuffer(
+    uint32_t binding, VkDescriptorBufferInfo *bufferInfo,
+    VkDescriptorType descriptorType, VkDescriptorImageInfo *imageInfo) {
   assert(setLayout.bindings.count(binding) == 1 &&
          "Layout does not cotain specified binding");
 
   auto &bindingDescription = setLayout.bindings[binding];
 
   assert(bindingDescription.descriptorCount == 1 &&
-         "Binding single descriptor info, but multiple expexcted");
+         "Binding single descriptor info, but "
+         "multiple expexcted");
 
   VkWriteDescriptorSet write = {};
   write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-  write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  write.descriptorType = descriptorType;
   write.dstBinding = binding;
   write.pBufferInfo = bufferInfo;
   write.descriptorCount = 1;
+  write.pImageInfo = imageInfo;
 
   writes.push_back(write);
 

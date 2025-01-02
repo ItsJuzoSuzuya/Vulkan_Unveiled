@@ -18,7 +18,7 @@ void main() {
   float distanceToLight = length(directionToLight);
 
   float lightIntensity = max(dot(normalize(fragNormalWorld), normalize(directionToLight)), 0);
-  float attenuation = lightIntensity / (1.0 + 0.2 * distanceToLight + 0.2 * distanceToLight * distanceToLight);
+  float attenuation = lightIntensity / (1.0 + 0.01 * distanceToLight + 0.0001 * distanceToLight * distanceToLight);
 
   vec3 lightColor = ubo.lightColor.xyz * ubo.lightColor.w;
   vec3 diffuseLight = lightColor * attenuation;

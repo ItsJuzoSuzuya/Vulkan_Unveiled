@@ -18,10 +18,17 @@ layout(set = 0, binding = 0) uniform GlobalUbo{
   vec4 ambientLightColor;
   vec3 lightPosition;
   vec4 lightColor;
+  int worldWidth;
+  int worldDepth;
 } ubo;
+
+layout(set = 0, binding = 1, std430) readonly buffer HeightMap {
+  int heightMap[];
+} heightMapUbo;
 
 void main() {
   vec4 worldPosition = push.modelMatrix * vec4(inPosition, 1.0);
+
   fragNormalWorld = normalize(mat3(push.normalMatrix) * inNormal);
   fragPositionWorld = worldPosition.xyz;
 

@@ -32,6 +32,9 @@ public:
   };
 
   Model(Device &device, const Model::Builder &builder);
+  Model(Device &device, const std::vector<Vertex> &vertices);
+  Model(Device &device, const std::vector<Vertex> &vertices,
+        const std::vector<uint32_t> &indices);
   ~Model();
 
   Model(const Model &) = delete;
@@ -41,7 +44,7 @@ public:
   uint32_t vertexCount;
 
   void bind(VkCommandBuffer commandBuffer);
-  void draw(VkCommandBuffer commandBuffer);
+  void draw(VkCommandBuffer commandBuffer, uint32_t instanceCount = 1);
 
   static std::unique_ptr<Model>
   createModelFromFile(Device &device, const std::string &filepath);

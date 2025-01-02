@@ -13,14 +13,19 @@
 namespace engine {
 
 Pipeline::Pipeline(Device &device, const std::string &vertFilepath,
+                   const std::string &tcsFilepath,
+                   const std::string &tesFilepath,
                    const std::string &fragFilepath,
                    const PipelineConfigInfo &configInfo)
     : device{device} {
-  createGraphicsPipeline(vertFilepath, fragFilepath, configInfo);
+  createGraphicsPipeline(vertFilepath, tcsFilepath, tesFilepath, fragFilepath,
+                         configInfo);
 }
 
 Pipeline::~Pipeline() {
   vkDestroyShaderModule(device.device(), vertShaderModule, nullptr);
+  vkDestroyShaderModule(device.device(), tcsShaderModule, nullptr);
+  vkDestroyShaderModule(device.device(), tesShaderModule, nullptr);
   vkDestroyShaderModule(device.device(), fragShaderModule, nullptr);
   vkDestroyPipeline(device.device(), graphicsPipeline, nullptr);
 }
@@ -31,6 +36,8 @@ void Pipeline::bind(VkCommandBuffer commandBuffer) {
 }
 
 void Pipeline::createGraphicsPipeline(const std::string &vertFilepath,
+                                      const std::string &tcsFilepath,
+                                      const std::string &tesFilepath,
                                       const std::string &fragFilepath,
                                       const PipelineConfigInfo &configInfo) {
   assert(configInfo.pipelineLayout != VK_NULL_HANDLE &&
@@ -39,9 +46,13 @@ void Pipeline::createGraphicsPipeline(const std::string &vertFilepath,
          "Cannot create graphics pipeline. Invalid render pass!");
 
   std::vector<char> vertCode = readFile(vertFilepath);
+  std::vector<char> tcsCode = readFile(tcsFilepath);
+  std::vector<char> tesCode = readFile(tesFilepath);
   std::vector<char> fragCode = readFile(fragFilepath);
 
   createShaderModule(vertCode, &vertShaderModule);
+  createShaderModule(tcsCode, &tcsShaderModule);
+  createShaderModule(tesCode, &tesShaderModule);
   createShaderModule(fragCode, &fragShaderModule);
 
   VkPipelineShaderStageCreateInfo shaderStages[2];
@@ -60,6 +71,20 @@ void Pipeline::createGraphicsPipeline(const std::string &vertFilepath,
   shaderStages[1].flags = 0;
   shaderStages[1].pNext = nullptr;
   shaderStages[1].pSpecializationInfo = nullptr;
+
+  // shaderStages[2].sType =
+  // VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; shaderStages[2].stage
+  // = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT; shaderStages[2].module =
+  // tcsShaderModule; shaderStages[2].pName = "main"; shaderStages[2].flags = 0;
+  // shaderStages[2].pNext = nullptr;
+  // shaderStages[2].pSpecializationInfo = nullptr;
+
+  // shaderStages[3].sType =
+  // VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; shaderStages[3].stage
+  // = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT; shaderStages[3].module =
+  // tesShaderModule; shaderStages[3].pName = "main"; shaderStages[3].flags = 0;
+  // shaderStages[3].pNext = nullptr;
+  // shaderStages[3].pSpecializationInfo = nullptr;
 
   auto bindingDescriptions = Model::Vertex::getBindingDescriptions();
   auto attributeDescriptions = Model::Vertex::getAttributeDescriptions();
@@ -80,6 +105,7 @@ void Pipeline::createGraphicsPipeline(const std::string &vertFilepath,
   pipelineInfo.pStages = shaderStages;
   pipelineInfo.pVertexInputState = &vertexInputInfo;
   pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
+  // pipelineInfo.pTessellationState = &configInfo.tessellationInfo;
   pipelineInfo.pViewportState = &configInfo.viewportInfo;
   pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
   pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;
@@ -154,6 +180,10 @@ void Pipeline::defaultPipelineConfig(PipelineConfigInfo &configInfo) {
       VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
   configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+
+  configInfo.tessellationInfo.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+  configInfo.tessellationInfo.patchControlPoints = 3;
 
   // Rasterizer
   configInfo.rasterizationInfo.sType =

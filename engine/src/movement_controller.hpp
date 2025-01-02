@@ -10,6 +10,8 @@ public:
     int backward = GLFW_KEY_S;
     int left = GLFW_KEY_A;
     int right = GLFW_KEY_D;
+    int up = GLFW_KEY_SPACE;
+    int down = GLFW_KEY_LEFT_SHIFT;
   };
 
   void move(GLFWwindow *window, float dt, GameObject &gameObject);

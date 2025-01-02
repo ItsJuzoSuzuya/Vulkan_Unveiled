@@ -1,4 +1,5 @@
 #include "render_system.hpp"
+#include "game_object.hpp"
 #include "swapchain.hpp"
 #include <array>
 #include <cassert>
@@ -13,7 +14,7 @@ namespace engine {
 
 struct PushConstantData {
   glm::mat4 modelMatrix{1.f};
-  glm::mat3 normalMatrix{1.f};
+  glm::mat4 normalMatrix{1.f};
 };
 
 RenderSystem::RenderSystem(Device &device, Window &window,
@@ -75,9 +76,10 @@ void RenderSystem::createPipeline(VkRenderPass renderPass) {
   piplineConfigInfo.renderPass = renderPass;
   piplineConfigInfo.pipelineLayout = pipelineLayout;
 
-  pipeline = std::make_unique<Pipeline>(device, "src/shaders/shader.vert.spv",
-                                        "src/shaders/shader.frag.spv",
-                                        piplineConfigInfo);
+  pipeline = std::make_unique<Pipeline>(
+      device, "src/shaders/shader.vert.spv", "src/shaders/terrain_control.spv",
+      "src/shaders/terrain_evaluation.spv", "src/shaders/shader.frag.spv",
+      piplineConfigInfo);
 }
 
 void RenderSystem::createCommandBuffers() {
@@ -132,9 +134,9 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
 
   VkViewport viewport = {};
   viewport.x = 0;
-  viewport.y = 0;
+  viewport.y = static_cast<float>(swapChain->extent().height);
   viewport.width = static_cast<float>(swapChain->extent().width);
-  viewport.height = static_cast<float>(swapChain->extent().height);
+  viewport.height = -static_cast<float>(swapChain->extent().height);
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
   vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
@@ -145,6 +147,26 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
   pipeline->bind(commandBuffer);
+}
+
+void RenderSystem::renderWorld(FrameInfo &frameInfo, uint32_t worldSize,
+                               GameObject &originCube) {
+  pipeline->bind(frameInfo.commandBuffer);
+
+  vkCmdBindDescriptorSets(frameInfo.commandBuffer,
+                          VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+                          &frameInfo.descriptorSet, 0, nullptr);
+
+  PushConstantData push{};
+  push.modelMatrix = originCube.transform.mat4();
+  push.normalMatrix = originCube.transform.normalMatrix();
+
+  vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
+                     VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),
+                     &push);
+
+  originCube.model->bind(frameInfo.commandBuffer);
+  originCube.model->draw(frameInfo.commandBuffer, worldSize);
 }
 
 void RenderSystem::renderGameObjects(FrameInfo &frameInfo,

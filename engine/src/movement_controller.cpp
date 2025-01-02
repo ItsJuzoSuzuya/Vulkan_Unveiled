@@ -1,4 +1,5 @@
 #include "movement_controller.hpp"
+#include <algorithm>
 #include <glm/ext/vector_float3.hpp>
 
 namespace engine {
@@ -21,7 +22,7 @@ void MovementController::move(GLFWwindow *window, float dt,
   rotateDirection.y = deltaX;
   rotateDirection.x = deltaY;
 
-  gameObject.transform.rotation += rotateDirection * dt;
+  gameObject.transform.rotation += rotateDirection * 0.05f;
 
   float yaw = gameObject.transform.rotation.y;
 
@@ -37,8 +38,12 @@ void MovementController::move(GLFWwindow *window, float dt,
     moveDirection = forwardDirection;
   if (glfwGetKey(window, keys.backward) == GLFW_PRESS)
     moveDirection = -forwardDirection;
+  if (glfwGetKey(window, keys.up) == GLFW_PRESS)
+    moveDirection.y = 1;
+  if (glfwGetKey(window, keys.down) == GLFW_PRESS)
+    moveDirection.y = -1;
 
-  gameObject.transform.position += moveDirection * dt;
+  gameObject.transform.position += moveDirection * dt * 100.f;
 
   mouseX = newMouseX;
   mouseY = newMouseY;

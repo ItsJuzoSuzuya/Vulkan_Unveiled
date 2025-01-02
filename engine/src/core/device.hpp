@@ -59,7 +59,10 @@ public:
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
                     VkDeviceMemory &bufferMemory);
+
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+  void copyBufferToImage(VkBuffer srcBuffer, VkImage image,
+                         VkBufferImageCopy region);
 
 private:
 #ifdef NDEBUG

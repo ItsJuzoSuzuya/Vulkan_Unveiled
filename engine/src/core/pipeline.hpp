@@ -12,6 +12,7 @@ struct PipelineConfigInfo {
 
   VkPipelineViewportStateCreateInfo viewportInfo;
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+  VkPipelineTessellationStateCreateInfo tessellationInfo;
   VkPipelineRasterizationStateCreateInfo rasterizationInfo;
   VkPipelineMultisampleStateCreateInfo multisampleInfo;
   VkPipelineColorBlendAttachmentState colorBlendAttachment;
@@ -27,6 +28,7 @@ struct PipelineConfigInfo {
 class Pipeline {
 public:
   Pipeline(Device &device, const std::string &vertFilepath,
+           const std::string &tcsFilepath, const std::string &tesFilepath,
            const std::string &fragFilepath,
            const PipelineConfigInfo &configInfo);
   ~Pipeline();
@@ -42,9 +44,13 @@ private:
   Device &device;
   VkPipeline graphicsPipeline;
   VkShaderModule vertShaderModule;
+  VkShaderModule tcsShaderModule;
+  VkShaderModule tesShaderModule;
   VkShaderModule fragShaderModule;
 
   void createGraphicsPipeline(const std::string &vertFilepath,
+                              const std::string &tcsFilepath,
+                              const std::string &tesFilepath,
                               const std::string &fragFilepath,
                               const PipelineConfigInfo &configInfo);
   std::vector<char> readFile(const std::string &filepath);

@@ -26,6 +26,8 @@ public:
   }
   float getAspectRatio() const { return swapChain->extentAspectRatio(); }
   void recordCommandBuffer(VkCommandBuffer commandBuffer);
+  void renderWorld(FrameInfo &frameInfo, uint32_t renderDistance,
+                   GameObject &originCube);
   void renderGameObjects(FrameInfo &frameInfo,
                          std::vector<GameObject> &gameObjects);
   void endRenderPass(VkCommandBuffer commandBuffer);

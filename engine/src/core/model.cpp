@@ -1,4 +1,5 @@
 #include "model.hpp"
+#include "device.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <glm/ext/vector_float3.hpp>
@@ -116,6 +117,18 @@ Model::Model(Device &device, const Model::Builder &builder) : device{device} {
   createIndexBuffer(builder.indices);
 }
 
+Model::Model(Device &device, const std::vector<Vertex> &vertices)
+    : device{device} {
+  createVertexBuffer(vertices);
+}
+
+Model::Model(Device &device, const std::vector<Vertex> &vertices,
+             const std::vector<uint32_t> &indices)
+    : device{device} {
+  createVertexBuffer(vertices);
+  createIndexBuffer(indices);
+}
+
 void Model::createVertexBuffer(const std::vector<Vertex> &vertices) {
   vertexCount = vertices.size();
   assert(vertexCount >= 3 && "Vertex count must be at least 3!");
@@ -179,9 +192,9 @@ void Model::bind(VkCommandBuffer commandBuffer) {
                          VK_INDEX_TYPE_UINT32);
 }
 
-void Model::draw(VkCommandBuffer commandBuffer) {
+void Model::draw(VkCommandBuffer commandBuffer, uint32_t instanceCount) {
   if (hasIndexBuffer) {
-    vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, 0, 0, 0);
   } else {
     vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
   }
