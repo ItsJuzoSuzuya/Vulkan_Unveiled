@@ -17,7 +17,10 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
               VkDebugUtilsMessageTypeFlagsEXT messageType,
               const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
               void *pUserData) {
-  std::cerr << "Debug callback" << pCallbackData->pMessage << std::endl;
+  std::cout << "Severity: " << messageSeverity << std::endl;
+  std::cout << "Message: " << pCallbackData->pMessage << std::endl;
+  std::cout << "Type: " << messageType << std::endl;
+  std::cout << "UserData: " << &pUserData << std::endl;
   return VK_FALSE;
 }
 
@@ -75,6 +78,7 @@ void Device::createInstance() {
   appInfo.pEngineName = "No Engine";
   appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.apiVersion = VK_API_VERSION_1_3;
+  appInfo.pNext = nullptr;
 
   VkInstanceCreateInfo createInfo = {};
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -84,12 +88,12 @@ void Device::createInstance() {
   createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
   createInfo.ppEnabledExtensionNames = extensions.data();
 
+  VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
   if (enableValidationLayers) {
     createInfo.enabledLayerCount =
         static_cast<uint32_t>(validationLayers.size());
     createInfo.ppEnabledLayerNames = validationLayers.data();
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
     populateDebugMessenger(debugCreateInfo);
 
     createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
@@ -198,14 +202,8 @@ void Device::createCommandPool() {
 }
 
 VkCommandBuffer Device::beginSingleTimeCommands() {
-  VkCommandBufferAllocateInfo allocInfo = {};
-  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-  allocInfo.commandPool = commandPool;
-  allocInfo.commandBufferCount = 1;
-  allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-  VkCommandBuffer commandBuffer;
-  vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer);
+  VkCommandBuffer commandBuffer =
+      allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -213,6 +211,45 @@ VkCommandBuffer Device::beginSingleTimeCommands() {
 
   vkBeginCommandBuffer(commandBuffer, &beginInfo);
   return commandBuffer;
+}
+
+VkCommandBuffer Device::allocateCommandBuffer(VkCommandBufferLevel level) {
+  VkCommandBufferAllocateInfo allocInfo = {};
+  allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  allocInfo.commandBufferCount = 1;
+  allocInfo.commandPool = commandPool;
+  allocInfo.level = level;
+
+  VkCommandBuffer commandBuffer;
+  vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer);
+
+  return commandBuffer;
+}
+
+void Device::endSingleTimeCommands(VkCommandBuffer &commandBuffer) {
+  submitCommands(commandBuffer);
+
+  vkFreeCommandBuffers(device_, commandPool, 1, &commandBuffer);
+}
+
+void Device::submitCommands(VkCommandBuffer &commandBuffer) {
+  vkEndCommandBuffer(commandBuffer);
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &commandBuffer;
+
+  VkFenceCreateInfo fenceInfo{};
+  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+  VkFence fence;
+  vkCreateFence(device_, &fenceInfo, nullptr, &fence);
+
+  if (vkQueueSubmit(graphicsQueue(), 1, &submitInfo, fence) != VK_SUCCESS)
+    throw std::runtime_error("Failed to submit command buffer!");
+
+  vkWaitForFences(device_, 1, &fence, VK_TRUE, UINT64_MAX);
 }
 
 bool Device::checkValidationLayerSupport() {
@@ -225,7 +262,7 @@ bool Device::checkValidationLayerSupport() {
   for (const char *layerName : validationLayers) {
     bool layerFound = false;
 
-    for (const auto layerProperty : availableLayers) {
+    for (const auto &layerProperty : availableLayers) {
       if (strcmp(layerName, layerProperty.layerName) == 0) {
         layerFound = true;
         break;
@@ -249,6 +286,7 @@ void Device::populateDebugMessenger(
                            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
   createInfo.pfnUserCallback = debugCallback;
   createInfo.pUserData = nullptr;
+  createInfo.pNext = NULL;
 }
 
 std::vector<const char *> Device::getRequiredExtensions() {
@@ -454,60 +492,73 @@ void Device::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer,
   VkBufferCopy copyRegion = {};
   copyRegion.size = size;
   vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-  vkEndCommandBuffer(commandBuffer);
 
-  VkSubmitInfo submitInfo{};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &commandBuffer;
-
-  vkQueueSubmit(graphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-  vkQueueWaitIdle(graphicsQueue());
+  endSingleTimeCommands(commandBuffer);
 }
 
-void Device::copyBufferToImage(VkBuffer srcBuffer, VkImage image,
+void Device::copyImageToBuffer(VkCommandBuffer &commandBuffer,
+                               VkBuffer dstBuffer, VkImage image,
                                VkBufferImageCopy region) {
-  VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+  transitionDepthImage(commandBuffer, image,
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+  vkCmdCopyImageToBuffer(commandBuffer, image,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dstBuffer, 1,
+                         &region);
+}
+
+void Device::transitionDepthImage(VkCommandBuffer commandBuffer, VkImage image,
+                                  VkImageLayout oldLayout,
+                                  VkImageLayout newLayout) {
+
+  if (oldLayout == newLayout)
+    return;
+
+  VkAccessFlags srcAccessMask = 0;
+  VkAccessFlags dstAccessMask = 0;
+
+  VkPipelineStageFlags srcStage = 0;
+  VkPipelineStageFlags dstStage = 0;
+
+  if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+    srcStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  } else if (oldLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+    srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    srcStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+    srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+  } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+    srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  } else {
+    throw std::invalid_argument("Unsupported layout transition!");
+  }
 
   VkImageMemoryBarrier barrier{};
   barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-  barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  barrier.oldLayout = oldLayout;
+  barrier.newLayout = newLayout;
   barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.image = image;
-  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
   barrier.subresourceRange.baseMipLevel = 0;
   barrier.subresourceRange.levelCount = 1;
   barrier.subresourceRange.baseArrayLayer = 0;
   barrier.subresourceRange.layerCount = 1;
-  barrier.srcAccessMask = 0;
-  barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-  vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+  barrier.srcAccessMask = srcAccessMask;
+  barrier.dstAccessMask = dstAccessMask;
+
+  vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 0, nullptr, 0,
                        nullptr, 1, &barrier);
-
-  vkCmdCopyBufferToImage(commandBuffer, srcBuffer, image,
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-  barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-  barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-  barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-  barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-  vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                       VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 0,
-                       nullptr, 1, &barrier);
-
-  vkEndCommandBuffer(commandBuffer);
-  VkSubmitInfo submitInfo{};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &commandBuffer;
-
-  vkQueueSubmit(graphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-  vkQueueWaitIdle(graphicsQueue());
 }
 
 } // namespace engine

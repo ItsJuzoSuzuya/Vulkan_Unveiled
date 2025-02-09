@@ -1,4 +1,5 @@
 #include "core/game_object.hpp"
+#include "player.hpp"
 #include <GLFW/glfw3.h>
 
 namespace engine {
@@ -14,7 +15,7 @@ public:
     int down = GLFW_KEY_LEFT_SHIFT;
   };
 
-  void move(GLFWwindow *window, float dt, GameObject &gameObject);
+  void move(GLFWwindow *window, float dt, Player &player);
 
 private:
   KeyMapping keys{};

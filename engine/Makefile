@@ -1,4 +1,4 @@
-CFLAGS = -std=c++20 -ggdb
+CFLAGS = -std=c++20 -O2 -g -Wall -Wextra -fsanitize=address -fsanitize=undefined -fsanitize=leak -I/usr/include/tinygltf
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 SOURCES := $(shell find src -name '*.cpp')

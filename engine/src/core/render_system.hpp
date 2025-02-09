@@ -1,11 +1,14 @@
 #ifndef RENDERSYSTEM_HPP
 #define RENDERSYSTEM_HPP
+#include "../chunk.hpp"
+#include "../player.hpp"
 #include "frame_info.hpp"
 #include "game_object.hpp"
 #include "pipeline.hpp"
 #include "swapchain.hpp"
 #include "window.hpp"
 #include <memory>
+#include <unordered_map>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 namespace engine {
@@ -19,15 +22,20 @@ public:
   RenderSystem &operator=(const RenderSystem &) = delete;
 
   int getFrameIndex() const { return currentFrameIndex; }
+  SwapChain &getSwapChain() { return *swapChain; }
 
   VkCommandBuffer beginFrame();
+  VkCommandBuffer beginDepthImageAcquire();
   VkCommandBuffer getCurrentCommandBuffer() const {
     return commandBuffers[currentFrameIndex];
   }
   float getAspectRatio() const { return swapChain->extentAspectRatio(); }
+  void getDepthBufferData(const FrameInfo &frameInfo,
+                          std::vector<float> &depthData,
+                          std::unique_ptr<Buffer> &stagingBuffer);
   void recordCommandBuffer(VkCommandBuffer commandBuffer);
-  void renderWorld(FrameInfo &frameInfo, uint32_t renderDistance,
-                   GameObject &originCube);
+  void renderWorld(FrameInfo &frameInfo, const Player &player,
+                   std::unordered_map<int, Chunk> &chunks);
   void renderGameObjects(FrameInfo &frameInfo,
                          std::vector<GameObject> &gameObjects);
   void endRenderPass(VkCommandBuffer commandBuffer);
@@ -40,6 +48,9 @@ private:
   std::unique_ptr<Pipeline> pipeline;
   std::unique_ptr<SwapChain> swapChain;
   std::vector<VkCommandBuffer> commandBuffers;
+
+  VkCommandBuffer imageAcquireCommandBuffer =
+      device.allocateCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
   void createPipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
   void createPipeline(VkRenderPass renderPass);

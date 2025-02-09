@@ -61,8 +61,15 @@ public:
                     VkDeviceMemory &bufferMemory);
 
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-  void copyBufferToImage(VkBuffer srcBuffer, VkImage image,
-                         VkBufferImageCopy region);
+  void copyImageToBuffer(VkCommandBuffer &commandBuffer, VkBuffer dstBuffer,
+                         VkImage image, VkBufferImageCopy region);
+  void transitionDepthImage(VkCommandBuffer commandBuffer, VkImage image,
+                            VkImageLayout oldLayout, VkImageLayout newLayout);
+
+  VkCommandBuffer allocateCommandBuffer(VkCommandBufferLevel level);
+  VkCommandBuffer beginSingleTimeCommands();
+  void submitCommands(VkCommandBuffer &commandBuffer);
+  void endSingleTimeCommands(VkCommandBuffer &commandBuffer);
 
 private:
 #ifdef NDEBUG
@@ -77,8 +84,6 @@ private:
   void pickPhysicalDevice();
   void createLogicalDevice();
   void createCommandPool();
-
-  VkCommandBuffer beginSingleTimeCommands();
 
   std::vector<const char *> getRequiredExtensions();
 

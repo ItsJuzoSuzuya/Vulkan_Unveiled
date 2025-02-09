@@ -1,9 +1,17 @@
 #include "camera.hpp"
+#include "swapchain.hpp"
+#include <array>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/vector_float3.hpp>
-#include <iostream>
+#include <vulkan/vulkan_core.h>
 
 namespace engine {
+
+struct AABB {
+  glm::vec3 min;
+  glm::vec3 max;
+};
+
 void Camera::setPerspectiveProjection(float fov, float aspect, float near,
                                       float far) {
   float tanHalfFov = tan(fov / 2.f);
@@ -40,5 +48,33 @@ void Camera::setView(const glm::vec3 &position, const glm::vec3 &rotation) {
   viewMatrix[3][1] = -glm::dot(v, position);
   viewMatrix[3][2] = -glm::dot(w, position);
 };
+
+bool Camera::canSee(const glm::vec3 &position) const {
+  AABB chunkBounds;
+  chunkBounds.min = position;
+  chunkBounds.max = position + glm::vec3{32.f, 32.f, 32.f};
+
+  std::array<glm::vec3, 8> corners;
+  corners[0] = {chunkBounds.min};
+  corners[1] = {chunkBounds.min.x, chunkBounds.min.y, chunkBounds.max.z};
+  corners[2] = {chunkBounds.min.x, chunkBounds.max.y, chunkBounds.min.z};
+  corners[3] = {chunkBounds.min.x, chunkBounds.max.y, chunkBounds.max.z};
+  corners[4] = {chunkBounds.max.x, chunkBounds.min.y, chunkBounds.min.z};
+  corners[5] = {chunkBounds.max.x, chunkBounds.min.y, chunkBounds.max.z};
+  corners[6] = {chunkBounds.max.x, chunkBounds.max.y, chunkBounds.min.z};
+  corners[7] = {chunkBounds.max};
+
+  for (const auto &corner : corners) {
+    glm::vec4 clipSpace =
+        projectionMatrix * viewMatrix * glm::vec4(corner, 1.f);
+
+    bool inFrustum = (-clipSpace.w < clipSpace.x && clipSpace.x < clipSpace.w &&
+                      -clipSpace.w < clipSpace.y && clipSpace.y < clipSpace.w &&
+                      0 < clipSpace.z && clipSpace.z < clipSpace.w);
+    if (inFrustum)
+      return true;
+  }
+  return false;
+}
 
 } // namespace engine

@@ -1,21 +1,23 @@
-#ifndef APP_HPP
-#define APP_HPP
+#pragma once
 #include "chunk.hpp"
 #include "core/descriptors.hpp"
 #include "core/game_object.hpp"
 #include "core/render_system.hpp"
-#include <atomic>
+#include <memory>
 #include <queue>
 #include <thread>
+#include <unordered_map>
+
 #include <vector>
 
 namespace engine {
 
+extern int RENDER_DISTANCE;
+extern const int WIDTH;
+extern const int HEIGHT;
+
 class App {
 public:
-  static constexpr int WIDTH = 800;
-  static constexpr int HEIGHT = 600;
-
   App();
 
   void run();
@@ -33,8 +35,9 @@ private:
   std::thread chunkThread;
   std::mutex queueMutex;
 
+  std::unordered_map<int, Chunk> chunks;
   std::queue<Chunk> chunkQueue;
-  std::vector<GameObject> chunkCache;
+  std::queue<int> chunkUnloadQueue;
   bool refreshChunks = true;
 
   bool isChunkLoaded(const glm::vec3 &playerChunkPosition);
@@ -42,7 +45,7 @@ private:
                    const glm::vec3 &playerRotation);
   void loadChunks(GameObject &player);
 
-  std::vector<GameObject> gameObjects;
+  std::vector<GameObject> gameObjects{};
+  bool wakingUp = true;
 };
 } // namespace engine
-#endif

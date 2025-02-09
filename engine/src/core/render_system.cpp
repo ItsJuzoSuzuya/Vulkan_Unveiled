@@ -1,11 +1,18 @@
 #include "render_system.hpp"
+#include "buffer.hpp"
+#include "device.hpp"
+#include "frame_info.hpp"
 #include "game_object.hpp"
+#include "occlusion_culler.hpp"
 #include "swapchain.hpp"
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 #include <glm/ext/scalar_constants.hpp>
 #include <memory>
+#include <ostream>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -28,6 +35,8 @@ RenderSystem::RenderSystem(Device &device, Window &window,
 
 RenderSystem::~RenderSystem() {
   vkDestroyPipelineLayout(device.device(), pipelineLayout, nullptr);
+  vkFreeCommandBuffers(device.device(), device.getCommandPool(), 1,
+                       &imageAcquireCommandBuffer);
 }
 
 void RenderSystem::recreateSwapChain() {
@@ -124,7 +133,7 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   renderPassInfo.renderArea.extent = swapChain->extent();
 
   std::array<VkClearValue, 2> clearValues{};
-  clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+  clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
   clearValues[1].depthStencil = {1.0f, 0};
   renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
   renderPassInfo.pClearValues = clearValues.data();
@@ -149,24 +158,58 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   pipeline->bind(commandBuffer);
 }
 
-void RenderSystem::renderWorld(FrameInfo &frameInfo, uint32_t worldSize,
-                               GameObject &originCube) {
+void RenderSystem::renderWorld(FrameInfo &frameInfo, const Player &player,
+                               std::unordered_map<int, Chunk> &chunks) {
   pipeline->bind(frameInfo.commandBuffer);
 
   vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                           &frameInfo.descriptorSet, 0, nullptr);
 
-  PushConstantData push{};
-  push.modelMatrix = originCube.transform.mat4();
-  push.normalMatrix = originCube.transform.normalMatrix();
+  glm::vec3 playerChunkPosition =
+      glm::floor(player.transform.position / 32.f) * 32.f;
 
-  vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
-                     VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),
-                     &push);
+  auto it = chunks.begin();
+  while (it != chunks.end()) {
+    Chunk &chunk = it->second;
 
-  originCube.model->bind(frameInfo.commandBuffer);
-  originCube.model->draw(frameInfo.commandBuffer, worldSize);
+    if (chunk.blocks.size() == 1 && chunk.blocks[0] == BlockType::Air) {
+      it++;
+      continue;
+    }
+
+    if (frameInfo.camera.canSee(chunk.transform.position) ||
+        chunk.transform.position == playerChunkPosition) {
+
+      PushConstantData push{};
+      push.modelMatrix = chunk.transform.mat4();
+      push.normalMatrix = chunk.transform.normalMatrix();
+
+      vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
+                         VK_SHADER_STAGE_VERTEX_BIT, 0,
+                         sizeof(PushConstantData), &push);
+
+      chunk.model->bind(frameInfo.commandBuffer);
+      chunk.model->draw(frameInfo.commandBuffer);
+    }
+    it++;
+  }
+}
+
+void RenderSystem::getDepthBufferData(const FrameInfo &frameInfo,
+                                      std::vector<float> &depthData,
+                                      std::unique_ptr<Buffer> &stagingBuffer) {
+  depthData.resize(swapChain->extent().width / 4 * swapChain->extent().height /
+                   4);
+  VkImage &depthImage = swapChain->getDepthImage(
+      (frameInfo.frameIndex + SwapChain::MAX_FRAMES_IN_FLIGHT - 1) %
+      SwapChain::MAX_FRAMES_IN_FLIGHT);
+
+  stagingBuffer->getDepthBufferData(imageAcquireCommandBuffer, depthImage,
+                                    swapChain->extent(), depthData);
+
+  std::memcpy(depthData.data(), stagingBuffer->mappedData(),
+              depthData.size() * sizeof(float));
 }
 
 void RenderSystem::renderGameObjects(FrameInfo &frameInfo,

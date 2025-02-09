@@ -26,7 +26,6 @@ public:
   GLFWwindow *getGLFWwindow() { return window; }
 
   void createSurface(VkInstance instance, VkSurfaceKHR *surface) {
-    std::cout << glfwVulkanSupported() << std::endl;
     if (glfwCreateWindowSurface(instance, window, nullptr, surface) !=
         VK_SUCCESS)
       throw std::runtime_error("Surface Creation was unsuccessful");

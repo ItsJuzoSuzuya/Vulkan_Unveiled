@@ -1,7 +1,7 @@
 #include "game_object.hpp"
 namespace engine {
 
-glm::mat4 Transform::mat4() {
+glm::mat4 Transform::mat4() const {
   const float c1 = glm::cos(rotation.y);
   const float s1 = glm::sin(rotation.y);
   const float c2 = glm::cos(rotation.x);
@@ -29,7 +29,7 @@ glm::mat4 Transform::mat4() {
                    {position.x, position.y, position.z, 1.f}};
 }
 
-glm::mat4 Transform::normalMatrix() {
+glm::mat4 Transform::normalMatrix() const {
   const float c1 = glm::cos(rotation.y);
   const float s1 = glm::sin(rotation.y);
   const float c2 = glm::cos(rotation.x);

@@ -41,6 +41,7 @@ public:
   Model &operator=(const Model &) = delete;
 
   std::unique_ptr<Buffer> vertexBuffer;
+  std::unique_ptr<Buffer> indexBuffer;
   uint32_t vertexCount;
 
   void bind(VkCommandBuffer commandBuffer);
@@ -54,7 +55,6 @@ private:
 
   uint32_t indexCount;
   bool hasIndexBuffer;
-  std::unique_ptr<Buffer> indexBuffer;
 
   void createVertexBuffer(const std::vector<Vertex> &vertices);
   void createIndexBuffer(const std::vector<uint32_t> &indices);

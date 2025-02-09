@@ -1,6 +1,7 @@
 #ifndef SWAPCHAIN_HPP
 #define SWAPCHAIN_HPP
 #include "device.hpp"
+#include "frame_info.hpp"
 #include <cwchar>
 #include <memory>
 #include <vector>
@@ -21,11 +22,14 @@ public:
 
   VkRenderPass getRenderPass() { return renderPass; }
   VkFramebuffer getFrameBuffer(int index) { return framebuffers[index]; }
-  VkExtent2D extent() { return swapChainExtent; }
+  VkImage &getDepthImage(int index) { return depthImages[index]; }
+  VkExtent2D &extent() { return swapChainExtent; }
   float extentAspectRatio() {
     return static_cast<float>(swapChainExtent.width) /
            static_cast<float>(swapChainExtent.height);
   }
+  VkImageLayout &getImageLayout(int index) { return depthImageLayouts[index]; }
+  VkFence &getInFlightFence(int index) { return inFlightFences[index]; }
 
   VkResult acquireNextImage(uint32_t *imageIndex);
   VkResult submitCommandBuffer(const VkCommandBuffer *commandBuffer,
@@ -53,6 +57,7 @@ private:
   std::vector<VkImage> depthImages;
   std::vector<VkDeviceMemory> depthImageMemories;
   std::vector<VkImageView> depthImageViews;
+  std::vector<VkImageLayout> depthImageLayouts;
 
   std::vector<VkFramebuffer> framebuffers;
 

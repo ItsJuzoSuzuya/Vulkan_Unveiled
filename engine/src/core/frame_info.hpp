@@ -1,4 +1,6 @@
+#pragma once
 #include "camera.hpp"
+#include <vector>
 #include <vulkan/vulkan_core.h>
 
 namespace engine {
