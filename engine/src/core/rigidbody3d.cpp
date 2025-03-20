@@ -2,7 +2,7 @@
 
 namespace engine {
 
-void RigidBody3D::applyGravity() { velocity.y -= gravity; }
+void RigidBody3D::applyGravity(const float dt) { velocity.y -= gravity * dt; }
 
 void RigidBody3D::applyForce(const glm::vec3 &force) { velocity += force; }
 

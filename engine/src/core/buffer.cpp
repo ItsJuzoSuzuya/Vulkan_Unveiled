@@ -6,6 +6,7 @@
 #include <glm/common.hpp>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+using namespace std;
 namespace engine {
 
 VkDeviceSize Buffer::getAlignment(VkDeviceSize instanceSize,

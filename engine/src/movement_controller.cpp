@@ -44,7 +44,7 @@ void MovementController::move(GLFWwindow *window, float dt, Player &player) {
     moveDirection -= forwardDirection;
   if (glfwGetKey(window, keys.up) == GLFW_PRESS) {
     if (player.canJump) {
-      player.rigidBody.applyForce({0.f, 20.f, 0.f});
+      player.rigidBody.applyForce({0.f, 10.f, 0.f});
       player.canJump = false;
     }
   }

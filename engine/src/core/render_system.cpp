@@ -3,6 +3,8 @@
 #include "device.hpp"
 #include "frame_info.hpp"
 #include "game_object.hpp"
+#include "model.hpp"
+#include "object_data.hpp"
 #include "occlusion_culler.hpp"
 #include "swapchain.hpp"
 #include <array>
@@ -17,17 +19,14 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
-namespace engine {
+using namespace std;
 
-struct PushConstantData {
-  glm::mat4 modelMatrix{1.f};
-  glm::mat4 normalMatrix{1.f};
-};
+namespace engine {
 
 RenderSystem::RenderSystem(Device &device, Window &window,
                            VkDescriptorSetLayout descriptorSetLayout)
     : device{device}, window{window} {
-  swapChain = std::make_unique<SwapChain>(device, window.getExtent());
+  swapChain = make_unique<SwapChain>(device, window.getExtent());
   createPipelineLayout(descriptorSetLayout);
   createPipeline(swapChain->getRenderPass());
   createCommandBuffers();
@@ -48,32 +47,26 @@ void RenderSystem::recreateSwapChain() {
 
   vkDeviceWaitIdle(device.device());
 
-  std::shared_ptr<SwapChain> oldSwapChain = std::move(swapChain);
-  swapChain = std::make_unique<SwapChain>(device, extent, oldSwapChain);
+  shared_ptr<SwapChain> oldSwapChain = move(swapChain);
+  swapChain = make_unique<SwapChain>(device, extent, oldSwapChain);
 
   if (!oldSwapChain->compareSwapFormats(*swapChain.get()))
-    throw std::runtime_error("Swap chain image(or depth) format has changed!");
+    throw runtime_error("Swap chain image(or depth) format has changed!");
 }
 
 void RenderSystem::createPipelineLayout(
     VkDescriptorSetLayout descriptorSetLayout) {
-  VkPushConstantRange pushConstantRange = {};
-  pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-  pushConstantRange.size = sizeof(PushConstantData);
-  pushConstantRange.offset = 0;
 
-  std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
+  vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
   pipelineLayoutInfo.pSetLayouts = layouts.data();
-  pipelineLayoutInfo.pushConstantRangeCount = 1;
-  pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
   if (vkCreatePipelineLayout(device.device(), &pipelineLayoutInfo, nullptr,
                              &pipelineLayout) != VK_SUCCESS)
-    throw std::runtime_error("Failed to create pipeline layout!");
+    throw runtime_error("Failed to create pipeline layout!");
 }
 
 void RenderSystem::createPipeline(VkRenderPass renderPass) {
@@ -85,7 +78,7 @@ void RenderSystem::createPipeline(VkRenderPass renderPass) {
   piplineConfigInfo.renderPass = renderPass;
   piplineConfigInfo.pipelineLayout = pipelineLayout;
 
-  pipeline = std::make_unique<Pipeline>(
+  pipeline = make_unique<Pipeline>(
       device, "src/shaders/shader.vert.spv", "src/shaders/terrain_control.spv",
       "src/shaders/terrain_evaluation.spv", "src/shaders/shader.frag.spv",
       piplineConfigInfo);
@@ -102,7 +95,7 @@ void RenderSystem::createCommandBuffers() {
 
   if (vkAllocateCommandBuffers(device.device(), &allocInfo,
                                commandBuffers.data()) != VK_SUCCESS)
-    throw std::runtime_error("Failed to allocate command buffers!");
+    throw runtime_error("Failed to allocate command buffers!");
 }
 
 VkCommandBuffer RenderSystem::beginFrame() {
@@ -112,14 +105,14 @@ VkCommandBuffer RenderSystem::beginFrame() {
     recreateSwapChain();
     return nullptr;
   } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-    throw std::runtime_error("Failed to acquire next swap chain image!");
+    throw runtime_error("Failed to acquire next swap chain image!");
 
   VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
   VkCommandBufferBeginInfo beginInfo = {};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
   if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-    throw std::runtime_error("Failed to begin recording command buffer!");
+    throw runtime_error("Failed to begin recording command buffer!");
 
   return commandBuffer;
 }
@@ -132,7 +125,7 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   renderPassInfo.renderArea.offset = {0, 0};
   renderPassInfo.renderArea.extent = swapChain->extent();
 
-  std::array<VkClearValue, 2> clearValues{};
+  array<VkClearValue, 2> clearValues{};
   clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
   clearValues[1].depthStencil = {1.0f, 0};
   renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -158,47 +151,26 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   pipeline->bind(commandBuffer);
 }
 
-void RenderSystem::renderWorld(FrameInfo &frameInfo, const Player &player,
-                               std::unordered_map<int, Chunk> &chunks) {
-  pipeline->bind(frameInfo.commandBuffer);
+void RenderSystem::renderWorld(FrameInfo &frameInfo,
+                               shared_ptr<Model> &worldModel,
+                               uint32_t drawCalls) {
+  if (drawCalls == 0 || worldModel == nullptr)
+    return;
 
   vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                           &frameInfo.descriptorSet, 0, nullptr);
 
-  glm::vec3 playerChunkPosition =
-      glm::floor(player.transform.position / 32.f) * 32.f;
+  worldModel->bind(frameInfo.commandBuffer, frameInfo.frameIndex);
 
-  auto it = chunks.begin();
-  while (it != chunks.end()) {
-    Chunk &chunk = it->second;
-
-    if (chunk.blocks.size() == 1 && chunk.blocks[0] == BlockType::Air) {
-      it++;
-      continue;
-    }
-
-    if (frameInfo.camera.canSee(chunk.transform.position) ||
-        chunk.transform.position == playerChunkPosition) {
-
-      PushConstantData push{};
-      push.modelMatrix = chunk.transform.mat4();
-      push.normalMatrix = chunk.transform.normalMatrix();
-
-      vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
-                         VK_SHADER_STAGE_VERTEX_BIT, 0,
-                         sizeof(PushConstantData), &push);
-
-      chunk.model->bind(frameInfo.commandBuffer);
-      chunk.model->draw(frameInfo.commandBuffer);
-    }
-    it++;
-  }
+  vkCmdDrawIndexedIndirect(frameInfo.commandBuffer,
+                           frameInfo.drawCallBuffer->getBuffer(), 0, drawCalls,
+                           sizeof(VkDrawIndexedIndirectCommand));
 }
 
 void RenderSystem::getDepthBufferData(const FrameInfo &frameInfo,
-                                      std::vector<float> &depthData,
-                                      std::unique_ptr<Buffer> &stagingBuffer) {
+                                      vector<float> &depthData,
+                                      unique_ptr<Buffer> &stagingBuffer) {
   depthData.resize(swapChain->extent().width / 4 * swapChain->extent().height /
                    4);
   VkImage &depthImage = swapChain->getDepthImage(
@@ -208,28 +180,17 @@ void RenderSystem::getDepthBufferData(const FrameInfo &frameInfo,
   stagingBuffer->getDepthBufferData(imageAcquireCommandBuffer, depthImage,
                                     swapChain->extent(), depthData);
 
-  std::memcpy(depthData.data(), stagingBuffer->mappedData(),
-              depthData.size() * sizeof(float));
+  memcpy(depthData.data(), stagingBuffer->mappedData(),
+         depthData.size() * sizeof(float));
 }
 
 void RenderSystem::renderGameObjects(FrameInfo &frameInfo,
-                                     std::vector<GameObject> &gameObjects) {
-  pipeline->bind(frameInfo.commandBuffer);
-
+                                     vector<GameObject> &gameObjects) {
   vkCmdBindDescriptorSets(frameInfo.commandBuffer,
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                           &frameInfo.descriptorSet, 0, nullptr);
-
   for (GameObject &gameObject : gameObjects) {
-    PushConstantData push{};
-    push.modelMatrix = gameObject.transform.mat4();
-    push.normalMatrix = gameObject.transform.normalMatrix();
-
-    vkCmdPushConstants(frameInfo.commandBuffer, pipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantData),
-                       &push);
-
-    gameObject.model->bind(frameInfo.commandBuffer);
+    gameObject.model->bind(frameInfo.commandBuffer, frameInfo.frameIndex);
     gameObject.model->draw(frameInfo.commandBuffer);
   }
 }
@@ -241,7 +202,7 @@ void RenderSystem::endRenderPass(VkCommandBuffer commandBuffer) {
 void RenderSystem::endFrame() {
   VkCommandBuffer commandBuffer = getCurrentCommandBuffer();
   if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-    throw std::runtime_error("Failed to record command buffer!");
+    throw runtime_error("Failed to record command buffer!");
 
   auto result =
       swapChain->submitCommandBuffer(&commandBuffer, &currentImageIndex);
@@ -253,7 +214,7 @@ void RenderSystem::endFrame() {
     currentFrameIndex = 0;
     return;
   } else if (result != VK_SUCCESS)
-    throw std::runtime_error("Failed to present swap chain image!");
+    throw runtime_error("Failed to present swap chain image!");
 
   currentFrameIndex = (currentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
 }

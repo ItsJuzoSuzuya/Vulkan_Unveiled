@@ -1,10 +1,13 @@
 #include "model.hpp"
 #include "device.hpp"
+#include "swapchain.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <glm/ext/vector_float3.hpp>
 #include <iostream>
 #include <memory>
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -12,6 +15,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tinygltf/tiny_gltf.h>
+
+using namespace std;
 
 namespace engine {
 std::vector<VkVertexInputBindingDescription>
@@ -104,12 +109,41 @@ void Model::Builder::loadModel(const std::string &filepath) {
   }
 }
 
+Model::Builder &
+Model::Builder::appendModel(const std::vector<Vertex> &vertices,
+                            const std::vector<uint32_t> &indices) {
+  this->vertices.insert(this->vertices.end(), vertices.begin(), vertices.end());
+  this->indices.insert(this->indices.end(), indices.begin(), indices.end());
+
+  return *this;
+}
+
 std::unique_ptr<Model> Model::createModelFromFile(Device &device,
                                                   const std::string &filepath) {
   Builder builder = {};
   builder.loadModel(filepath);
 
   return std::make_unique<Model>(device, builder);
+}
+
+std::unique_ptr<Model> Model::loadFromMeshes(
+    Device &device,
+    std::vector<std::pair<std::vector<Model::Vertex>, std::vector<uint32_t>>>
+        &meshes) {
+
+  Builder builder = {};
+  for (auto &mesh : meshes) {
+    builder.appendModel(mesh.first, mesh.second);
+  }
+
+  return std::make_unique<Model>(device, builder);
+}
+
+Model::Model(Device &device) : device{device} {
+  cout << "Creating model with default constructor" << endl;
+  createVertexBuffer(10000000);
+  createIndexBuffer(15000000);
+  createStagingBuffers(10000000, 15000000);
 }
 
 Model::Model(Device &device, const Model::Builder &builder) : device{device} {
@@ -129,6 +163,17 @@ Model::Model(Device &device, const std::vector<Vertex> &vertices,
   createIndexBuffer(indices);
 }
 
+void Model::createVertexBuffer(uint32_t vertexCount) {
+  uint32_t vertexSize = sizeof(Model::Vertex);
+  for (uint32_t i = 0; i < SwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+    auto vertexBuffer = std::make_shared<Buffer>(
+        device, vertexSize, vertexCount,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vertexBuffers.push_back(vertexBuffer);
+  }
+}
+
 void Model::createVertexBuffer(const std::vector<Vertex> &vertices) {
   vertexCount = vertices.size();
   assert(vertexCount >= 3 && "Vertex count must be at least 3!");
@@ -144,17 +189,33 @@ void Model::createVertexBuffer(const std::vector<Vertex> &vertices) {
   stagingBuffer.map();
   stagingBuffer.writeToBuffer((void *)vertices.data());
 
-  vertexBuffer = std::make_unique<Buffer>(device, vertexSize, vertexCount,
-                                          VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                                              VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  vertexBuffers[0] = std::make_unique<Buffer>(
+      device, vertexSize, vertexCount,
+      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-  device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffer->getBuffer(),
+  device.copyBuffer(stagingBuffer.getBuffer(), vertexBuffers[0]->getBuffer(),
                     bufferSize);
 }
 
 Model::~Model() {}
 
+void Model::createIndexBuffer(uint32_t indexCount) {
+  hasIndexBuffer = indexCount > 0;
+
+  if (!hasIndexBuffer)
+    return;
+
+  uint32_t indexSize = sizeof(uint32_t);
+
+  for (uint32_t i = 0; i < SwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+    auto indexBuffer = std::make_shared<Buffer>(
+        device, indexSize, indexCount,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    indexBuffers.push_back(indexBuffer);
+  }
+}
 void Model::createIndexBuffer(const std::vector<uint32_t> &indices) {
   indexCount = static_cast<uint32_t>(indices.size());
   hasIndexBuffer = indexCount > 0;
@@ -173,23 +234,55 @@ void Model::createIndexBuffer(const std::vector<uint32_t> &indices) {
   stagingBuffer.map();
   stagingBuffer.writeToBuffer((void *)indices.data());
 
-  indexBuffer = std::make_unique<Buffer>(device, indexSize, indexCount,
-                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
-                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  indexBuffers[0] = std::make_unique<Buffer>(
+      device, indexSize, indexCount,
+      VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-  device.copyBuffer(stagingBuffer.getBuffer(), indexBuffer->getBuffer(),
+  device.copyBuffer(stagingBuffer.getBuffer(), indexBuffers[0]->getBuffer(),
                     bufferSize);
 }
 
-void Model::bind(VkCommandBuffer commandBuffer) {
-  VkBuffer vertexBuffers[] = {vertexBuffer->getBuffer()};
+void Model::createStagingBuffers(uint32_t vertexCount, uint32_t indexCount) {
+  uint32_t vertexSize = sizeof(Model::Vertex);
+  uint32_t indexSize = sizeof(uint32_t);
+
+  for (uint32_t i = 0; i < SwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
+    size_t vertexBufferSize = vertexSize * vertexCount + indexSize * indexCount;
+    auto stagingBuffer = std::make_shared<Buffer>(
+        device, vertexBufferSize, 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    stagingBuffers.push_back(stagingBuffer);
+    stagingBuffers[i]->map();
+  }
+}
+
+void Model::writeMeshDataToBuffers(
+    const std::pair<std::vector<Vertex>, std::vector<uint32_t>> &mesh,
+    uint32_t vertexBufferOffset, uint32_t indexBufferOffset,
+    uint32_t frameIndex) {
+  size_t vertexDataSize = mesh.first.size() * sizeof(Vertex);
+  size_t indexDataSize = mesh.second.size() * sizeof(uint32_t);
+
+  stagingBuffers[frameIndex]->writeToBuffer((void *)mesh.first.data(),
+                                            vertexDataSize, vertexBufferOffset);
+  stagingBuffers[frameIndex]->writeToBuffer(
+      (void *)mesh.second.data(), indexDataSize,
+      indexBufferOffset + 10000000 * sizeof(Vertex));
+
+  vertexBufferOffset += vertexDataSize;
+  indexBufferOffset += indexDataSize;
+}
+
+void Model::bind(VkCommandBuffer commandBuffer, int frameIndex) {
+  VkBuffer vkVertexBuffers[] = {vertexBuffers[frameIndex]->getBuffer()};
   VkDeviceSize offsets[] = {0};
-  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vkVertexBuffers, offsets);
 
   if (hasIndexBuffer)
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer->getBuffer(), 0,
-                         VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffers[frameIndex]->getBuffer(),
+                         0, VK_INDEX_TYPE_UINT32);
 }
 
 void Model::draw(VkCommandBuffer commandBuffer, uint32_t instanceCount) {

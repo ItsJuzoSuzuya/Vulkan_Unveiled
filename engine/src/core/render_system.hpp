@@ -7,6 +7,7 @@
 #include "pipeline.hpp"
 #include "swapchain.hpp"
 #include "window.hpp"
+#include <cstdint>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -34,8 +35,8 @@ public:
                           std::vector<float> &depthData,
                           std::unique_ptr<Buffer> &stagingBuffer);
   void recordCommandBuffer(VkCommandBuffer commandBuffer);
-  void renderWorld(FrameInfo &frameInfo, const Player &player,
-                   std::unordered_map<int, Chunk> &chunks);
+  void renderWorld(FrameInfo &frameInfo, std::shared_ptr<Model> &worldModel,
+                   uint32_t drawCalls);
   void renderGameObjects(FrameInfo &frameInfo,
                          std::vector<GameObject> &gameObjects);
   void endRenderPass(VkCommandBuffer commandBuffer);

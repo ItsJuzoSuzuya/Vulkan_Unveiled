@@ -44,7 +44,7 @@ public:
     return blocks[x + z * 32 + y * 32 * 32];
   }
 
-  std::pair<std::vector<Model::Vertex>, std::vector<uint32_t>> getMesh() {
+  std::pair<std::vector<Model::Vertex>, std::vector<uint32_t>> &getMesh() {
     return chunkMesh;
   };
 

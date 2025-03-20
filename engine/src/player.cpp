@@ -92,10 +92,27 @@ Player::getBlocksAround(const std::unordered_map<int, Chunk> &chunks) {
   const Chunk *chunkFrontRight = nullptr;
   const Chunk *chunkBackLeft = nullptr;
   const Chunk *chunkBackRight = nullptr;
-  const Chunk *chunkPlayer = nullptr;
+  const Chunk *chunkPlayer = &chunks.at(
+      playerChunkPosition.x + playerChunkPosition.z * RENDER_DISTANCE * 2 +
+      playerChunkPosition.y * RENDER_DISTANCE * 2 * RENDER_DISTANCE * 2);
 
   std::vector<Block> surroundingBlocks;
 
+  try {
+    Block block1{playerBlockPosition + glm::vec3{0, 0, 0}};
+    block1.type =
+        chunkPlayer->getBlock(playerBlockX, playerBlockY - 1, playerBlockZ);
+    surroundingBlocks.push_back(std::move(block1));
+
+    Block block2{playerBlockPosition + glm::vec3{0, 1, 0}};
+    block2.type =
+        chunkPlayer->getBlock(playerBlockX, playerBlockY, playerBlockZ);
+    surroundingBlocks.push_back(std::move(block2));
+  } catch (std::out_of_range) {
+    return surroundingBlocks;
+  }
+
+  /*
   try {
     if (isPlayerAtFrontEdge)
       chunkFront = &chunks.at(
@@ -313,6 +330,7 @@ Player::getBlocksAround(const std::unordered_map<int, Chunk> &chunks) {
     surroundingBlocks.push_back(std::move(frontRightBlock));
   if (frontRightBlockAbove.type != BlockType::Air)
     surroundingBlocks.push_back(std::move(frontRightBlockAbove));
+  */
 
   return surroundingBlocks;
 }

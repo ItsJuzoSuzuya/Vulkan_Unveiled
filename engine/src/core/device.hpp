@@ -60,7 +60,12 @@ public:
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
                     VkDeviceMemory &bufferMemory);
 
-  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+  void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size,
+                  VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
+  void copyModel(VkBuffer srcBuffer, VkBuffer vertexBuffer,
+                 VkBuffer indexBuffer, VkDeviceSize vertexSize,
+                 VkDeviceSize indexSize);
+
   void copyImageToBuffer(VkCommandBuffer &commandBuffer, VkBuffer dstBuffer,
                          VkImage image, VkBufferImageCopy region);
   void transitionDepthImage(VkCommandBuffer commandBuffer, VkImage image,
@@ -113,7 +118,8 @@ private:
   const std::vector<const char *> validationLayers = {
       "VK_LAYER_KHRONOS_validation"};
   const std::vector<const char *> deviceExtensions = {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_MULTI_DRAW_EXTENSION_NAME,
+      VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME};
 };
 } // namespace engine
 #endif

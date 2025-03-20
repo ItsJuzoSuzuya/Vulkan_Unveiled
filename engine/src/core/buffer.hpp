@@ -18,7 +18,8 @@ public:
   Buffer(const Buffer &) = delete;
   Buffer &operator=(const Buffer &) = delete;
 
-  VkBuffer getBuffer() const { return buffer; }
+  VkBuffer &getBuffer() { return buffer; }
+  VkDeviceSize getBufferSize() const { return bufferSize; }
   void *mappedData() const { return mappedMemory; }
 
   VkDescriptorBufferInfo descriptorInfo();
