@@ -37,6 +37,8 @@ Model::Vertex::getAttributeDescriptions() {
       {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)});
   attributeDescriptions.push_back(
       {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal)});
+  attributeDescriptions.push_back(
+      {3, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, texCoord)});
 
   return attributeDescriptions;
 }
@@ -74,6 +76,7 @@ void Model::Builder::loadModel(const std::string &filepath) {
       const float *vertexData = reinterpret_cast<const float *>(
           &vertexBuffer
                .data[vertexBufferView.byteOffset + vertexAccessor.byteOffset]);
+
       const auto &normalAccessor =
           gltfModel.accessors[primitive.attributes.at("NORMAL")];
       const auto &normalBufferView =
@@ -83,12 +86,22 @@ void Model::Builder::loadModel(const std::string &filepath) {
           &normalBuffer
                .data[normalBufferView.byteOffset + normalAccessor.byteOffset]);
 
+      const auto &uvAccessor =
+          gltfModel.accessors[primitive.attributes.at("TEXCOORD_0")];
+      const auto &uvBufferView = gltfModel.bufferViews[uvAccessor.bufferView];
+      const auto &uvBuffer = gltfModel.buffers[uvBufferView.buffer];
+      const float *uvData = reinterpret_cast<const float *>(
+          &uvBuffer.data[uvBufferView.byteOffset + uvAccessor.byteOffset]);
+
       for (size_t i = 0; i < vertexAccessor.count; i++) {
         Vertex vertex{};
         vertex.position = {vertexData[i * 3], vertexData[i * 3 + 1],
                            vertexData[i * 3 + 2]};
         vertex.normal = {normalData[i * 3], normalData[i * 3 + 1],
                          normalData[i * 3 + 2]};
+        vertex.texCoord = {uvData[i * 2], uvData[i * 2 + 1]};
+        cout << "Tex coord: " << vertex.texCoord.x << ", " << vertex.texCoord.y
+             << endl;
         vertices.push_back(vertex);
       }
 

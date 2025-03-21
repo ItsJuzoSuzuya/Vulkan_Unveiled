@@ -49,10 +49,11 @@ void Chunk::calculateMesh() {
 
         // Top
         if (top == BlockType::Air) {
-          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {0, 1, 0}});
-          vertices.push_back({{x + 1, y + 1, z}, {1, 0, 0}, {0, 1, 0}});
-          vertices.push_back({{x + 1, y + 1, z + 1}, {1, 0, 0}, {0, 1, 0}});
-          vertices.push_back({{x, y + 1, z + 1}, {1, 0, 0}, {0, 1, 0}});
+          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {0, 1, 0}, {0, 0}});
+          vertices.push_back({{x + 1, y + 1, z}, {1, 0, 0}, {0, 1, 0}, {1, 0}});
+          vertices.push_back(
+              {{x + 1, y + 1, z + 1}, {1, 0, 0}, {0, 1, 0}, {1, 1}});
+          vertices.push_back({{x, y + 1, z + 1}, {1, 0, 0}, {0, 1, 0}, {0, 1}});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -65,10 +66,11 @@ void Chunk::calculateMesh() {
         // Bottom
         if (y > 0) {
           if (bottom == BlockType::Air) {
-            vertices.push_back({{x, y, z}, {1, 0, 0}, {0, -1, 0}});
-            vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {0, -1, 0}});
-            vertices.push_back({{x + 1, y, z + 1}, {1, 0, 0}, {0, -1, 0}});
-            vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {0, -1, 0}});
+            vertices.push_back({{x, y, z}, {1, 0, 0}, {0, -1, 0}, {0, 0}});
+            vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {0, -1, 0}, {1, 0}});
+            vertices.push_back(
+                {{x + 1, y, z + 1}, {1, 0, 0}, {0, -1, 0}, {1, 1}});
+            vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {0, -1, 0}, {0, 1}});
 
             indices.push_back(vertices.size() - 4);
             indices.push_back(vertices.size() - 3);
@@ -81,10 +83,12 @@ void Chunk::calculateMesh() {
 
         // Front
         if (front == BlockType::Air) {
-          vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {0, 0, 1}});
-          vertices.push_back({{x, y + 1, z + 1}, {1, 0, 0}, {0, 0, 1}});
-          vertices.push_back({{x + 1, y + 1, z + 1}, {1, 0, 0}, {0, 0, 1}});
-          vertices.push_back({{x + 1, y, z + 1}, {1, 0, 0}, {0.f, 0.f, 1}});
+          vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {0, 0, 1}, {0, 0}});
+          vertices.push_back({{x, y + 1, z + 1}, {1, 0, 0}, {0, 0, 1}, {1, 0}});
+          vertices.push_back(
+              {{x + 1, y + 1, z + 1}, {1, 0, 0}, {0, 0, 1}, {1, 1}});
+          vertices.push_back(
+              {{x + 1, y, z + 1}, {1, 0, 0}, {0.f, 0.f, 1}, {0, 1}});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -96,10 +100,11 @@ void Chunk::calculateMesh() {
 
         // Back
         if (back == BlockType::Air) {
-          vertices.push_back({{x, y, z}, {1, 0, 0}, {0, 0, -1}});
-          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {0, 0, -1}});
-          vertices.push_back({{x + 1, y + 1, z}, {1, 0, 0}, {0, 0, -1}});
-          vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {0, 0, -1}});
+          vertices.push_back({{x, y, z}, {1, 0, 0}, {0, 0, -1}, {0, 0}});
+          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {0, 0, -1}, {1, 0}});
+          vertices.push_back(
+              {{x + 1, y + 1, z}, {1, 0, 0}, {0, 0, -1}, {1, 1}});
+          vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {0, 0, -1}, {0, 1}});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -111,10 +116,11 @@ void Chunk::calculateMesh() {
 
         // Left
         if (left == BlockType::Air) {
-          vertices.push_back({{x, y, z}, {1, 0, 0}, {-1, 0, 0}});
-          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {-1, 0, 0}});
-          vertices.push_back({{x, y + 1, z + 1}, {1, 0, 0}, {-1, 0, 0}});
-          vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {-1, 0, 0}});
+          vertices.push_back({{x, y, z}, {1, 0, 0}, {-1, 0, 0}, {0, 0}});
+          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {-1, 0, 0}, {1, 0}});
+          vertices.push_back(
+              {{x, y + 1, z + 1}, {1, 0, 0}, {-1, 0, 0}, {1, 1}});
+          vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1}});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -126,10 +132,11 @@ void Chunk::calculateMesh() {
 
         // Right
         if (right == BlockType::Air) {
-          vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {1, 0, 0}});
-          vertices.push_back({{x + 1, y + 1, z}, {1, 0, 0}, {1, 0, 0}});
-          vertices.push_back({{x + 1, y + 1, z + 1}, {1, 0, 0}, {1, 0, 0}});
-          vertices.push_back({{x + 1, y, z + 1}, {1, 0, 0}, {1, 0, 0}});
+          vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {1, 0, 0}, {0, 0}});
+          vertices.push_back({{x + 1, y + 1, z}, {1, 0, 0}, {1, 0, 0}, {1, 0}});
+          vertices.push_back(
+              {{x + 1, y + 1, z + 1}, {1, 0, 0}, {1, 0, 0}, {1, 1}});
+          vertices.push_back({{x + 1, y, z + 1}, {1, 0, 0}, {1, 0, 0}, {0, 1}});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);

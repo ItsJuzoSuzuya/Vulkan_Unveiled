@@ -78,6 +78,8 @@ public:
       uint32_t binding, VkDescriptorBufferInfo *bufferInfo,
       VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
       VkDescriptorImageInfo *imageInfo = nullptr);
+  DescriptorWriter &writeImage(uint32_t binding,
+                               VkDescriptorImageInfo *imageInfo);
 
   bool build(VkDescriptorSet &set);
   void overwrite(VkDescriptorSet &set);

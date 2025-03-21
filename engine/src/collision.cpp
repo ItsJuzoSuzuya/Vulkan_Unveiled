@@ -32,15 +32,7 @@ Collision3D BoxCollider::resolveCollision(const CollisionBox3D &other) {
   Collision3D collision;
   collision.isColliding = false;
 
-  cout << "other: " << other.min.x << " " << other.min.y << " " << other.min.z
-       << " " << other.max.x << " " << other.max.y << " " << other.max.z
-       << endl; // Debug
-  cout << "this: " << collisionBox.min.x << " " << collisionBox.min.y << " "
-       << collisionBox.min.z << " " << collisionBox.max.x << " "
-       << collisionBox.max.y << " " << collisionBox.max.z << endl; // Debug
-
   if (checkCollision(other)) {
-    cout << "Collision detected" << endl;
     collision.isColliding = true;
 
     float xOverlap = std::min(collisionBox.max.x, other.max.x) -

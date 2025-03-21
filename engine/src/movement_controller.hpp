@@ -15,12 +15,16 @@ public:
     int down = GLFW_KEY_LEFT_SHIFT;
   };
 
-  void move(GLFWwindow *window, float dt, Player &player);
+  void move(GLFWwindow *window, Player &player,
+            std::unordered_map<int, Chunk> &chunks, float dt);
 
 private:
   KeyMapping keys{};
   double mouseX, mouseY;
   bool firstMouse = true;
+
+  void handleInput(GLFWwindow *window, Player &player, float dt);
+  void predictMovement(Player &player, float dt);
 };
 
 } // namespace engine

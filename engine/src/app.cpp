@@ -5,12 +5,12 @@
 #include "core/model.hpp"
 #include "core/occlusion_culler.hpp"
 #include "core/swapchain.hpp"
+#include "include/stb_image.h"
 #include "movement_controller.hpp"
 #include "player.hpp"
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <cstdint>
-#include <cstdlib>
 #include <glm/common.hpp>
 #include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
@@ -21,13 +21,13 @@
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <mutex>
-#include <ostream>
 #include <thread>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define STB_IMAGE_IMPLEMENTATION
 
 using namespace std;
 
@@ -51,6 +51,8 @@ App::App() {
                        .addPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                     SwapChain::MAX_FRAMES_IN_FLIGHT)
                        .addPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                    SwapChain::MAX_FRAMES_IN_FLIGHT)
+                       .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                     SwapChain::MAX_FRAMES_IN_FLIGHT)
                        .build();
 }
@@ -85,21 +87,117 @@ void App::run() {
     uboBuffers[i]->map();
   }
 
+  int textureWidth, textureHeight, textureChannels;
+  stbi_uc *textureData =
+      stbi_load("textures/gras.jpeg", &textureWidth, &textureHeight,
+                &textureChannels, STBI_rgb_alpha);
+  VkDeviceSize textureSize = textureWidth * textureHeight * 4;
+
+  if (!textureData) {
+    cerr << "Failed to load texture image: " << stbi_failure_reason() << endl;
+    throw runtime_error("Failed to load texture image");
+  }
+
+  Buffer textureStagingBuffer{device, textureSize, 1,
+                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+  textureStagingBuffer.map();
+  textureStagingBuffer.writeToBuffer((void *)textureData);
+
+  stbi_image_free(textureData);
+
+  VkImage textureImage;
+  VkDeviceMemory textureImageMemory;
+
+  VkImageCreateInfo imageInfo{};
+  imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  imageInfo.imageType = VK_IMAGE_TYPE_2D;
+  imageInfo.extent.width = static_cast<uint32_t>(textureWidth);
+  imageInfo.extent.height = static_cast<uint32_t>(textureHeight);
+  imageInfo.extent.depth = 1;
+  imageInfo.mipLevels = 1;
+  imageInfo.arrayLayers = 1;
+  imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+  imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+  imageInfo.usage =
+      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+
+  device.createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                             textureImage, textureImageMemory);
+  device.transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+                               VK_IMAGE_LAYOUT_UNDEFINED,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+  device.copyBufferToImage(textureStagingBuffer.getBuffer(), textureImage,
+                           static_cast<uint32_t>(textureWidth),
+                           static_cast<uint32_t>(textureHeight));
+  device.transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+  VkImageViewCreateInfo viewInfo = {};
+  viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  viewInfo.image = textureImage;
+  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+  viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  viewInfo.subresourceRange.baseMipLevel = 0;
+  viewInfo.subresourceRange.levelCount = 1;
+  viewInfo.subresourceRange.baseArrayLayer = 0;
+  viewInfo.subresourceRange.layerCount = 1;
+
+  VkImageView textureImageView;
+  if (vkCreateImageView(device.device(), &viewInfo, nullptr,
+                        &textureImageView) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create image views!");
+
+  VkSamplerCreateInfo samplerInfo{};
+  samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  samplerInfo.magFilter = VK_FILTER_LINEAR;
+  samplerInfo.minFilter = VK_FILTER_LINEAR;
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.anisotropyEnable = VK_FALSE;
+  samplerInfo.maxAnisotropy = 1.0f;
+  samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+  samplerInfo.unnormalizedCoordinates = VK_FALSE;
+  samplerInfo.compareEnable = VK_FALSE;
+  samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+  samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  samplerInfo.mipLodBias = 0.0f;
+  samplerInfo.minLod = 0.0f;
+  samplerInfo.maxLod = 0.0f;
+
+  VkSampler textureSampler;
+  if (vkCreateSampler(device.device(), &samplerInfo, nullptr,
+                      &textureSampler) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create texture sampler!");
+
   auto descriptorSetLayout =
       DescriptorSetLayout::Builder(device)
           .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                       VK_SHADER_STAGE_ALL_GRAPHICS)
           .addBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                       VK_SHADER_STAGE_VERTEX_BIT)
+          .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                      VK_SHADER_STAGE_FRAGMENT_BIT)
           .build();
 
   vector<VkDescriptorSet> descriptorSets(SwapChain::MAX_FRAMES_IN_FLIGHT);
   for (int i = 0; i < static_cast<int>(descriptorSets.size()); i++) {
     auto bufferInfo = uboBuffers[i]->descriptorInfo();
     auto ODBInfo = objectDataBuffers[i]->descriptorInfo();
+    auto imageInfo =
+        VkDescriptorImageInfo{textureSampler, textureImageView,
+                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
     DescriptorWriter(*descriptorSetLayout, *descriptorPool)
         .writeBuffer(0, &bufferInfo)
         .writeBuffer(1, &ODBInfo, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+        .writeImage(2, &imageInfo)
         .build(descriptorSets[i]);
   }
 
@@ -116,11 +214,16 @@ void App::run() {
   MovementController movementController{};
 
   Player player = Player();
-  player.transform.position = {0.f, 120.f, 0.f};
+  player.transform.position = {7.f, 120.f, 8.f};
   player.transform.scale = {0.8f, 2.f, 0.8f};
 
-  glm::vec3 colliderMax = player.transform.position + player.transform.scale;
-
+  glm::vec3 colliderMin =
+      player.transform.position - glm::vec3{player.transform.scale.x / 2.f, 0,
+                                            player.transform.scale.z / 2.f};
+  glm::vec3 colliderMax =
+      player.transform.position + glm::vec3{player.transform.scale.x / 2.f,
+                                            player.transform.scale.y,
+                                            player.transform.scale.z / 2.f};
   player.collider = BoxCollider(player.transform.position, colliderMax);
 
   auto currentTime = chrono::high_resolution_clock::now();
@@ -151,9 +254,9 @@ void App::run() {
 
     /* Movement */
 
-    movementController.move(window.getGLFWwindow(), deltaTime, player);
-    camera.follow(player.transform.position + glm::vec3{0.f, 1.f, 0.f},
-                  player.transform.rotation);
+    movementController.move(window.getGLFWwindow(), player, chunks, deltaTime);
+    player.rigidBody.update(player.transform.position, deltaTime);
+    camera.follow(player.transform.position, player.transform.rotation);
 
     /* Chunk Loading */
 
@@ -165,6 +268,14 @@ void App::run() {
     if (chunks.size() > 100) {
       player.rigidBody.applyGravity(deltaTime);
       player.rigidBody.update(player.transform.position, deltaTime);
+      player.collider.collisionBox.min =
+          player.transform.position - glm::vec3{player.transform.scale.x / 2.f,
+                                                0,
+                                                player.transform.scale.z / 2.f};
+      player.collider.collisionBox.max =
+          player.transform.position + glm::vec3{player.transform.scale.x / 2.f,
+                                                player.transform.scale.y,
+                                                player.transform.scale.z / 2.f};
     }
 
     /* Collision Detection World */
@@ -178,21 +289,10 @@ void App::run() {
         player.canJump = true;
         player.rigidBody.resetVelocity();
       }
-
-      vector<Block> blocksAroundPlayer = player.getBlocksAround(chunks);
-      for (const auto &block : blocksAroundPlayer) {
-        Collision3D collision =
-            player.collider.resolveCollision(block.collider.collisionBox);
-        if (collision.isColliding) {
-          cout << "Colliding" << endl;
-          player.transform.position += collision.direction * collision.length;
-        }
-      }
     }
 
     /* Rendering */
 
-    auto startRender = chrono::high_resolution_clock::now();
     while (!chunkQueue.empty()) {
       {
         lock_guard<mutex> lock(queueMutex);
@@ -204,14 +304,12 @@ void App::run() {
         chunkQueue.pop();
       }
     }
-    auto endRender = chrono::high_resolution_clock::now();
 
     if (auto commandBuffer = renderSystem.beginFrame()) {
       int frameIndex = renderSystem.getFrameIndex();
 
       loadWorldModel(objectDataBuffer, drawCallBuffer, player, camera,
                      frameIndex);
-
       GlobalUbo ubo{};
       ubo.projectionView = camera.getProjection() * camera.getView();
       uboBuffers[frameIndex]->writeToBuffer(&ubo);
@@ -232,11 +330,10 @@ void App::run() {
 
     chrono::duration<double> frameTime =
         chrono::high_resolution_clock::now() - currentTime;
-    cout << "Frame Time: " << frameTime.count() * 1000 << "ms" << endl;
-    // cout << "\rFps: " << 1.0 / frameTime.count() << flush;
+    // cout << "Frame Time: " << frameTime.count() * 1000 << "ms" << endl;
+    //  cout << "\rFps: " << 1.0 / frameTime.count() << flush;
     frameCounter++;
   }
-  vkDeviceWaitIdle(device.device());
   chunkThread.join();
 }
 
@@ -256,9 +353,6 @@ uint32_t App::loadWorldModel(ObjectData *objectDataBuffer,
   uint32_t vertexOffset = 0;
 
   auto it = chunks.begin();
-
-  std::chrono::duration<double> meshDataTime =
-      std::chrono::duration<double>::zero();
 
   while (it != chunks.end()) {
 
@@ -282,13 +376,9 @@ uint32_t App::loadWorldModel(ObjectData *objectDataBuffer,
       indirectCommand.vertexOffset = vertexOffset;
       indirectCommand.firstInstance = drawCallCounter;
       drawCallBuffer[drawCallCounter] = indirectCommand;
-      auto endOcclusion = std::chrono::high_resolution_clock::now();
 
-      auto startMeshData = std::chrono::high_resolution_clock::now();
       worldModel->writeMeshDataToBuffers(chunk.getMesh(), vertexBufferOffset,
                                          indexBufferOffset, frameIndex);
-      auto endMeshData = std::chrono::high_resolution_clock::now();
-      meshDataTime += endMeshData - startMeshData;
 
       drawCallCounter++;
       firstIndex += chunk.getMesh().second.size();
@@ -299,6 +389,9 @@ uint32_t App::loadWorldModel(ObjectData *objectDataBuffer,
     }
     it++;
   }
+
+  if (drawCallCounter == 0)
+    return 0;
 
   device.copyModel(worldModel->stagingBuffers[frameIndex]->getBuffer(),
                    worldModel->vertexBuffers[frameIndex]->getBuffer(),

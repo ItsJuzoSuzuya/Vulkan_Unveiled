@@ -3,6 +3,7 @@
 #include "buffer.hpp"
 #include "device.hpp"
 #include <cstdint>
+#include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <memory>
 #include <string>
@@ -17,6 +18,7 @@ public:
     glm::vec3 position{};
     glm::vec3 color{1.f, 0.f, 0.f};
     glm::vec3 normal{};
+    glm::vec2 texCoord{};
 
     static std::vector<VkVertexInputBindingDescription>
     getBindingDescriptions();

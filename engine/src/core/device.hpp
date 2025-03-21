@@ -66,8 +66,12 @@ public:
                  VkBuffer indexBuffer, VkDeviceSize vertexSize,
                  VkDeviceSize indexSize);
 
+  void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
+                         uint32_t height);
   void copyImageToBuffer(VkCommandBuffer &commandBuffer, VkBuffer dstBuffer,
                          VkImage image, VkBufferImageCopy region);
+  void transitionImageLayout(VkImage image, VkFormat format,
+                             VkImageLayout oldLayout, VkImageLayout newLayout);
   void transitionDepthImage(VkCommandBuffer commandBuffer, VkImage image,
                             VkImageLayout oldLayout, VkImageLayout newLayout);
 

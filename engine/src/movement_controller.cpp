@@ -1,18 +1,43 @@
 #include "movement_controller.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
-#include <chrono>
 #include <glm/ext/vector_float3.hpp>
+#include <unordered_map>
 
+using namespace std;
 namespace engine {
 
-void MovementController::move(GLFWwindow *window, float dt, Player &player) {
+void MovementController::move(GLFWwindow *window, Player &player,
+                              unordered_map<int, Chunk> &chunks, float dt) {
   if (firstMouse) {
     glfwGetCursorPos(window, &mouseX, &mouseY);
     firstMouse = false;
     return;
   }
 
+  handleInput(window, player, dt);
+  predictMovement(player, dt);
+
+  auto blocks = player.getBlocksAround(chunks);
+
+  for (auto &block : blocks) {
+    bool isColliding =
+        player.collider.checkCollision(block.collider.collisionBox);
+    if (isColliding) {
+      auto collision =
+          player.collider.resolveCollision(block.collider.collisionBox);
+      if (collision.direction.x != 0.f) {
+        player.rigidBody.velocity.x = 0.f;
+      }
+      if (collision.direction.z != 0.f) {
+        player.rigidBody.velocity.z = 0.f;
+      }
+    }
+  }
+};
+
+void MovementController::handleInput(GLFWwindow *window, Player &player,
+                                     float dt) {
   double newMouseX, newMouseY;
   glfwGetCursorPos(window, &newMouseX, &newMouseY);
 
@@ -23,7 +48,7 @@ void MovementController::move(GLFWwindow *window, float dt, Player &player) {
   rotateDirection.y = deltaX;
   rotateDirection.x = deltaY;
 
-  player.transform.rotation += rotateDirection * 0.05f;
+  player.transform.rotation += rotateDirection * dt * 0.1f;
   player.transform.rotation.x =
       std::clamp(player.transform.rotation.x, -glm::half_pi<float>(),
                  glm::half_pi<float>());
@@ -49,12 +74,18 @@ void MovementController::move(GLFWwindow *window, float dt, Player &player) {
     }
   }
 
-  player.transform.position += moveDirection * dt * 10.f;
-  player.collider.collisionBox.min += moveDirection * dt * 10.f;
-  player.collider.collisionBox.max += moveDirection * dt * 10.f;
+  player.rigidBody.velocity.x = moveDirection.x * 10.f;
+  player.rigidBody.velocity.z = moveDirection.z * 10.f;
 
   mouseX = newMouseX;
   mouseY = newMouseY;
-};
+}
+
+void MovementController::predictMovement(Player &player, float dt) {
+  player.collider.collisionBox.min =
+      player.collider.collisionBox.min + player.rigidBody.velocity * dt;
+  player.collider.collisionBox.max =
+      player.collider.collisionBox.max + player.rigidBody.velocity * dt;
+}
 
 } // namespace engine
