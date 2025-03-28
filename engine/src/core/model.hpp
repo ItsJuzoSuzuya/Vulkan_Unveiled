@@ -2,6 +2,7 @@
 #define MODEL_HPP
 #include "buffer.hpp"
 #include "device.hpp"
+#include "swapchain.hpp"
 #include <cstdint>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -16,7 +17,7 @@ class Model {
 public:
   struct Vertex {
     glm::vec3 position{};
-    glm::vec3 color{1.f, 0.f, 0.f};
+    glm::vec3 color{0.f, 0.f, 0.f};
     glm::vec3 normal{};
     glm::vec2 texCoord{};
 
@@ -24,6 +25,13 @@ public:
     getBindingDescriptions();
     static std::vector<VkVertexInputAttributeDescription>
     getAttributeDescriptions();
+  };
+
+  struct TexCoord {
+    constexpr static glm::vec2 first = glm::vec2{0.f, 0.f};
+    constexpr static glm::vec2 second = glm::vec2{0.f, 1.f};
+    constexpr static glm::vec2 third = glm::vec2{1.f, 0.f};
+    constexpr static glm::vec2 fourth = glm::vec2{1.f, 1.f};
   };
 
   struct Builder {
@@ -47,7 +55,9 @@ public:
 
   std::vector<std::shared_ptr<Buffer>> vertexBuffers;
   std::vector<std::shared_ptr<Buffer>> indexBuffers;
-  std::vector<std::shared_ptr<Buffer>> stagingBuffers;
+
+  std::shared_ptr<Buffer> ringBuffer;
+  std::shared_ptr<Buffer> stagingBuffer;
 
   uint32_t vertexCount;
   uint32_t indexCount;
@@ -75,6 +85,7 @@ private:
   void createVertexBuffer(const std::vector<Vertex> &vertices);
   void createIndexBuffer(const std::vector<uint32_t> &indices);
   void createStagingBuffers(uint32_t vertexCount, uint32_t indexCount);
+  void createRingBuffer(uint32_t vertexCount, uint32_t indexCount);
 };
 } // namespace engine
 #endif

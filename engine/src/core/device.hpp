@@ -59,6 +59,8 @@ public:
   void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                     VkMemoryPropertyFlags properties, VkBuffer &buffer,
                     VkDeviceMemory &bufferMemory);
+  void generateImage(const char *filename, VkImageView &imageView,
+                     VkSampler &sampler);
 
   void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size,
                   VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
@@ -70,8 +72,8 @@ public:
                          uint32_t height);
   void copyImageToBuffer(VkCommandBuffer &commandBuffer, VkBuffer dstBuffer,
                          VkImage image, VkBufferImageCopy region);
-  void transitionImageLayout(VkImage image, VkFormat format,
-                             VkImageLayout oldLayout, VkImageLayout newLayout);
+  void transitionImageLayout(VkImage image, VkImageLayout oldLayout,
+                             VkImageLayout newLayout);
   void transitionDepthImage(VkCommandBuffer commandBuffer, VkImage image,
                             VkImageLayout oldLayout, VkImageLayout newLayout);
 

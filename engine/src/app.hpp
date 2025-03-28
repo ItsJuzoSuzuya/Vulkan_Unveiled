@@ -4,6 +4,7 @@
 #include "core/game_object.hpp"
 #include "core/object_data.hpp"
 #include "core/render_system.hpp"
+#include "core/swapchain.hpp"
 #include <cstdint>
 #include <memory>
 #include <queue>
@@ -33,7 +34,7 @@ private:
 
   uint32_t loadWorldModel(ObjectData *objectDataBuffer,
                           VkDrawIndexedIndirectCommand *drawCallBuffer,
-                          Player &player, Camera &camera, uint32_t frameIndex);
+                          uint32_t frameIndex);
 
   ChunkGenerator chunkGenerator{device};
 

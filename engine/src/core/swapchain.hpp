@@ -1,7 +1,6 @@
 #ifndef SWAPCHAIN_HPP
 #define SWAPCHAIN_HPP
 #include "device.hpp"
-#include "frame_info.hpp"
 #include <cwchar>
 #include <memory>
 #include <vector>
@@ -10,7 +9,7 @@
 namespace engine {
 class SwapChain {
 public:
-  static const int MAX_FRAMES_IN_FLIGHT = 2;
+  static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
   SwapChain(Device &device, VkExtent2D extent);
   SwapChain(Device &device, VkExtent2D extent,

@@ -8,6 +8,7 @@ layout(location = 3) in vec2 fragTexCoord;
 layout(location = 0) out vec4 outColor;
 
 layout(binding = 2) uniform sampler2D textureSampler;
+layout(binding = 3) uniform sampler2D topSampler;
 
 layout(set = 0, binding = 0) uniform GlobalUbo{
   mat4 projectionMatrix;
@@ -27,5 +28,10 @@ void main() {
   vec3 diffuseLight = lightColor * attenuation;
 
   vec3 ambientLight = ubo.ambientLightColor.xyz * ubo.ambientLightColor.w;
-  outColor = texture(textureSampler, fragTexCoord);
+  if (fragNormalWorld.y > 0.0) {
+    outColor = texture(topSampler, fragTexCoord) * vec4((ambientLight + diffuseLight), 1.0f);
+  } else {
+    outColor = texture(textureSampler, fragTexCoord) * vec4((ambientLight + diffuseLight), 1.0f);
+  }
+
 }

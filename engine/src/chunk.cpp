@@ -1,5 +1,6 @@
 #include "chunk.hpp"
 #include "app.hpp"
+#include "block.hpp"
 #include "collision.hpp"
 #include "core/device.hpp"
 #include "core/game_object.hpp"
@@ -17,6 +18,8 @@
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
+
+using namespace std;
 
 namespace engine {
 
@@ -48,12 +51,47 @@ void Chunk::calculateMesh() {
         BlockType left = getBlock(x - 1, y, z);
 
         // Top
-        if (top == BlockType::Air) {
-          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {0, 1, 0}, {0, 0}});
-          vertices.push_back({{x + 1, y + 1, z}, {1, 0, 0}, {0, 1, 0}, {1, 0}});
+        if (y < 31) {
+          if (top == BlockType::Air) {
+            vertices.push_back(
+                {{x, y + 1, z}, {1, 0, 0}, {0, 1, 0}, Model::TexCoord::fourth});
+            vertices.push_back({{x + 1, y + 1, z},
+                                {1, 1, 1},
+                                {0, 1, 0},
+                                Model::TexCoord::third});
+            vertices.push_back({{x + 1, y + 1, z + 1},
+                                {1, 1, 1},
+                                {0, 1, 0},
+                                Model::TexCoord::first});
+            vertices.push_back({{x, y + 1, z + 1},
+                                {1, 1, 1},
+                                {0, 1, 0},
+                                Model::TexCoord::second});
+
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 3);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 1);
+          }
+        } else if (ChunkGenerator::getBlockType(
+                       transform.position.x + x, transform.position.y + 32,
+                       transform.position.z + z) == BlockType::Air) {
           vertices.push_back(
-              {{x + 1, y + 1, z + 1}, {1, 0, 0}, {0, 1, 0}, {1, 1}});
-          vertices.push_back({{x, y + 1, z + 1}, {1, 0, 0}, {0, 1, 0}, {0, 1}});
+              {{x, y + 1, z}, {1, 0, 0}, {0, 1, 0}, Model::TexCoord::fourth});
+          vertices.push_back({{x + 1, y + 1, z},
+                              {1, 1, 1},
+                              {0, 1, 0},
+                              Model::TexCoord::third});
+          vertices.push_back({{x + 1, y + 1, z + 1},
+                              {1, 1, 1},
+                              {0, 1, 0},
+                              Model::TexCoord::first});
+          vertices.push_back({{x, y + 1, z + 1},
+                              {1, 1, 1},
+                              {0, 1, 0},
+                              Model::TexCoord::second});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -66,11 +104,18 @@ void Chunk::calculateMesh() {
         // Bottom
         if (y > 0) {
           if (bottom == BlockType::Air) {
-            vertices.push_back({{x, y, z}, {1, 0, 0}, {0, -1, 0}, {0, 0}});
-            vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {0, -1, 0}, {1, 0}});
             vertices.push_back(
-                {{x + 1, y, z + 1}, {1, 0, 0}, {0, -1, 0}, {1, 1}});
-            vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {0, -1, 0}, {0, 1}});
+                {{x, y, z}, {1, 1, 1}, {0, -1, 0}, Model::TexCoord::fourth});
+            vertices.push_back(
+                {{x + 1, y, z}, {1, 1, 1}, {0, -1, 0}, Model::TexCoord::third});
+            vertices.push_back({{x + 1, y, z + 1},
+                                {1, 1, 1},
+                                {0, -1, 0},
+                                Model::TexCoord::first});
+            vertices.push_back({{x, y, z + 1},
+                                {1, 1, 1},
+                                {0, -1, 0},
+                                Model::TexCoord::second});
 
             indices.push_back(vertices.size() - 4);
             indices.push_back(vertices.size() - 3);
@@ -79,16 +124,70 @@ void Chunk::calculateMesh() {
             indices.push_back(vertices.size() - 2);
             indices.push_back(vertices.size() - 1);
           }
+        } else if (ChunkGenerator::getBlockType(
+                       transform.position.x + x, transform.position.y - 1,
+                       transform.position.z + z) == BlockType::Air) {
+          vertices.push_back(
+              {{x, y, z}, {1, 1, 1}, {0, -1, 0}, Model::TexCoord::fourth});
+          vertices.push_back(
+              {{x + 1, y, z}, {1, 1, 1}, {0, -1, 0}, Model::TexCoord::third});
+          vertices.push_back({{x + 1, y, z + 1},
+                              {1, 1, 1},
+                              {0, -1, 0},
+                              Model::TexCoord::first});
+          vertices.push_back(
+              {{x, y, z + 1}, {1, 1, 1}, {0, -1, 0}, Model::TexCoord::second});
+
+          indices.push_back(vertices.size() - 4);
+          indices.push_back(vertices.size() - 3);
+          indices.push_back(vertices.size() - 2);
+          indices.push_back(vertices.size() - 4);
+          indices.push_back(vertices.size() - 2);
+          indices.push_back(vertices.size() - 1);
         }
 
         // Front
-        if (front == BlockType::Air) {
-          vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {0, 0, 1}, {0, 0}});
-          vertices.push_back({{x, y + 1, z + 1}, {1, 0, 0}, {0, 0, 1}, {1, 0}});
+        if (z < 31) {
+          if (front == BlockType::Air) {
+            vertices.push_back(
+                {{x, y, z + 1}, {1, 1, 1}, {0, 0, 1}, Model::TexCoord::fourth});
+            vertices.push_back({{x, y + 1, z + 1},
+                                {1, 1, 1},
+                                {0, 0, 1},
+                                Model::TexCoord::third});
+            vertices.push_back({{x + 1, y + 1, z + 1},
+                                {1, 1, 1},
+                                {0, 0, 1},
+                                Model::TexCoord::first});
+            vertices.push_back({{x + 1, y, z + 1},
+                                {1, 1, 1},
+                                {0.f, 0.f, 1},
+                                Model::TexCoord::second});
+
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 3);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 1);
+          }
+        } else if (ChunkGenerator::getBlockType(
+                       transform.position.x + x, transform.position.y + y,
+                       transform.position.z + 32) == BlockType::Air) {
           vertices.push_back(
-              {{x + 1, y + 1, z + 1}, {1, 0, 0}, {0, 0, 1}, {1, 1}});
-          vertices.push_back(
-              {{x + 1, y, z + 1}, {1, 0, 0}, {0.f, 0.f, 1}, {0, 1}});
+              {{x, y, z + 1}, {1, 1, 1}, {0, 0, 1}, Model::TexCoord::fourth});
+          vertices.push_back({{x, y + 1, z + 1},
+                              {1, 1, 1},
+                              {0, 0, 1},
+                              Model::TexCoord::third});
+          vertices.push_back({{x + 1, y + 1, z + 1},
+                              {1, 1, 1},
+                              {0, 0, 1},
+                              Model::TexCoord::first});
+          vertices.push_back({{x + 1, y, z + 1},
+                              {1, 1, 1},
+                              {0, 0, 1},
+                              Model::TexCoord::second});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -99,12 +198,41 @@ void Chunk::calculateMesh() {
         }
 
         // Back
-        if (back == BlockType::Air) {
-          vertices.push_back({{x, y, z}, {1, 0, 0}, {0, 0, -1}, {0, 0}});
-          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {0, 0, -1}, {1, 0}});
+        if (z > 0) {
+          if (back == BlockType::Air) {
+            vertices.push_back(
+                {{x, y, z}, {1, 1, 1}, {0, 0, -1}, Model::TexCoord::fourth});
+            vertices.push_back(
+                {{x, y + 1, z}, {1, 1, 1}, {0, 0, -1}, Model::TexCoord::third});
+            vertices.push_back({{x + 1, y + 1, z},
+                                {1, 1, 1},
+                                {0, 0, -1},
+                                Model::TexCoord::first});
+            vertices.push_back({{x + 1, y, z},
+                                {1, 1, 1},
+                                {0, 0, -1},
+                                Model::TexCoord::second});
+
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 3);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 1);
+          }
+        } else if (ChunkGenerator::getBlockType(
+                       transform.position.x + x, transform.position.y + y,
+                       transform.position.z - 1) == BlockType::Air) {
           vertices.push_back(
-              {{x + 1, y + 1, z}, {1, 0, 0}, {0, 0, -1}, {1, 1}});
-          vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {0, 0, -1}, {0, 1}});
+              {{x, y, z}, {1, 1, 1}, {0, 0, -1}, Model::TexCoord::fourth});
+          vertices.push_back(
+              {{x, y + 1, z}, {1, 1, 1}, {0, 0, -1}, Model::TexCoord::third});
+          vertices.push_back({{x + 1, y + 1, z},
+                              {1, 1, 1},
+                              {0, 0, -1},
+                              Model::TexCoord::first});
+          vertices.push_back(
+              {{x + 1, y, z}, {1, 1, 1}, {0, 0, -1}, Model::TexCoord::second});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -115,12 +243,41 @@ void Chunk::calculateMesh() {
         }
 
         // Left
-        if (left == BlockType::Air) {
-          vertices.push_back({{x, y, z}, {1, 0, 0}, {-1, 0, 0}, {0, 0}});
-          vertices.push_back({{x, y + 1, z}, {1, 0, 0}, {-1, 0, 0}, {1, 0}});
+        if (x > 0) {
+          if (left == BlockType::Air) {
+            vertices.push_back(
+                {{x, y, z}, {1, 1, 1}, {-1, 0, 0}, Model::TexCoord::fourth});
+            vertices.push_back(
+                {{x, y + 1, z}, {1, 1, 1}, {-1, 0, 0}, Model::TexCoord::third});
+            vertices.push_back({{x, y + 1, z + 1},
+                                {1, 1, 1},
+                                {-1, 0, 0},
+                                Model::TexCoord::first});
+            vertices.push_back({{x, y, z + 1},
+                                {1, 1, 1},
+                                {-1, 0, 0},
+                                Model::TexCoord::second});
+
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 3);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 1);
+          }
+        } else if (ChunkGenerator::getBlockType(
+                       transform.position.x - 1, transform.position.y + y,
+                       transform.position.z + z) == BlockType::Air) {
           vertices.push_back(
-              {{x, y + 1, z + 1}, {1, 0, 0}, {-1, 0, 0}, {1, 1}});
-          vertices.push_back({{x, y, z + 1}, {1, 0, 0}, {-1, 0, 0}, {0, 1}});
+              {{x, y, z}, {1, 1, 1}, {-1, 0, 0}, Model::TexCoord::fourth});
+          vertices.push_back(
+              {{x, y + 1, z}, {1, 1, 1}, {-1, 0, 0}, Model::TexCoord::third});
+          vertices.push_back({{x, y + 1, z + 1},
+                              {1, 1, 1},
+                              {-1, 0, 0},
+                              Model::TexCoord::first});
+          vertices.push_back(
+              {{x, y, z + 1}, {1, 1, 1}, {-1, 0, 0}, Model::TexCoord::second});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);
@@ -131,12 +288,47 @@ void Chunk::calculateMesh() {
         }
 
         // Right
-        if (right == BlockType::Air) {
-          vertices.push_back({{x + 1, y, z}, {1, 0, 0}, {1, 0, 0}, {0, 0}});
-          vertices.push_back({{x + 1, y + 1, z}, {1, 0, 0}, {1, 0, 0}, {1, 0}});
+        if (x < 31) {
+          if (right == BlockType::Air) {
+            vertices.push_back(
+                {{x + 1, y, z}, {1, 1, 1}, {1, 0, 0}, Model::TexCoord::fourth});
+            vertices.push_back({{x + 1, y + 1, z},
+                                {1, 1, 1},
+                                {1, 0, 0},
+                                Model::TexCoord::third});
+            vertices.push_back({{x + 1, y + 1, z + 1},
+                                {1, 1, 1},
+                                {1, 0, 0},
+                                Model::TexCoord::first});
+            vertices.push_back({{x + 1, y, z + 1},
+                                {1, 1, 1},
+                                {1, 0, 0},
+                                Model::TexCoord::second});
+
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 3);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 4);
+            indices.push_back(vertices.size() - 2);
+            indices.push_back(vertices.size() - 1);
+          }
+        } else if (ChunkGenerator::getBlockType(
+                       transform.position.x + 32, transform.position.y + y,
+                       transform.position.z + z) == BlockType::Air) {
           vertices.push_back(
-              {{x + 1, y + 1, z + 1}, {1, 0, 0}, {1, 0, 0}, {1, 1}});
-          vertices.push_back({{x + 1, y, z + 1}, {1, 0, 0}, {1, 0, 0}, {0, 1}});
+              {{x + 1, y, z}, {1, 1, 1}, {1, 0, 0}, Model::TexCoord::fourth});
+          vertices.push_back({{x + 1, y + 1, z},
+                              {1, 1, 1},
+                              {1, 0, 0},
+                              Model::TexCoord::third});
+          vertices.push_back({{x + 1, y + 1, z + 1},
+                              {1, 1, 1},
+                              {1, 0, 0},
+                              Model::TexCoord::first});
+          vertices.push_back({{x + 1, y, z + 1},
+                              {1, 1, 1},
+                              {1, 0, 0},
+                              Model::TexCoord::second});
 
           indices.push_back(vertices.size() - 4);
           indices.push_back(vertices.size() - 3);

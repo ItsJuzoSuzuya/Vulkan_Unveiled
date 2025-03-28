@@ -100,8 +100,6 @@ void Model::Builder::loadModel(const std::string &filepath) {
         vertex.normal = {normalData[i * 3], normalData[i * 3 + 1],
                          normalData[i * 3 + 2]};
         vertex.texCoord = {uvData[i * 2], uvData[i * 2 + 1]};
-        cout << "Tex coord: " << vertex.texCoord.x << ", " << vertex.texCoord.y
-             << endl;
         vertices.push_back(vertex);
       }
 
@@ -154,8 +152,7 @@ std::unique_ptr<Model> Model::loadFromMeshes(
 
 Model::Model(Device &device) : device{device} {
   cout << "Creating model with default constructor" << endl;
-  createVertexBuffer(10000000);
-  createIndexBuffer(15000000);
+  createRingBuffer(10000000, 15000000);
   createStagingBuffers(10000000, 15000000);
 }
 
@@ -174,6 +171,18 @@ Model::Model(Device &device, const std::vector<Vertex> &vertices,
     : device{device} {
   createVertexBuffer(vertices);
   createIndexBuffer(indices);
+}
+
+void Model::createRingBuffer(uint32_t vertexCount, uint32_t indexCount) {
+  size_t instanceSize =
+      vertexCount * sizeof(Model::Vertex) + indexCount * sizeof(uint32_t);
+  ringBuffer = std::make_shared<Buffer>(
+      device, instanceSize, SwapChain::MAX_FRAMES_IN_FLIGHT,
+      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+          VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+  hasIndexBuffer = indexCount > 0;
 }
 
 void Model::createVertexBuffer(uint32_t vertexCount) {
@@ -260,15 +269,13 @@ void Model::createStagingBuffers(uint32_t vertexCount, uint32_t indexCount) {
   uint32_t vertexSize = sizeof(Model::Vertex);
   uint32_t indexSize = sizeof(uint32_t);
 
-  for (uint32_t i = 0; i < SwapChain::MAX_FRAMES_IN_FLIGHT; i++) {
-    size_t vertexBufferSize = vertexSize * vertexCount + indexSize * indexCount;
-    auto stagingBuffer = std::make_shared<Buffer>(
-        device, vertexBufferSize, 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    stagingBuffers.push_back(stagingBuffer);
-    stagingBuffers[i]->map();
-  }
+  size_t vertexBufferSize = vertexSize * vertexCount + indexSize * indexCount;
+  stagingBuffer = std::make_shared<Buffer>(
+      device, vertexBufferSize, SwapChain::MAX_FRAMES_IN_FLIGHT,
+      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+  stagingBuffer->map();
 }
 
 void Model::writeMeshDataToBuffers(
@@ -278,24 +285,33 @@ void Model::writeMeshDataToBuffers(
   size_t vertexDataSize = mesh.first.size() * sizeof(Vertex);
   size_t indexDataSize = mesh.second.size() * sizeof(uint32_t);
 
-  stagingBuffers[frameIndex]->writeToBuffer((void *)mesh.first.data(),
-                                            vertexDataSize, vertexBufferOffset);
-  stagingBuffers[frameIndex]->writeToBuffer(
-      (void *)mesh.second.data(), indexDataSize,
-      indexBufferOffset + 10000000 * sizeof(Vertex));
+  size_t frameOffset =
+      frameIndex * (10000000 * sizeof(Vertex) + 15000000 * sizeof(uint32_t));
+
+  stagingBuffer->writeToBuffer((void *)mesh.first.data(), vertexDataSize,
+                               vertexBufferOffset + frameOffset);
+  stagingBuffer->writeToBuffer((void *)mesh.second.data(), indexDataSize,
+                               indexBufferOffset + 10000000 * sizeof(Vertex) +
+                                   frameOffset);
 
   vertexBufferOffset += vertexDataSize;
   indexBufferOffset += indexDataSize;
 }
 
 void Model::bind(VkCommandBuffer commandBuffer, int frameIndex) {
-  VkBuffer vkVertexBuffers[] = {vertexBuffers[frameIndex]->getBuffer()};
-  VkDeviceSize offsets[] = {0};
-  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vkVertexBuffers, offsets);
+  VkBuffer vkRingBuffers[] = {ringBuffer->getBuffer()};
+  uint32_t vertexBufferOffset =
+      frameIndex * (10000000 * sizeof(Vertex) + 15000000 * sizeof(uint32_t));
+  VkDeviceSize offsets[] = {vertexBufferOffset};
+  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vkRingBuffers, offsets);
 
-  if (hasIndexBuffer)
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffers[frameIndex]->getBuffer(),
-                         0, VK_INDEX_TYPE_UINT32);
+  if (hasIndexBuffer) {
+    uint32_t indexBufferOffset =
+        vertexBufferOffset + (10000000 * sizeof(Vertex));
+
+    vkCmdBindIndexBuffer(commandBuffer, ringBuffer->getBuffer(),
+                         indexBufferOffset, VK_INDEX_TYPE_UINT32);
+  }
 }
 
 void Model::draw(VkCommandBuffer commandBuffer, uint32_t instanceCount) {

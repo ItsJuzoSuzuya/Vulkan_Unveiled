@@ -66,8 +66,9 @@ public:
 
 private:
   Device &device;
-  int getBlockType(int x, int y, int z);
-  float perlinNoise(int x, int z);
+  static int getBlockType(int x, int y, int z);
+  static float perlinNoise(int x, int z);
+  friend class Chunk;
 };
 
 class ChunkLoader {

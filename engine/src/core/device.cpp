@@ -1,4 +1,5 @@
 #include "device.hpp"
+#include "../include/stb_image.h"
 #include "model.hpp"
 #include <GLFW/glfw3.h>
 #include <cstdint>
@@ -558,8 +559,7 @@ void Device::copyImageToBuffer(VkCommandBuffer &commandBuffer,
                          &region);
 }
 
-void Device::transitionImageLayout(VkImage image, VkFormat format,
-                                   VkImageLayout oldLayout,
+void Device::transitionImageLayout(VkImage image, VkImageLayout oldLayout,
                                    VkImageLayout newLayout) {
   VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
@@ -653,6 +653,92 @@ void Device::transitionDepthImage(VkCommandBuffer commandBuffer, VkImage image,
 
   vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 0, nullptr, 0,
                        nullptr, 1, &barrier);
+}
+
+void Device::generateImage(const char *filename, VkImageView &imageView,
+                           VkSampler &sampler) {
+  int textureWidth, textureHeight, textureChannels;
+  stbi_uc *textureData = stbi_load(filename, &textureWidth, &textureHeight,
+                                   &textureChannels, STBI_rgb_alpha);
+  VkDeviceSize textureSize = textureWidth * textureHeight * 4;
+
+  if (!textureData) {
+    cerr << "Failed to load texture image: " << stbi_failure_reason() << endl;
+    throw runtime_error("Failed to load texture image");
+  }
+
+  Buffer textureStagingBuffer{*this, textureSize, 1,
+                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+  textureStagingBuffer.map();
+  textureStagingBuffer.writeToBuffer((void *)textureData);
+
+  stbi_image_free(textureData);
+
+  VkImage image;
+  VkDeviceMemory textureImageMemory;
+
+  VkImageCreateInfo imageInfo{};
+  imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  imageInfo.imageType = VK_IMAGE_TYPE_2D;
+  imageInfo.extent.width = static_cast<uint32_t>(textureWidth);
+  imageInfo.extent.height = static_cast<uint32_t>(textureHeight);
+  imageInfo.extent.depth = 1;
+  imageInfo.mipLevels = 1;
+  imageInfo.arrayLayers = 1;
+  imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+  imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+  imageInfo.usage =
+      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+
+  createImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image,
+                      textureImageMemory);
+  transitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED,
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+  copyBufferToImage(textureStagingBuffer.getBuffer(), image,
+                    static_cast<uint32_t>(textureWidth),
+                    static_cast<uint32_t>(textureHeight));
+  transitionImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+  VkImageViewCreateInfo viewInfo = {};
+  viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  viewInfo.image = image;
+  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+  viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  viewInfo.subresourceRange.baseMipLevel = 0;
+  viewInfo.subresourceRange.levelCount = 1;
+  viewInfo.subresourceRange.baseArrayLayer = 0;
+  viewInfo.subresourceRange.layerCount = 1;
+
+  if (vkCreateImageView(device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create image views!");
+
+  VkSamplerCreateInfo samplerInfo{};
+  samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  samplerInfo.magFilter = VK_FILTER_LINEAR;
+  samplerInfo.minFilter = VK_FILTER_LINEAR;
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.anisotropyEnable = VK_FALSE;
+  samplerInfo.maxAnisotropy = 1.0f;
+  samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+  samplerInfo.unnormalizedCoordinates = VK_FALSE;
+  samplerInfo.compareEnable = VK_FALSE;
+  samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+  samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  samplerInfo.mipLodBias = 0.0f;
+  samplerInfo.minLod = 0.0f;
+  samplerInfo.maxLod = 0.0f;
+
+  if (vkCreateSampler(device(), &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+    throw std::runtime_error("Failed to create texture sampler!");
 }
 
 } // namespace engine

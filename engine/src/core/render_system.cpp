@@ -13,8 +13,6 @@
 #include <cstring>
 #include <glm/ext/scalar_constants.hpp>
 #include <memory>
-#include <ostream>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -47,7 +45,7 @@ void RenderSystem::recreateSwapChain() {
 
   vkDeviceWaitIdle(device.device());
 
-  shared_ptr<SwapChain> oldSwapChain = move(swapChain);
+  shared_ptr<SwapChain> oldSwapChain = std::move(swapChain);
   swapChain = make_unique<SwapChain>(device, extent, oldSwapChain);
 
   if (!oldSwapChain->compareSwapFormats(*swapChain.get()))
@@ -126,7 +124,7 @@ void RenderSystem::recordCommandBuffer(VkCommandBuffer commandBuffer) {
   renderPassInfo.renderArea.extent = swapChain->extent();
 
   array<VkClearValue, 2> clearValues{};
-  clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+  clearValues[0].color = {{0.53f, 0.81f, 0.92f, 1.0f}};
   clearValues[1].depthStencil = {1.0f, 0};
   renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
   renderPassInfo.pClearValues = clearValues.data();
