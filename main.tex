@@ -8046,11 +8046,283 @@ rotateDirection.x = deltaY;
 
 Perfect. Now we have a cube that is lit by a light source and a floor that is also lit by the light source.
 
-\listoffigures
+\chapter{Rigid Body Physics}
 
-\printbibliography[
-	heading=bibintoc, title={Bibliography}
-]
+Rigid Bodies are non-deformable objects that are used in physics simulations to simulate the movement of objects.
+It handles the application of forces, the calculation of the velocity and updates the position of the parent object.
+The rigid body physics engine will be a core class that will be used by the game objects to simulate gravity, forces and collisions.
 
+\section{Rigid Body}
+
+For now we will only implement the rigid body physics engine and add gravity to the game objects.
+Let's create a new class called RigidBody3D that will have a velocity vector and a gravity float value.
+Additionally we will add a \textit{applyGravity} function that will apply the gravity to the velocity vector,
+a \textit{update} function that will update the position of the parent object and a \textit{resetVelocity}
+function that will reset the velocity vector.
+
+\begin{lstlisting}[Language=C++]
+//rigidbody3d.hpp
+#include <glm/ext/vector_float3.hpp>
+namespace engine {
+
+class RigidBody3D {
+public:
+  float gravity = 1.f;
+
+  glm::vec3 velocity{0.f};
+
+  void applyGravity(const float deltaTime);
+  void update(glm::vec3 &position);
+  void resetVelocity();
+};
+} // namespace engine
+\end{lstlisting}
+
+In the implementation of the \textit{applyGravity} function we will multiply the gravity value by the delta time
+and subtract it to the y component of the velocity vector. The update function will then add the velocity vector to the position vector.
+
+\begin{lstlisting}[Language=C++]
+#include "rigidbody3d.hpp"
+
+namespace engine {
+void RigidBody3D::applyGravity(const float deltaTime) {
+  velocity.y -= gravity * deltaTime;
+}
+
+void RigidBody3D::update(glm::vec3 &position) { position += velocity; }
+
+void RigidBody3D::resetVelocity() { velocity = glm::vec3{0.f}; }
+} // namespace engine
+\end{lstlisting}
+
+Let's also create a Player class that inherits from the GameObject class and adds a RigidBody3D object to the player.
+Additionally it will provide a boolean flag that will indicate if the player can jump.
+
+\begin{lstlisting}[Language=C++]
+//player.hpp
+#pragma once
+#include "core/rigidbody3d.hpp"
+#include <glm/fwd.hpp>
+#include <vector>
+
+namespace engine {
+
+class Player : public GameObject {
+public:
+  bool canJump = false;
+
+  RigidBody3D rigidBody{};
+};
+
+} // namespace engine
+\end{lstlisting}
+
+Let's call the \textit{applyGravity} function and the \textit{update} function in our game loop.
+
+\begin{lstlisting}[Language=C++]
+//app.cpp
+void App::run() {
+  ...
+  Player player{};
+
+  while (!window.shouldClose()) {
+      ...
+      player.rigidBody.applyGravity(deltaTime);
+      player.rigidBody.update(player.transform.position);
+      ...
+    }
+}
+\end{lstlisting}
+
+When you run the application you should see the player fall down but not stop at the floor.
+So let's check collisions in the next section.
+
+\section{Collision Detection}
+
+There are many different ways to detect collisions between objects. Since we are working with cubes we will use the AABB collision detection.
+AABB stands for Axis Aligned Bounding Box and is a simple collision detection algorithm that uses the axis aligned bounding boxes of the objects to detect collisions.
+A bounding box is the hit box. As long as both bounding boxes are parallel to the coordinate axis we can use the AABB collision detection.
+
+The AABB collision detection works by checking if the bounding boxes of two objects overlap. We can do so by comparing the minimum and maximum values of the bounding boxes.
+For example, in 2D we can check if either the first objects minimum is greater than the other objects maximum or the first objects maximum is smaller than the other objects minimum.
+
+Let's add a new File called \textit{collision.hpp} that will contain a CollisionBox3D struct, that will hold the minimum and maximum values of the bounding box.
+
+\begin{lstlisting}[Language=C++]
+#pragma once
+#include "core/game_object.hpp"
+#include <glm/glm.hpp>
+
+namespace engine {
+struct CollisionBox3D {
+glm::vec3 min;
+glm::vec3 max;
+};
+} // namespace engine
+\end{lstlisting}
+
+Let's also add a BoxCollider class that will have a CollisionBox3D object and a \textit{checkCollision} function that will check if two BoxCollider objects overlap.
+If the bounding boxes overlap the function will return true, otherwise it will return false. If they overlap we will resolve the collision
+and return a Collision3D object that will hold the direction and length of the collision and also a boolean flag to indicate the collision state.
+We will also add some contructors to the BoxCollider class. These will set the minimum and maximum values of the bounding box.
+
+\begin{lstlisting}[Language=C++]
+//collision.hpp
+namespace engine {
+...
+class Collision3D {
+public:
+bool isColliding;
+
+glm::vec3 direction;
+float length;
+};
+
+class BoxCollider {
+public:
+BoxCollider() { BoxCollider(Transform()); }
+BoxCollider(const Transform &transform);
+
+bool checkCollision(const CollisionBox3D &other);
+Collision3D resolveCollision(const CollisionBox3D &other);
+
+CollisionBox3D collisionBox;
+};
+} // namespace engine
+\end{lstlisting}
+
+Let's implement the BoxCollider class. We will first implement the constructors.
+When we add a transform to the constructor we will set the collision boxes minimum to the position of the transform and
+the maximum to the position of the transform plus the scale of the transform. If we don't provide a transform we will assume the scale to be 1 aka
+we assume it to be a unit cube and use an empty transform for the construction.
+
+\begin{lstlisting}[Language=C++]
+#include "collision.hpp"
+#include "core/game_object.hpp"
+#include <algorithm>
+#include <glm/fwd.hpp>
+
+namespace engine {
+
+BoxCollider::BoxCollider(const Transform &transform) {
+collisionBox.min = transform.position;
+collisionBox.max = transform.position + transform.scale;
+}
+
+} // namespace engine
+\end{lstlisting}
+
+The \textit{checkCollision} function will check if the bounding boxes overlap. We will do so by checking if the minimum of the first bounding box is greater than the maximum of the second bounding box
+or if the maximum of the first bounding box is smaller than the minimum of the second bounding box. If one of these conditions is true we will return false, otherwise we will return true.
+
+\begin{lstlisting}[Language=C++]
+namepsace engine {
+...
+bool BoxCollider::checkCollision(const CollisionBox3D &other) {
+return collisionBox.min.x < other.max.x && collisionBox.max.x > other.min.x &&
+       collisionBox.min.y < other.max.y && collisionBox.max.y > other.min.y &&
+       collisionBox.min.z < other.max.z && collisionBox.max.z > other.min.z;
+}
+} // namespace engine
+\end{lstlisting}
+
+Next the \textit{resolveCollision} function will resolve the collision. We will first calculate the overlap length of the bounding boxes for each axis.
+To get the overlap length we will subtract the smaller maximum value from the larger minimum value. Then we can calculate the direction of the collision by
+checking for the smallest overlap length. Finally we will have to negate the direction if the minimum of the first bounding box is smaller than the minimum of the second bounding box.
+
+\begin{lstlisting}[Language=C++]
+namespace engine {
+...
+Collision3D BoxCollider::resolveCollision(const CollisionBox3D &other) {
+Collision3D collision;
+collision.isColliding = false;
+
+if (checkCollision(other)) {
+		collision.isColliding = true;
+
+		float xOverlap = std::min(collisionBox.max.x, other.max.x) -
+		std::max(collisionBox.min.x, other.min.x);
+		float yOverlap = std::min(collisionBox.max.y, other.max.y) -
+		std::max(collisionBox.min.y, other.min.y);
+		float zOverlap = std::min(collisionBox.max.z, other.max.z) -
+		std::max(collisionBox.min.z, other.min.z);
+
+		if (xOverlap < yOverlap && xOverlap < zOverlap) {
+				collision.direction = {1, 0, 0};
+				collision.length = xOverlap;
+			} else if (yOverlap < xOverlap && yOverlap < zOverlap) {
+				collision.direction = {0, 1, 0};
+				collision.length = yOverlap;
+			} else {
+				collision.direction = {0, 0, 1};
+				collision.length = zOverlap;
+			}
+
+		if (collisionBox.min.x < other.min.x)
+		collision.direction.x *= -1;
+		if (collisionBox.min.y < other.min.y)
+		collision.direction.y *= -1;
+		if (collisionBox.min.z < other.min.z)
+		collision.direction.z *= -1;
+	}
+return collision;
+} // namespace engine
+\end{lstlisting}
+
+Now we can add a BoxCollider object to the Player class. But the floor also needs a BoxCollider object.
+So let's add header class called block.hpp. It will deefine a Block class that will inherit from the GameObject class and add a BoxCollider object to the block.
+Additionally we will add a BlockType struct that will hold the type of the block as a uint8_t and a return it when we call the operator \textit{int()}.
+It will also define static BlockType objects for the different block types and overwrites the \textit{operator=} to set the type of the block.
+The block class will also have 2 constructors. One that will use the position of the block and set the minimum and maximum values of the bounding box to the position and the position plus 1.
+The other constructor will use a transform object and pass it to the BoxCollider constructor.
+
+\begin{lstlisting}[Language=C++]
+//block.hpp
+#pragma once
+#include "collision.hpp"
+#include "core/game_object.hpp"
+#include <cstdint>
+#include <sys/types.h>
+
+namespace engine {
+struct BlockType {
+  const static uint8_t Air = 0;
+  const static uint8_t Stone = 1;
+
+  uint8_t type;
+
+  operator int() const { return type; }
+  BlockType &operator=(const int &other) {
+    type = other;
+    return *this;
+  }
+};
+
+class Block : public GameObject {
+public:
+  Block(glm::vec3 position) : GameObject() {
+    transform.position = position;
+    collider.collisionBox.min = position;
+    collider.collisionBox.max = position + glm::vec3(1.0f);
+  }
+  Block(Transform transform) : GameObject() {
+    transform.position = transform.position;
+    collider = BoxCollider{transform};
+  }
+
+  BlockType type;
+  BoxCollider collider;
+};
+
+} // namespace engine
+\end{lstlisting}
+
+Great let's rewrite the app.cpp file to include the new classes.
+
+\section{Collision Handling}
+
+\printbibliography
+
+\end{document}
 \end{document}
 \end{document}
