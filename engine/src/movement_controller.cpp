@@ -48,7 +48,7 @@ void MovementController::handleInput(GLFWwindow *window, Player &player,
   rotateDirection.y = deltaX;
   rotateDirection.x = deltaY;
 
-  player.transform.rotation += rotateDirection * dt * 0.1f;
+  player.transform.rotation += rotateDirection * dt;
   player.transform.rotation.x =
       std::clamp(player.transform.rotation.x, -glm::half_pi<float>(),
                  glm::half_pi<float>());
