@@ -19,6 +19,10 @@
 using namespace std;
 
 namespace engine {
+
+const int MAX_VERTEX_COUNT = 10000000;
+const int MAX_INDEX_COUNT = 10000000;
+
 std::vector<VkVertexInputBindingDescription>
 Model::Vertex::getBindingDescriptions() {
   std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
@@ -152,8 +156,8 @@ std::unique_ptr<Model> Model::loadFromMeshes(
 
 Model::Model(Device &device) : device{device} {
   cout << "Creating model with default constructor" << endl;
-  createRingBuffer(10000000, 15000000);
-  createStagingBuffers(10000000, 15000000);
+  createRingBuffer(MAX_VERTEX_COUNT, MAX_INDEX_COUNT);
+  createStagingBuffers(MAX_VERTEX_COUNT, MAX_INDEX_COUNT);
 }
 
 Model::Model(Device &device, const Model::Builder &builder) : device{device} {
@@ -287,7 +291,8 @@ void Model::writeMeshDataToBuffer(
   stagingBuffer->writeToBuffer((void *)mesh.first.data(), vertexDataSize,
                                vertexBufferOffset);
   stagingBuffer->writeToBuffer((void *)mesh.second.data(), indexDataSize,
-                               indexBufferOffset + 10000000 * sizeof(Vertex));
+                               indexBufferOffset +
+                                   MAX_VERTEX_COUNT * sizeof(Vertex));
 }
 
 void Model::bind(VkCommandBuffer commandBuffer) {
@@ -296,7 +301,7 @@ void Model::bind(VkCommandBuffer commandBuffer) {
   vkCmdBindVertexBuffers(commandBuffer, 0, 1, vkRingBuffers, offsets);
 
   if (hasIndexBuffer) {
-    uint32_t indexBufferOffset = 10000000 * sizeof(Vertex);
+    uint32_t indexBufferOffset = MAX_VERTEX_COUNT * sizeof(Vertex);
 
     vkCmdBindIndexBuffer(commandBuffer, ringBuffer->getBuffer(),
                          indexBufferOffset, VK_INDEX_TYPE_UINT32);

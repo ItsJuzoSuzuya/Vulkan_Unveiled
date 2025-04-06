@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "chunk.hpp"
 #include "collision.hpp"
 #include "core/buffer.hpp"
 #include "core/game_object.hpp"
@@ -271,17 +272,56 @@ void App::loadWorldModel(queue<Chunk *> &pushQueue,
 
   VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
   while (!pushQueue.empty()) {
-    Chunk &chunk = *pushQueue.front();
+    Chunk *chunk = pushQueue.front();
+
+    size_t vertexBlockSize;
+    if (chunk->getMesh().first.size() * sizeof(Model::Vertex) <
+        ChunkSize::Tiny) {
+      vertexBlockSize = ChunkSize::Tiny;
+    } else if (chunk->getMesh().first.size() * sizeof(Model::Vertex) <
+               ChunkSize::Small) {
+      vertexBlockSize = ChunkSize::Small;
+    } else if (chunk->getMesh().first.size() * sizeof(Model::Vertex) <
+               ChunkSize::Medium) {
+      vertexBlockSize = ChunkSize::Medium;
+    } else if (chunk->getMesh().first.size() * sizeof(Model::Vertex) <
+               ChunkSize::Large) {
+      vertexBlockSize = ChunkSize::Large;
+    } else if (chunk->getMesh().first.size() * sizeof(Model::Vertex) <
+               ChunkSize::Huge) {
+      vertexBlockSize = ChunkSize::Huge;
+    } else {
+      vertexBlockSize = ChunkSize::Max;
+    }
+
+    size_t indexBlockSize;
+    if (chunk->getMesh().second.size() * sizeof(uint32_t) < ChunkSize::Tiny) {
+      indexBlockSize = ChunkSize::Tiny;
+    } else if (chunk->getMesh().second.size() * sizeof(uint32_t) <
+               ChunkSize::Small) {
+      indexBlockSize = ChunkSize::Small;
+    } else if (chunk->getMesh().second.size() * sizeof(uint32_t) <
+               ChunkSize::Medium) {
+      indexBlockSize = ChunkSize::Medium;
+    } else if (chunk->getMesh().second.size() * sizeof(uint32_t) <
+               ChunkSize::Large) {
+      indexBlockSize = ChunkSize::Large;
+    } else if (chunk->getMesh().second.size() * sizeof(uint32_t) <
+               ChunkSize::Huge) {
+      indexBlockSize = ChunkSize::Huge;
+    } else {
+      indexBlockSize = ChunkSize::Max;
+    }
 
     if (freeChunks.empty()) {
       auto *objectDataBuffer = (ObjectData *)objectDataBuffers[0]->mappedData();
       auto *drawCallBuffer =
           (VkDrawIndexedIndirectCommand *)drawCallBuffers[0]->mappedData();
-      objectDataBuffer[drawCallCounter] = {chunk.transform.mat4(),
-                                           chunk.transform.normalMatrix()};
+      objectDataBuffer[drawCallCounter] = {chunk->transform.mat4(),
+                                           chunk->transform.normalMatrix()};
 
       VkDrawIndexedIndirectCommand indirectCommand{};
-      indirectCommand.indexCount = chunk.getMesh().second.size();
+      indirectCommand.indexCount = chunk->getMesh().second.size();
       indirectCommand.instanceCount = 1;
       indirectCommand.firstIndex = firstIndex;
       indirectCommand.vertexOffset = vertexOffset;
@@ -291,28 +331,30 @@ void App::loadWorldModel(queue<Chunk *> &pushQueue,
       objectDataBuffer = (ObjectData *)objectDataBuffers[1]->mappedData();
       drawCallBuffer =
           (VkDrawIndexedIndirectCommand *)drawCallBuffers[1]->mappedData();
-      objectDataBuffer[drawCallCounter] = {chunk.transform.mat4(),
-                                           chunk.transform.normalMatrix()};
+      objectDataBuffer[drawCallCounter] = {chunk->transform.mat4(),
+                                           chunk->transform.normalMatrix()};
 
       drawCallBuffer[drawCallCounter] = indirectCommand;
 
-      worldModel->writeMeshDataToBuffer(chunk.getMesh(), vertexBufferOffset,
+      worldModel->writeMeshDataToBuffer(chunk->getMesh(), vertexBufferOffset,
                                         indexBufferOffset);
 
       BufferBlock bufferBlock;
       bufferBlock.drawCallIndex = drawCallCounter;
       bufferBlock.vertexOffset = vertexOffset;
-      bufferBlock.vertexCount = chunk.getMesh().first.size();
+      bufferBlock.vertexCount = chunk->getMesh().first.size();
       bufferBlock.firstIndex = firstIndex;
-      bufferBlock.indexCount = chunk.getMesh().second.size();
+      bufferBlock.indexCount = chunk->getMesh().second.size();
       bufferBlock.vertexBufferOffset = vertexBufferOffset;
       bufferBlock.indexBufferOffset = indexBufferOffset;
-      chunk.bufferMemory = bufferBlock;
+      bufferBlock.vertexBlockSize = vertexBlockSize;
+      bufferBlock.indexBlockSize = indexBlockSize;
+      chunk->bufferMemory = bufferBlock;
 
       VkBufferCopy copyRegion = {};
       copyRegion.srcOffset = vertexBufferOffset;
       copyRegion.dstOffset = vertexBufferOffset;
-      copyRegion.size = chunk.getMesh().first.size() * sizeof(Model::Vertex);
+      copyRegion.size = chunk->getMesh().first.size() * sizeof(Model::Vertex);
       vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
                       worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
 
@@ -320,61 +362,146 @@ void App::loadWorldModel(queue<Chunk *> &pushQueue,
           indexBufferOffset + 10000000 * sizeof(Model::Vertex);
       copyRegion.dstOffset =
           indexBufferOffset + 10000000 * sizeof(Model::Vertex);
-      copyRegion.size = chunk.getMesh().second.size() * sizeof(uint32_t);
+      copyRegion.size = chunk->getMesh().second.size() * sizeof(uint32_t);
       vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
                       worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
 
       drawCallCounter++;
-      firstIndex += 30000;
-      vertexOffset += 20000;
-      vertexBufferOffset += 20000 * sizeof(Model::Vertex);
-      indexBufferOffset += 30000 * sizeof(uint32_t);
+      firstIndex += indexBlockSize;
+      indexBufferOffset += indexBlockSize * sizeof(uint32_t);
+      vertexOffset += vertexBlockSize;
+      vertexBufferOffset += vertexBlockSize * sizeof(Model::Vertex);
       pushQueue.pop();
+      continue;
     } else {
-      auto freeChunk = freeChunks.front();
+      auto it = freeChunks.begin();
+      bool found = false;
 
-      auto *objectDataBuffer = (ObjectData *)objectDataBuffers[0]->mappedData();
-      objectDataBuffer[freeChunk.drawCallIndex] = {
-          chunk.transform.mat4(), chunk.transform.normalMatrix()};
+      while (it != freeChunks.end()) {
+        BufferBlock &freeChunk = *it;
 
-      auto *drawCallBuffer =
-          (VkDrawIndexedIndirectCommand *)drawCallBuffers[0]->mappedData();
-      VkDrawIndexedIndirectCommand indirectCommand{};
-      indirectCommand.indexCount = chunk.getMesh().second.size();
-      indirectCommand.instanceCount = 1;
-      indirectCommand.firstIndex = freeChunk.firstIndex;
-      indirectCommand.vertexOffset = freeChunk.vertexOffset;
-      indirectCommand.firstInstance = freeChunk.drawCallIndex;
-      drawCallBuffer[freeChunk.drawCallIndex] = indirectCommand;
+        if (freeChunk.vertexBlockSize == vertexBlockSize &&
+            freeChunk.indexBlockSize == indexBlockSize) {
 
-      objectDataBuffer = (ObjectData *)objectDataBuffers[1]->mappedData();
-      drawCallBuffer =
-          (VkDrawIndexedIndirectCommand *)drawCallBuffers[1]->mappedData();
-      objectDataBuffer[freeChunk.drawCallIndex] = {
-          chunk.transform.mat4(), chunk.transform.normalMatrix()};
-      drawCallBuffer[freeChunk.drawCallIndex] = indirectCommand;
+          auto *objectDataBuffer =
+              (ObjectData *)objectDataBuffers[0]->mappedData();
+          objectDataBuffer[freeChunk.drawCallIndex] = {
+              chunk->transform.mat4(), chunk->transform.normalMatrix()};
+          auto *drawCallBuffer =
+              (VkDrawIndexedIndirectCommand *)drawCallBuffers[0]->mappedData();
+          VkDrawIndexedIndirectCommand indirectCommand{};
+          indirectCommand.indexCount = chunk->getMesh().second.size();
+          indirectCommand.instanceCount = 1;
+          indirectCommand.firstIndex = freeChunk.firstIndex;
+          indirectCommand.vertexOffset = freeChunk.vertexOffset;
+          indirectCommand.firstInstance = freeChunk.drawCallIndex;
+          drawCallBuffer[freeChunk.drawCallIndex] = indirectCommand;
 
-      worldModel->writeMeshDataToBuffer(chunk.getMesh(),
-                                        freeChunk.vertexBufferOffset,
-                                        freeChunk.indexBufferOffset);
+          objectDataBuffer = (ObjectData *)objectDataBuffers[1]->mappedData();
+          drawCallBuffer =
+              (VkDrawIndexedIndirectCommand *)drawCallBuffers[1]->mappedData();
+          objectDataBuffer[freeChunk.drawCallIndex] = {
+              chunk->transform.mat4(), chunk->transform.normalMatrix()};
+          drawCallBuffer[freeChunk.drawCallIndex] = indirectCommand;
 
-      chunk.bufferMemory = freeChunk;
+          worldModel->writeMeshDataToBuffer(chunk->getMesh(),
+                                            freeChunk.vertexBufferOffset,
+                                            freeChunk.indexBufferOffset);
 
-      VkBufferCopy copyRegion = {};
-      copyRegion.srcOffset = copyRegion.dstOffset =
-          freeChunk.vertexBufferOffset;
-      copyRegion.size = chunk.getMesh().first.size() * sizeof(Model::Vertex);
-      vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
-                      worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+          chunk->bufferMemory = freeChunk;
 
-      copyRegion.srcOffset = copyRegion.dstOffset =
-          freeChunk.indexBufferOffset + 10000000 * sizeof(Model::Vertex);
-      copyRegion.size = chunk.getMesh().second.size() * sizeof(uint32_t);
-      vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
-                      worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+          VkBufferCopy copyRegion = {};
+          copyRegion.srcOffset = copyRegion.dstOffset =
+              freeChunk.vertexBufferOffset;
+          copyRegion.size =
+              chunk->getMesh().first.size() * sizeof(Model::Vertex);
+          vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                          worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
 
-      pushQueue.pop();
-      freeChunks.pop();
+          copyRegion.srcOffset = copyRegion.dstOffset =
+              freeChunk.indexBufferOffset + 10000000 * sizeof(Model::Vertex);
+          copyRegion.size = chunk->getMesh().second.size() * sizeof(uint32_t);
+          vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                          worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+
+          pushQueue.pop();
+          freeChunks.erase(it);
+          found = true;
+          break;
+        } else {
+          auto drawCallBuffer =
+              (VkDrawIndexedIndirectCommand *)drawCallBuffers[0]->mappedData();
+          drawCallBuffer[freeChunk.drawCallIndex] = {0, 0, 0, 0, 0};
+
+          drawCallBuffer =
+              (VkDrawIndexedIndirectCommand *)drawCallBuffers[1]->mappedData();
+          drawCallBuffer[freeChunk.drawCallIndex] = {0, 0, 0, 0, 0};
+
+          ++it;
+        }
+      }
+
+      if (!found) {
+        auto *objectDataBuffer =
+            (ObjectData *)objectDataBuffers[0]->mappedData();
+        auto *drawCallBuffer =
+            (VkDrawIndexedIndirectCommand *)drawCallBuffers[0]->mappedData();
+        objectDataBuffer[drawCallCounter] = {chunk->transform.mat4(),
+                                             chunk->transform.normalMatrix()};
+
+        VkDrawIndexedIndirectCommand indirectCommand{};
+        indirectCommand.indexCount = chunk->getMesh().second.size();
+        indirectCommand.instanceCount = 1;
+        indirectCommand.firstIndex = firstIndex;
+        indirectCommand.vertexOffset = vertexOffset;
+        indirectCommand.firstInstance = drawCallCounter;
+        drawCallBuffer[drawCallCounter] = indirectCommand;
+
+        objectDataBuffer = (ObjectData *)objectDataBuffers[1]->mappedData();
+        drawCallBuffer =
+            (VkDrawIndexedIndirectCommand *)drawCallBuffers[1]->mappedData();
+        objectDataBuffer[drawCallCounter] = {chunk->transform.mat4(),
+                                             chunk->transform.normalMatrix()};
+
+        drawCallBuffer[drawCallCounter] = indirectCommand;
+
+        worldModel->writeMeshDataToBuffer(chunk->getMesh(), vertexBufferOffset,
+                                          indexBufferOffset);
+
+        BufferBlock bufferBlock;
+        bufferBlock.drawCallIndex = drawCallCounter;
+        bufferBlock.vertexOffset = vertexOffset;
+        bufferBlock.vertexCount = chunk->getMesh().first.size();
+        bufferBlock.firstIndex = firstIndex;
+        bufferBlock.indexCount = chunk->getMesh().second.size();
+        bufferBlock.vertexBufferOffset = vertexBufferOffset;
+        bufferBlock.indexBufferOffset = indexBufferOffset;
+        bufferBlock.vertexBlockSize = vertexBlockSize;
+        bufferBlock.indexBlockSize = indexBlockSize;
+        chunk->bufferMemory = bufferBlock;
+
+        VkBufferCopy copyRegion = {};
+        copyRegion.srcOffset = vertexBufferOffset;
+        copyRegion.dstOffset = vertexBufferOffset;
+        copyRegion.size = chunk->getMesh().first.size() * sizeof(Model::Vertex);
+        vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                        worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+
+        copyRegion.srcOffset =
+            indexBufferOffset + 10000000 * sizeof(Model::Vertex);
+        copyRegion.dstOffset =
+            indexBufferOffset + 10000000 * sizeof(Model::Vertex);
+        copyRegion.size = chunk->getMesh().second.size() * sizeof(uint32_t);
+        vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                        worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+
+        drawCallCounter++;
+        firstIndex += indexBlockSize;
+        indexBufferOffset += indexBlockSize * sizeof(uint32_t);
+        vertexOffset += vertexBlockSize;
+        vertexBufferOffset += vertexBlockSize * sizeof(Model::Vertex);
+        pushQueue.pop();
+      }
     }
   }
   device.endSingleTimeCommands(commandBuffer);

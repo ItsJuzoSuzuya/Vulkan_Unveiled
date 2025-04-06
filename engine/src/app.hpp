@@ -30,7 +30,7 @@ private:
   Window window{WIDTH, HEIGHT, "Vulkan Application"};
   Device device{window};
 
-  std::unique_ptr<DescriptorPool> descriptorPool;
+  unique_ptr<DescriptorPool> descriptorPool;
 
   void loadWorldModel(queue<Chunk *> &pushQueue,
                       vector<shared_ptr<Buffer>> objectDataBuffers,
@@ -38,15 +38,15 @@ private:
 
   ChunkGenerator chunkGenerator{device};
 
-  std::thread chunkThread;
-  std::mutex queueMutex;
+  thread chunkThread;
+  mutex queueMutex;
 
-  std::unordered_map<int, Chunk> chunks;
-  queue<BufferBlock> freeChunks;
-  std::queue<Chunk> chunkQueue;
-  std::queue<int> chunkUnloadQueue;
+  unordered_map<int, Chunk> chunks;
+  vector<BufferBlock> freeChunks;
+  queue<Chunk> chunkQueue;
+  queue<int> chunkUnloadQueue;
 
-  std::shared_ptr<Model> worldModel;
+  shared_ptr<Model> worldModel;
 
   bool isChunkLoaded(const glm::vec3 &playerChunkPosition);
   void checkChunks(const glm::vec3 &playerChunk,

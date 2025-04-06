@@ -429,7 +429,7 @@ void ChunkLoader::loadChunks(const GameObject &player,
 
 void ChunkLoader::unloadOutOfRangeChunks(const GameObject &player,
                                          std::unordered_map<int, Chunk> &chunks,
-                                         queue<BufferBlock> &freeChunks) {
+                                         vector<BufferBlock> &freeChunks) {
   glm::vec3 playerChunk{glm::floor(player.transform.position / 32.f)};
 
   auto it = chunks.begin();
@@ -447,7 +447,7 @@ void ChunkLoader::unloadOutOfRangeChunks(const GameObject &player,
         std::lock_guard<std::mutex> lock(chunkMutex);
         if (it->second.blocks.size() != 1 ||
             it->second.blocks[0] != BlockType::Air)
-          freeChunks.push(it->second.bufferMemory);
+          freeChunks.push_back(it->second.bufferMemory);
         it = chunks.erase(it);
       }
     } else {

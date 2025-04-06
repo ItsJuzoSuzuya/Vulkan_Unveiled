@@ -88,7 +88,7 @@ public:
                         const std::unordered_map<int, Chunk> &chunks);
   void unloadOutOfRangeChunks(const GameObject &player,
                               std::unordered_map<int, Chunk> &chunks,
-                              queue<BufferBlock> &freeChunks);
+                              vector<BufferBlock> &freeChunks);
   int getChunkIndex(const glm::vec3 &chunkPosition);
 
   atomic<bool> running = true;
