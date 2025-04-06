@@ -45,10 +45,10 @@ void MovementController::handleInput(GLFWwindow *window, Player &player,
   double deltaY = newMouseY - mouseY;
 
   glm::vec3 rotateDirection{0.f};
-  rotateDirection.y = deltaX;
-  rotateDirection.x = deltaY;
+  rotateDirection.y = deltaX * dt;
+  rotateDirection.x = deltaY * dt;
 
-  player.transform.rotation += rotateDirection * dt;
+  player.transform.rotation += rotateDirection;
   player.transform.rotation.x =
       std::clamp(player.transform.rotation.x, -glm::half_pi<float>(),
                  glm::half_pi<float>());

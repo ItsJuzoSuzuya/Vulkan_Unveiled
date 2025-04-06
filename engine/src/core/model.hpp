@@ -62,10 +62,10 @@ public:
   uint32_t vertexCount;
   uint32_t indexCount;
 
-  void writeMeshDataToBuffers(
+  void writeMeshDataToBuffer(
       const std::pair<std::vector<Vertex>, std::vector<uint32_t>> &mesh,
-      uint32_t vertexOffset, uint32_t indexOffset, uint32_t frameIndex);
-  void bind(VkCommandBuffer commandBuffer, int frameIndex);
+      uint32_t vertexOffset, uint32_t indexOffset);
+  void bind(VkCommandBuffer commandBuffer);
   void draw(VkCommandBuffer commandBuffer, uint32_t instanceCount = 1);
 
   static std::unique_ptr<Model>

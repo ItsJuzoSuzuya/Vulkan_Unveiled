@@ -32,9 +32,9 @@ private:
 
   std::unique_ptr<DescriptorPool> descriptorPool;
 
-  uint32_t loadWorldModel(ObjectData *objectDataBuffer,
-                          VkDrawIndexedIndirectCommand *drawCallBuffer,
-                          uint32_t frameIndex);
+  void loadWorldModel(queue<Chunk *> &pushQueue,
+                      vector<shared_ptr<Buffer>> objectDataBuffers,
+                      vector<shared_ptr<Buffer>> drawCallBuffers);
 
   ChunkGenerator chunkGenerator{device};
 
@@ -42,9 +42,9 @@ private:
   std::mutex queueMutex;
 
   std::unordered_map<int, Chunk> chunks;
+  queue<BufferBlock> freeChunks;
   std::queue<Chunk> chunkQueue;
   std::queue<int> chunkUnloadQueue;
-  bool refreshChunks = true;
 
   std::shared_ptr<Model> worldModel;
 
@@ -59,6 +59,8 @@ private:
   uint32_t drawCallCounter = 0;
   uint32_t vertexBufferOffset = 0;
   uint32_t indexBufferOffset = 0;
+  uint32_t firstIndex = 0;
+  uint32_t vertexOffset = 0;
   uint32_t frameCounter = 0;
 
   uint32_t modelIndex = 0;

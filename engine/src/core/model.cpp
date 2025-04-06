@@ -278,36 +278,25 @@ void Model::createStagingBuffers(uint32_t vertexCount, uint32_t indexCount) {
   stagingBuffer->map();
 }
 
-void Model::writeMeshDataToBuffers(
+void Model::writeMeshDataToBuffer(
     const std::pair<std::vector<Vertex>, std::vector<uint32_t>> &mesh,
-    uint32_t vertexBufferOffset, uint32_t indexBufferOffset,
-    uint32_t frameIndex) {
+    uint32_t vertexBufferOffset, uint32_t indexBufferOffset) {
   size_t vertexDataSize = mesh.first.size() * sizeof(Vertex);
   size_t indexDataSize = mesh.second.size() * sizeof(uint32_t);
 
-  size_t frameOffset =
-      frameIndex * (10000000 * sizeof(Vertex) + 15000000 * sizeof(uint32_t));
-
   stagingBuffer->writeToBuffer((void *)mesh.first.data(), vertexDataSize,
-                               vertexBufferOffset + frameOffset);
+                               vertexBufferOffset);
   stagingBuffer->writeToBuffer((void *)mesh.second.data(), indexDataSize,
-                               indexBufferOffset + 10000000 * sizeof(Vertex) +
-                                   frameOffset);
-
-  vertexBufferOffset += vertexDataSize;
-  indexBufferOffset += indexDataSize;
+                               indexBufferOffset + 10000000 * sizeof(Vertex));
 }
 
-void Model::bind(VkCommandBuffer commandBuffer, int frameIndex) {
+void Model::bind(VkCommandBuffer commandBuffer) {
   VkBuffer vkRingBuffers[] = {ringBuffer->getBuffer()};
-  uint32_t vertexBufferOffset =
-      frameIndex * (10000000 * sizeof(Vertex) + 15000000 * sizeof(uint32_t));
-  VkDeviceSize offsets[] = {vertexBufferOffset};
+  VkDeviceSize offsets[] = {0};
   vkCmdBindVertexBuffers(commandBuffer, 0, 1, vkRingBuffers, offsets);
 
   if (hasIndexBuffer) {
-    uint32_t indexBufferOffset =
-        vertexBufferOffset + (10000000 * sizeof(Vertex));
+    uint32_t indexBufferOffset = 10000000 * sizeof(Vertex);
 
     vkCmdBindIndexBuffer(commandBuffer, ringBuffer->getBuffer(),
                          indexBufferOffset, VK_INDEX_TYPE_UINT32);

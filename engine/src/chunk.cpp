@@ -390,51 +390,46 @@ float ChunkGenerator::perlinNoise(int x, int z) {
 
 void ChunkLoader::startChunkThread(
     GameObject &player, const std::unordered_map<int, Chunk> &chunks) {
-  if (!refreshChunks)
-    return;
-
-  if (chunkThread.joinable())
-    chunkThread.detach();
-
   chunkThread = std::thread(&ChunkLoader::loadChunks, this, std::ref(player),
                             std::ref(chunks));
-
-  refreshChunks = false;
-  stopChunkThread = false;
 }
 
 void ChunkLoader::loadChunks(const GameObject &player,
                              const std::unordered_map<int, Chunk> &chunks) {
-  glm::vec3 playerChunk{floor(player.transform.position / 32.f)};
+  glm::vec3 playerChunk;
 
-  for (int y = 0; y < RENDER_DISTANCE * 2; y++) {
-    for (int z = 0; z < RENDER_DISTANCE * 2; z++) {
-      for (int x = 0; x < RENDER_DISTANCE * 2; x++) {
-        if (stopChunkThread)
-          break;
+  while (running) {
+    {
+      std::lock_guard<std::mutex> lock(chunkMutex);
+      playerChunk = {floor(player.transform.position / 32.f)};
+    }
 
-        int xPos = (playerChunk.x + (x - RENDER_DISTANCE)) * 32.f;
-        int zPos = (playerChunk.z + (z - RENDER_DISTANCE)) * 32.f;
-        int yPos = y * 32.f;
+    for (int y = 0; y < RENDER_DISTANCE * 2; y++) {
+      for (int z = 0; z < RENDER_DISTANCE * 2; z++) {
+        for (int x = 0; x < RENDER_DISTANCE * 2; x++) {
+          int xPos = (playerChunk.x + (x - RENDER_DISTANCE)) * 32.f;
+          int zPos = (playerChunk.z + (z - RENDER_DISTANCE)) * 32.f;
+          int yPos = y * 32.f;
 
-        glm::vec3 chunkPosition{xPos, yPos, zPos};
+          glm::vec3 chunkPosition{xPos, yPos, zPos};
 
-        if (isLoaded(chunkPosition, chunks))
-          continue;
+          if (isLoaded(chunkPosition, chunks))
+            continue;
 
-        Chunk chunk = chunkGenerator.generate(chunkPosition);
-        {
-          std::lock_guard<std::mutex> lock(chunkMutex);
-          chunkQueue.push(std::move(chunk));
+          Chunk chunk = chunkGenerator.generate(chunkPosition);
+          {
+            std::lock_guard<std::mutex> lock(chunkMutex);
+            chunkQueue.push(std::move(chunk));
+          }
         }
       }
     }
   }
-  refreshChunks = true;
 }
 
-void ChunkLoader::unloadOutOfRangeChunks(
-    const GameObject &player, std::unordered_map<int, Chunk> &chunks) {
+void ChunkLoader::unloadOutOfRangeChunks(const GameObject &player,
+                                         std::unordered_map<int, Chunk> &chunks,
+                                         queue<BufferBlock> &freeChunks) {
   glm::vec3 playerChunk{glm::floor(player.transform.position / 32.f)};
 
   auto it = chunks.begin();
@@ -450,15 +445,15 @@ void ChunkLoader::unloadOutOfRangeChunks(
     if (isToFar) {
       {
         std::lock_guard<std::mutex> lock(chunkMutex);
-        vkQueueWaitIdle(device.graphicsQueue());
+        if (it->second.blocks.size() != 1 ||
+            it->second.blocks[0] != BlockType::Air)
+          freeChunks.push(it->second.bufferMemory);
         it = chunks.erase(it);
       }
     } else {
       it++;
     }
   }
-
-  stopChunkThread = false;
 }
 
 bool ChunkLoader::isLoaded(const glm::vec3 &chunkPosition,
@@ -474,8 +469,12 @@ bool ChunkLoader::isLoaded(const glm::vec3 &chunkPosition,
 }
 
 int ChunkLoader::getChunkIndex(const glm::vec3 &chunkPosition) {
-  int index = (chunkPosition.x) + (chunkPosition.z * RENDER_DISTANCE * 2) +
-              (chunkPosition.y * RENDER_DISTANCE * RENDER_DISTANCE * 4);
-  return index;
+  const int CHUNK_GRID_SIZE = RENDER_DISTANCE * 2;
+
+  int x = static_cast<int>(chunkPosition.x);
+  int y = static_cast<int>(chunkPosition.y);
+  int z = static_cast<int>(chunkPosition.z);
+
+  return x + (z * CHUNK_GRID_SIZE) + (y * CHUNK_GRID_SIZE * CHUNK_GRID_SIZE);
 }
 } // namespace engine

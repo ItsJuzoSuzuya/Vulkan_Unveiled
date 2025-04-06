@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <glm/common.hpp>
 #include <glm/detail/qualifier.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
@@ -32,7 +33,7 @@ using namespace std;
 
 namespace engine {
 
-int RENDER_DISTANCE = 5;
+int RENDER_DISTANCE = 6;
 const int MAX_DRAW_CALLS = 10000;
 const int WIDTH = 1200;
 const int HEIGHT = 800;
@@ -132,9 +133,6 @@ void App::run() {
   RenderSystem renderSystem{device, window,
                             descriptorSetLayout->getDescriptorSetLayout()};
 
-  ChunkLoader chunkLoader{device, chunkQueue, chunkUnloadQueue, queueMutex,
-                          refreshChunks};
-
   Camera camera{};
   camera.setPerspectiveProjection(glm::radians(90.f),
                                   renderSystem.getAspectRatio(), 0.1f, 1000.f);
@@ -142,8 +140,11 @@ void App::run() {
   MovementController movementController{};
 
   Player player = Player();
-  player.transform.position = {7.f, 120.f, 8.f};
+  player.transform.position = {0.f, 80.f, 0.f};
   player.transform.scale = {0.8f, 2.f, 0.8f};
+
+  ChunkLoader chunkLoader{device, chunkQueue, chunkUnloadQueue, queueMutex};
+  chunkLoader.startChunkThread(player, chunks);
 
   glm::vec3 colliderMin =
       player.transform.position - glm::vec3{player.transform.scale.x / 2.f, 0,
@@ -159,18 +160,9 @@ void App::run() {
   while (!window.shouldClose()) {
     /* GLFW Poll Events */
 
-    auto *objectDataBuffer =
-        (ObjectData *)objectDataBuffers[renderSystem.getFrameIndex()]
-            ->mappedData();
-    auto *drawCallBuffer = (VkDrawIndexedIndirectCommand *)
-                               drawCallBuffers[renderSystem.getFrameIndex()]
-                                   ->mappedData();
-
     glfwPollEvents();
-    if (glfwGetKey(window.getGLFWwindow(), GLFW_KEY_ESCAPE)) {
+    if (glfwGetKey(window.getGLFWwindow(), GLFW_KEY_ESCAPE))
       window.close();
-      return;
-    }
 
     /* Delta Time */
 
@@ -188,12 +180,11 @@ void App::run() {
 
     /* Chunk Loading */
 
-    chunkLoader.startChunkThread(player, chunks);
-    chunkLoader.unloadOutOfRangeChunks(player, chunks);
+    chunkLoader.unloadOutOfRangeChunks(player, chunks, freeChunks);
 
     /* Gravity */
 
-    if (chunks.size() > 100) {
+    if (chunks.size() > 7) {
       player.rigidBody.applyGravity(deltaTime);
       player.rigidBody.update(player.transform.position, deltaTime);
       player.collider.collisionBox.min =
@@ -221,27 +212,27 @@ void App::run() {
 
     /* Rendering */
 
-    size_t updatedChunks = 0;
-
+    queue<Chunk *> pushQueue;
     while (!chunkQueue.empty()) {
       {
         lock_guard<mutex> lock(queueMutex);
 
         int chunkIndex =
             chunkLoader.getChunkIndex(chunkQueue.front().transform.position);
-
         chunks.insert({chunkIndex, std::move(chunkQueue.front())});
-        updatedChunks++;
 
         chunkQueue.pop();
+
+        if (chunks.at(chunkIndex).blocks.size() != 1 ||
+            chunks.at(chunkIndex).blocks[0].type != BlockType::Air)
+          pushQueue.push(&chunks.at(chunkIndex));
       }
     }
 
     if (auto commandBuffer = renderSystem.beginFrame()) {
       int frameIndex = renderSystem.getFrameIndex();
 
-      if (updatedChunks > 0)
-        loadWorldModel(objectDataBuffer, drawCallBuffer, frameIndex);
+      loadWorldModel(pushQueue, objectDataBuffers, drawCallBuffers);
 
       GlobalUbo ubo{};
       ubo.projectionView = camera.getProjection() * camera.getView();
@@ -263,66 +254,130 @@ void App::run() {
 
     chrono::duration<double> frameTime =
         chrono::high_resolution_clock::now() - currentTime;
-    cout << "Frame Time: " << frameTime.count() * 1000 << "ms" << endl;
+    // cout << "Frame Time: " << frameTime.count() * 1000 << "ms" << endl;
     // cout << "\rFps: " << 1.0 / frameTime.count() << flush;
     frameCounter++;
   }
+
+  chunkLoader.running = false;
   chunkThread.join();
 }
 
-uint32_t App::loadWorldModel(ObjectData *objectDataBuffer,
-                             VkDrawIndexedIndirectCommand *drawCallBuffer,
-                             uint32_t frameIndex) {
-  drawCallCounter = 0;
-  vertexBufferOffset = 0;
-  indexBufferOffset = 0;
+void App::loadWorldModel(queue<Chunk *> &pushQueue,
+                         vector<shared_ptr<Buffer>> objectDataBuffers,
+                         vector<shared_ptr<Buffer>> drawCallBuffers) {
+  if (pushQueue.empty())
+    return;
 
-  int firstIndex = 0;
+  VkCommandBuffer commandBuffer = device.beginSingleTimeCommands();
+  while (!pushQueue.empty()) {
+    Chunk &chunk = *pushQueue.front();
 
-  uint32_t vertexOffset = 0;
+    if (freeChunks.empty()) {
+      auto *objectDataBuffer = (ObjectData *)objectDataBuffers[0]->mappedData();
+      auto *drawCallBuffer =
+          (VkDrawIndexedIndirectCommand *)drawCallBuffers[0]->mappedData();
+      objectDataBuffer[drawCallCounter] = {chunk.transform.mat4(),
+                                           chunk.transform.normalMatrix()};
 
-  auto it = chunks.begin();
+      VkDrawIndexedIndirectCommand indirectCommand{};
+      indirectCommand.indexCount = chunk.getMesh().second.size();
+      indirectCommand.instanceCount = 1;
+      indirectCommand.firstIndex = firstIndex;
+      indirectCommand.vertexOffset = vertexOffset;
+      indirectCommand.firstInstance = drawCallCounter;
+      drawCallBuffer[drawCallCounter] = indirectCommand;
 
-  while (it != chunks.end()) {
-    Chunk &chunk = it->second;
+      objectDataBuffer = (ObjectData *)objectDataBuffers[1]->mappedData();
+      drawCallBuffer =
+          (VkDrawIndexedIndirectCommand *)drawCallBuffers[1]->mappedData();
+      objectDataBuffer[drawCallCounter] = {chunk.transform.mat4(),
+                                           chunk.transform.normalMatrix()};
 
-    if (chunk.blocks.size() == 1 && chunk.blocks[0] == BlockType::Air) {
-      it++;
-      continue;
+      drawCallBuffer[drawCallCounter] = indirectCommand;
+
+      worldModel->writeMeshDataToBuffer(chunk.getMesh(), vertexBufferOffset,
+                                        indexBufferOffset);
+
+      BufferBlock bufferBlock;
+      bufferBlock.drawCallIndex = drawCallCounter;
+      bufferBlock.vertexOffset = vertexOffset;
+      bufferBlock.vertexCount = chunk.getMesh().first.size();
+      bufferBlock.firstIndex = firstIndex;
+      bufferBlock.indexCount = chunk.getMesh().second.size();
+      bufferBlock.vertexBufferOffset = vertexBufferOffset;
+      bufferBlock.indexBufferOffset = indexBufferOffset;
+      chunk.bufferMemory = bufferBlock;
+
+      VkBufferCopy copyRegion = {};
+      copyRegion.srcOffset = vertexBufferOffset;
+      copyRegion.dstOffset = vertexBufferOffset;
+      copyRegion.size = chunk.getMesh().first.size() * sizeof(Model::Vertex);
+      vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                      worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+
+      copyRegion.srcOffset =
+          indexBufferOffset + 10000000 * sizeof(Model::Vertex);
+      copyRegion.dstOffset =
+          indexBufferOffset + 10000000 * sizeof(Model::Vertex);
+      copyRegion.size = chunk.getMesh().second.size() * sizeof(uint32_t);
+      vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                      worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+
+      drawCallCounter++;
+      firstIndex += 30000;
+      vertexOffset += 20000;
+      vertexBufferOffset += 20000 * sizeof(Model::Vertex);
+      indexBufferOffset += 30000 * sizeof(uint32_t);
+      pushQueue.pop();
+    } else {
+      auto freeChunk = freeChunks.front();
+
+      auto *objectDataBuffer = (ObjectData *)objectDataBuffers[0]->mappedData();
+      objectDataBuffer[freeChunk.drawCallIndex] = {
+          chunk.transform.mat4(), chunk.transform.normalMatrix()};
+
+      auto *drawCallBuffer =
+          (VkDrawIndexedIndirectCommand *)drawCallBuffers[0]->mappedData();
+      VkDrawIndexedIndirectCommand indirectCommand{};
+      indirectCommand.indexCount = chunk.getMesh().second.size();
+      indirectCommand.instanceCount = 1;
+      indirectCommand.firstIndex = freeChunk.firstIndex;
+      indirectCommand.vertexOffset = freeChunk.vertexOffset;
+      indirectCommand.firstInstance = freeChunk.drawCallIndex;
+      drawCallBuffer[freeChunk.drawCallIndex] = indirectCommand;
+
+      objectDataBuffer = (ObjectData *)objectDataBuffers[1]->mappedData();
+      drawCallBuffer =
+          (VkDrawIndexedIndirectCommand *)drawCallBuffers[1]->mappedData();
+      objectDataBuffer[freeChunk.drawCallIndex] = {
+          chunk.transform.mat4(), chunk.transform.normalMatrix()};
+      drawCallBuffer[freeChunk.drawCallIndex] = indirectCommand;
+
+      worldModel->writeMeshDataToBuffer(chunk.getMesh(),
+                                        freeChunk.vertexBufferOffset,
+                                        freeChunk.indexBufferOffset);
+
+      chunk.bufferMemory = freeChunk;
+
+      VkBufferCopy copyRegion = {};
+      copyRegion.srcOffset = copyRegion.dstOffset =
+          freeChunk.vertexBufferOffset;
+      copyRegion.size = chunk.getMesh().first.size() * sizeof(Model::Vertex);
+      vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                      worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+
+      copyRegion.srcOffset = copyRegion.dstOffset =
+          freeChunk.indexBufferOffset + 10000000 * sizeof(Model::Vertex);
+      copyRegion.size = chunk.getMesh().second.size() * sizeof(uint32_t);
+      vkCmdCopyBuffer(commandBuffer, worldModel->stagingBuffer->getBuffer(),
+                      worldModel->ringBuffer->getBuffer(), 1, &copyRegion);
+
+      pushQueue.pop();
+      freeChunks.pop();
     }
-
-    objectDataBuffer[drawCallCounter] = {chunk.transform.mat4(),
-                                         chunk.transform.normalMatrix()};
-
-    VkDrawIndexedIndirectCommand indirectCommand{};
-    indirectCommand.indexCount = chunk.getMesh().second.size();
-    indirectCommand.instanceCount = 1;
-    indirectCommand.firstIndex = firstIndex;
-    indirectCommand.vertexOffset = vertexOffset;
-    indirectCommand.firstInstance = drawCallCounter;
-    drawCallBuffer[drawCallCounter] = indirectCommand;
-
-    worldModel->writeMeshDataToBuffers(chunk.getMesh(), vertexBufferOffset,
-                                       indexBufferOffset, frameIndex);
-
-    drawCallCounter++;
-    firstIndex += chunk.getMesh().second.size();
-    vertexOffset += chunk.getMesh().first.size();
-    vertexBufferOffset += chunk.getMesh().first.size() * sizeof(Model::Vertex);
-    indexBufferOffset += chunk.getMesh().second.size() * sizeof(uint32_t);
-    it++;
   }
-
-  if (drawCallCounter == 0)
-    return 0;
-
-  size_t size = 10000000 * sizeof(Model::Vertex) + 15000000 * sizeof(uint32_t);
-
-  device.copyBuffer(worldModel->stagingBuffer->getBuffer(),
-                    worldModel->ringBuffer->getBuffer(), size,
-                    frameIndex * size, frameIndex * size);
-
-  return drawCallCounter;
+  device.endSingleTimeCommands(commandBuffer);
 }
 
 } // namespace engine

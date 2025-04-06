@@ -22,7 +22,7 @@ layout(set = 0, binding = 0) uniform GlobalUbo{
   vec4 lightColor;
 } ubo;
 
-layout(set = 0, binding = 1) buffer ObjectBuffer {
+layout(set = 0, binding = 1) readonly buffer ObjectBuffer {
   ObjectData data[];
 } objectBuffer;
 

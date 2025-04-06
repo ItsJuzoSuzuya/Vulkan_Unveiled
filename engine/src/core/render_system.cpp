@@ -159,7 +159,7 @@ void RenderSystem::renderWorld(FrameInfo &frameInfo,
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                           &frameInfo.descriptorSet, 0, nullptr);
 
-  worldModel->bind(frameInfo.commandBuffer, frameInfo.frameIndex);
+  worldModel->bind(frameInfo.commandBuffer);
 
   vkCmdDrawIndexedIndirect(frameInfo.commandBuffer,
                            frameInfo.drawCallBuffer->getBuffer(), 0, drawCalls,
@@ -188,7 +188,7 @@ void RenderSystem::renderGameObjects(FrameInfo &frameInfo,
                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                           &frameInfo.descriptorSet, 0, nullptr);
   for (GameObject &gameObject : gameObjects) {
-    gameObject.model->bind(frameInfo.commandBuffer, frameInfo.frameIndex);
+    gameObject.model->bind(frameInfo.commandBuffer);
     gameObject.model->draw(frameInfo.commandBuffer);
   }
 }
